@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { PageHeader, Card, Button, Input, Select, Table, TableHead, TableBody, Th, Td, TableRow, Badge, Skeleton, EmptyState } from "@/components/ui";
 
 interface Siswa {
   id: number;
@@ -21,6 +22,8 @@ export default function SiswaPage() {
   const [kelasList, setKelasList] = useState<KelasOption[]>([]);
   const [form, setForm] = useState({ nis: "", nama: "", jenis_kelamin: "L", kelas_rombel_id: "" });
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -33,87 +36,72 @@ export default function SiswaPage() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
-    await api.post("/siswa", {
-      ...form,
-      kelas_rombel_id: form.kelas_rombel_id || null,
-    });
+    setCreating(true);
+    await api.post("/siswa", { ...form, kelas_rombel_id: form.kelas_rombel_id || null });
     setForm({ nis: "", nama: "", jenis_kelamin: "L", kelas_rombel_id: "" });
+    setShowForm(false);
+    setCreating(false);
     load();
   }
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold">Data Siswa</h1>
+    <div className="animate-fade-in">
+      <PageHeader
+        title="Data Siswa"
+        description="Daftar seluruh siswa pesantren."
+        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? "Tutup" : "+ Tambah Siswa"}</Button>}
+      />
 
-      <form onSubmit={handleCreate} className="mt-4 flex flex-wrap gap-2">
-        <input
-          value={form.nis}
-          onChange={(e) => setForm({ ...form, nis: e.target.value })}
-          placeholder="NIS"
-          required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          value={form.nama}
-          onChange={(e) => setForm({ ...form, nama: e.target.value })}
-          placeholder="Nama lengkap"
-          required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={form.jenis_kelamin}
-          onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="L">Laki-laki</option>
-          <option value="P">Perempuan</option>
-        </select>
-        <select
-          value={form.kelas_rombel_id}
-          onChange={(e) => setForm({ ...form, kelas_rombel_id: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value="">Belum ada kelas</option>
-          {kelasList.map((k) => (
-            <option key={k.id} value={k.id}>
-              {k.nama}
-            </option>
-          ))}
-        </select>
-        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-          Tambah Siswa
-        </button>
-      </form>
+      {showForm && (
+        <Card className="mb-6 animate-slide-up">
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="NIS" value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} placeholder="Nomor Induk Siswa" required />
+            <Input label="Nama Lengkap" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Nama siswa" required />
+            <Select label="Jenis Kelamin" value={form.jenis_kelamin} onChange={(e) => setForm({ ...form, jenis_kelamin: e.target.value })}>
+              <option value="L">Laki-laki</option>
+              <option value="P">Perempuan</option>
+            </Select>
+            <Select label="Kelas" value={form.kelas_rombel_id} onChange={(e) => setForm({ ...form, kelas_rombel_id: e.target.value })} placeholder="Belum ada kelas">
+              {kelasList.map((k) => (
+                <option key={k.id} value={k.id}>{k.nama}</option>
+              ))}
+            </Select>
+            <div className="sm:col-span-2">
+              <Button type="submit" loading={creating}>Simpan Siswa</Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {loading ? (
-        <p className="mt-6 text-sm text-gray-500">Memuat...</p>
+        <Skeleton className="h-40 w-full" />
+      ) : data.length === 0 ? (
+        <EmptyState title="Belum ada siswa" description="Tambahkan siswa baru melalui tombol di atas." />
       ) : (
-        <table className="mt-6 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
-            <tr>
-              <th className="px-4 py-2">NIS</th>
-              <th className="px-4 py-2">Nama</th>
-              <th className="px-4 py-2">Kelas</th>
-              <th className="px-4 py-2">L/P</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((s) => (
-              <tr key={s.id} className="border-t border-gray-100">
-                <td className="px-4 py-2">{s.nis}</td>
-                <td className="px-4 py-2">{s.nama}</td>
-                <td className="px-4 py-2">{s.kelas_rombel?.nama ?? "-"}</td>
-                <td className="px-4 py-2">{s.jenis_kelamin}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Card>
+          <Table>
+            <TableHead>
+              <Th>NIS</Th>
+              <Th>Nama</Th>
+              <Th>Kelas</Th>
+              <Th>L/P</Th>
+            </TableHead>
+            <TableBody>
+              {data.map((s) => (
+                <TableRow key={s.id}>
+                  <Td className="font-mono text-xs">{s.nis}</Td>
+                  <Td className="font-medium">{s.nama}</Td>
+                  <Td>{s.kelas_rombel?.nama ?? <span className="text-slate-400">-</span>}</Td>
+                  <Td><Badge variant={s.jenis_kelamin === "L" ? "info" : "purple"}>{s.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}</Badge></Td>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { PageHeader, Card, Button, Input, Select, Table, TableHead, TableBody, Th, Td, TableRow, Skeleton, EmptyState } from "@/components/ui";
 
 interface KelasRombel {
   id: number;
@@ -17,6 +18,7 @@ export default function KelasPage() {
   const [tingkat, setTingkat] = useState(7);
   const [tahunAjaranId, setTahunAjaranId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -30,70 +32,63 @@ export default function KelasPage() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
-    if (!tahunAjaranId) {
-      alert("Aktifkan tahun ajaran terlebih dahulu di menu Tahun Ajaran.");
-      return;
-    }
+    if (!tahunAjaranId) return;
+    setCreating(true);
     await api.post("/kelas-rombel", { nama, tingkat, tahun_ajaran_id: tahunAjaranId });
     setNama("");
+    setCreating(false);
     load();
   }
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold">Kelas / Rombel</h1>
+    <div className="animate-fade-in">
+      <PageHeader title="Kelas / Rombel" description="Kelola rombel dan penugasan wali kelas." />
 
-      <form onSubmit={handleCreate} className="mt-4 flex flex-wrap gap-2">
-        <input
-          value={nama}
-          onChange={(e) => setNama(e.target.value)}
-          placeholder="contoh: VII-A"
-          required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <select
-          value={tingkat}
-          onChange={(e) => setTingkat(Number(e.target.value))}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          <option value={7}>Tingkat 7</option>
-          <option value={8}>Tingkat 8</option>
-          <option value={9}>Tingkat 9</option>
-        </select>
-        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-          Tambah Kelas
-        </button>
-      </form>
+      <Card className="mb-6">
+        <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input value={nama} onChange={(e) => setNama(e.target.value)} placeholder="contoh: VII-A" required />
+          </div>
+          <div className="w-full sm:w-40">
+            <Select value={tingkat} onChange={(e) => setTingkat(Number(e.target.value))}>
+              <option value={7}>Tingkat 7</option>
+              <option value={8}>Tingkat 8</option>
+              <option value={9}>Tingkat 9</option>
+            </Select>
+          </div>
+          <Button type="submit" loading={creating}>Tambah</Button>
+        </form>
+      </Card>
 
       {loading ? (
-        <p className="mt-6 text-sm text-gray-500">Memuat...</p>
+        <Skeleton className="h-40 w-full" />
+      ) : data.length === 0 ? (
+        <EmptyState title="Belum ada kelas" description="Buat kelas/rombel baru melalui form di atas." />
       ) : (
-        <table className="mt-6 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
-            <tr>
-              <th className="px-4 py-2">Kelas</th>
-              <th className="px-4 py-2">Tingkat</th>
-              <th className="px-4 py-2">Wali Kelas</th>
-              <th className="px-4 py-2">Jumlah Siswa</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((k) => (
-              <tr key={k.id} className="border-t border-gray-100">
-                <td className="px-4 py-2">{k.nama}</td>
-                <td className="px-4 py-2">{k.tingkat}</td>
-                <td className="px-4 py-2">{k.wali_kelas?.name ?? "-"}</td>
-                <td className="px-4 py-2">{k.siswas_count}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Card>
+          <Table>
+            <TableHead>
+              <Th>Kelas</Th>
+              <Th>Tingkat</Th>
+              <Th>Wali Kelas</Th>
+              <Th>Jumlah Siswa</Th>
+            </TableHead>
+            <TableBody>
+              {data.map((k) => (
+                <TableRow key={k.id}>
+                  <Td className="font-medium">{k.nama}</Td>
+                  <Td>{k.tingkat}</Td>
+                  <Td>{k.wali_kelas?.name ?? <span className="text-slate-400">-</span>}</Td>
+                  <Td>{k.siswas_count}</Td>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );

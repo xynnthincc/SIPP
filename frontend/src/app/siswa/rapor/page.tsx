@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { PageHeader, Card, Badge, Skeleton, EmptyState, Table, TableHead, TableBody, Th, Td, TableRow } from "@/components/ui";
 
 interface Rapor {
   id: number;
@@ -15,57 +16,67 @@ interface RekapItem {
   nilai_akhir: number | null;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  Draft: "bg-gray-100 text-gray-600",
-  Diajukan: "bg-amber-100 text-amber-700",
-  Divalidasi: "bg-blue-100 text-blue-700",
-  Ditolak: "bg-red-100 text-red-700",
-  Diterbitkan: "bg-emerald-100 text-emerald-700",
+const STATUS_VARIANT: Record<string, "success" | "warning" | "info" | "danger" | "default"> = {
+  Draft: "default",
+  Diajukan: "warning",
+  Divalidasi: "info",
+  Ditolak: "danger",
+  Diterbitkan: "success",
 };
 
 export default function RaporSiswaPage() {
   const [rapors, setRapors] = useState<Rapor[]>([]);
   const [rekap, setRekap] = useState<Record<number, RekapItem[]>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get<Rapor[]>("/rapors").then(async (res) => {
       setRapors(res.data);
-      // Rekap nilai hanya relevan untuk rapor yang sudah diterbitkan
       for (const r of res.data.filter((r) => r.status === "Diterbitkan")) {
         const rk = await api.get<RekapItem[]>(`/siswas/${r.siswa.id}/nilai-rekap/${r.semester.id}`);
         setRekap((prev) => ({ ...prev, [r.id]: rk.data }));
       }
+      setLoading(false);
     });
   }, []);
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold">Rapor Saya</h1>
+    <div className="animate-fade-in">
+      <PageHeader title="Rapor Saya" description="Rapor pesantren dan rekap nilai." />
 
-      <div className="mt-6 space-y-4">
-        {rapors.length === 0 && <p className="text-sm text-gray-500">Belum ada rapor.</p>}
-        {rapors.map((r) => (
-          <div key={r.id} className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">Semester {r.semester.nama}</p>
-              <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS_COLOR[r.status]}`}>{r.status}</span>
-            </div>
+      {loading ? (
+        <Skeleton className="h-40 w-full" />
+      ) : rapors.length === 0 ? (
+        <EmptyState title="Belum ada rapor" description="Rapor akan muncul setelah diterbitkan oleh kepala sekolah." />
+      ) : (
+        <div className="space-y-4">
+          {rapors.map((r) => (
+            <Card key={r.id}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-slate-800">Semester {r.semester.nama}</h3>
+                <Badge variant={STATUS_VARIANT[r.status] || "default"}>{r.status}</Badge>
+              </div>
 
-            {rekap[r.id] && (
-              <table className="mt-3 w-full text-sm">
-                <tbody>
-                  {rekap[r.id].map((item, i) => (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="py-1.5">{item.mapel}</td>
-                      <td className="py-1.5 text-right font-medium">{item.nilai_akhir ?? "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        ))}
-      </div>
+              {rekap[r.id] && (
+                <Table>
+                  <TableHead>
+                    <Th>Mata Pelajaran</Th>
+                    <Th className="text-right">Nilai Akhir</Th>
+                  </TableHead>
+                  <TableBody>
+                    {rekap[r.id].map((item, i) => (
+                      <TableRow key={i}>
+                        <Td>{item.mapel}</Td>
+                        <Td className="text-right font-semibold">{item.nilai_akhir ?? "-"}</Td>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

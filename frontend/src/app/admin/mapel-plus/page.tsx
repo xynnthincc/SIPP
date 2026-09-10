@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { PageHeader, Card, Button, Input, Table, TableHead, TableBody, Th, Td, TableRow, Badge, Skeleton, EmptyState } from "@/components/ui";
 
 interface MapelPlus {
   id: number;
@@ -15,6 +16,8 @@ export default function MapelPlusPage() {
   const [data, setData] = useState<MapelPlus[]>([]);
   const [form, setForm] = useState({ kode: "", nama: "", punya_progres_hafalan: false });
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -23,75 +26,69 @@ export default function MapelPlusPage() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
+    setCreating(true);
     await api.post("/mapel-plus", form);
     setForm({ kode: "", nama: "", punya_progres_hafalan: false });
+    setShowForm(false);
+    setCreating(false);
     load();
   }
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold">Mata Pelajaran Plus</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Mata pelajaran kepesantrenan seperti Tahfidz, Tahsin, Kitab Kuning, Bahasa Arab, Akhlak.
-      </p>
+    <div className="animate-fade-in">
+      <PageHeader
+        title="Mata Pelajaran Plus"
+        description="Tahfidz, Tahsin, Kitab Kuning, Bahasa Arab, Akhlak."
+        action={<Button onClick={() => setShowForm(!showForm)}>{showForm ? "Tutup" : "+ Tambah Mapel"}</Button>}
+      />
 
-      <form onSubmit={handleCreate} className="mt-4 flex flex-wrap items-center gap-2">
-        <input
-          value={form.kode}
-          onChange={(e) => setForm({ ...form, kode: e.target.value.toUpperCase() })}
-          placeholder="Kode (contoh: TAHFIDZ)"
-          required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          value={form.nama}
-          onChange={(e) => setForm({ ...form, nama: e.target.value })}
-          placeholder="Nama mata pelajaran"
-          required
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        />
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={form.punya_progres_hafalan}
-            onChange={(e) => setForm({ ...form, punya_progres_hafalan: e.target.checked })}
-          />
-          Punya tracker hafalan
-        </label>
-        <button className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-          Tambah
-        </button>
-      </form>
+      {showForm && (
+        <Card className="mb-6 animate-slide-up">
+          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Kode" value={form.kode} onChange={(e) => setForm({ ...form, kode: e.target.value.toUpperCase() })} placeholder="TAHFIDZ" required />
+            <Input label="Nama Mapel" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} placeholder="Tahfidz Al-Quran" required />
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                <input type="checkbox" checked={form.punya_progres_hafalan} onChange={(e) => setForm({ ...form, punya_progres_hafalan: e.target.checked })} className="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
+                Punya tracker hafalan
+              </label>
+            </div>
+            <div className="sm:col-span-2">
+              <Button type="submit" loading={creating}>Simpan</Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {loading ? (
-        <p className="mt-6 text-sm text-gray-500">Memuat...</p>
+        <Skeleton className="h-40 w-full" />
+      ) : data.length === 0 ? (
+        <EmptyState title="Belum ada mapel plus" description="Tambahkan mata pelajaran kepesantrenan baru." />
       ) : (
-        <table className="mt-6 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-sm">
-          <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
-            <tr>
-              <th className="px-4 py-2">Kode</th>
-              <th className="px-4 py-2">Nama</th>
-              <th className="px-4 py-2">Jenis Assessment</th>
-              <th className="px-4 py-2">Tracker Hafalan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((m) => (
-              <tr key={m.id} className="border-t border-gray-100">
-                <td className="px-4 py-2">{m.kode}</td>
-                <td className="px-4 py-2">{m.nama}</td>
-                <td className="px-4 py-2">{m.jenis_assessments_count}</td>
-                <td className="px-4 py-2">{m.punya_progres_hafalan ? "Ya" : "Tidak"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Card>
+          <Table>
+            <TableHead>
+              <Th>Kode</Th>
+              <Th>Nama</Th>
+              <Th>Assessment</Th>
+              <Th>Hafalan</Th>
+            </TableHead>
+            <TableBody>
+              {data.map((m) => (
+                <TableRow key={m.id}>
+                  <Td className="font-mono text-xs font-semibold">{m.kode}</Td>
+                  <Td className="font-medium">{m.nama}</Td>
+                  <Td>{m.jenis_assessments_count}</Td>
+                  <Td><Badge variant={m.punya_progres_hafalan ? "success" : "default"}>{m.punya_progres_hafalan ? "Ya" : "Tidak"}</Badge></Td>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );

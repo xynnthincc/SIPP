@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { PageHeader, Card, Select, Badge, Skeleton, EmptyState } from "@/components/ui";
 
 interface Anak {
   id: number;
@@ -30,93 +31,117 @@ interface Presensi {
   status: string;
 }
 
+const STATUS_VARIANT: Record<string, "success" | "warning" | "danger" | "info" | "default"> = {
+  Hadir: "success",
+  Sakit: "warning",
+  Izin: "info",
+  Alpa: "danger",
+};
+
+const HAFALAN_VARIANT: Record<string, "success" | "warning" | "danger"> = {
+  Lancar: "success",
+  "Perlu Perbaikan": "warning",
+  Mengulang: "danger",
+};
+
 export default function ProgresAnakPage() {
   const [anakList, setAnakList] = useState<Anak[]>([]);
   const [anakId, setAnakId] = useState<number | null>(null);
   const [progres, setProgres] = useState<ProgresHafalan[]>([]);
   const [catatan, setCatatan] = useState<CatatanGuru[]>([]);
   const [presensi, setPresensi] = useState<Presensi[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get<Anak[]>("/siswa").then((res) => {
       setAnakList(res.data);
       if (res.data.length > 0) setAnakId(res.data[0].id);
+      setLoading(false);
     });
   }, []);
 
   useEffect(() => {
     if (!anakId) return;
-    api.get<ProgresHafalan[]>("/progres-hafalan", { params: { siswa_id: anakId } }).then((res) => setProgres(res.data));
-    api.get<CatatanGuru[]>("/catatan-guru", { params: { siswa_id: anakId } }).then((res) => setCatatan(res.data));
-    api.get<Presensi[]>("/presensi", { params: { siswa_id: anakId } }).then((res) => setPresensi(res.data));
+    setLoading(true);
+    Promise.all([
+      api.get<ProgresHafalan[]>("/progres-hafalan", { params: { siswa_id: anakId } }),
+      api.get<CatatanGuru[]>("/catatan-guru", { params: { siswa_id: anakId } }),
+      api.get<Presensi[]>("/presensi", { params: { siswa_id: anakId } }),
+    ]).then(([p, c, pr]) => {
+      setProgres(p.data);
+      setCatatan(c.data);
+      setPresensi(pr.data);
+      setLoading(false);
+    });
   }, [anakId]);
 
   return (
-    <div>
-      <h1 className="text-lg font-semibold">Progres Anak</h1>
+    <div className="animate-fade-in">
+      <PageHeader title="Progres Anak" description="Pantau perkembangan hafalan, catatan guru, dan presensi anak." />
 
       {anakList.length > 1 && (
-        <select
-          value={anakId ?? ""}
-          onChange={(e) => setAnakId(Number(e.target.value))}
-          className="mt-4 rounded-lg border border-gray-300 px-3 py-2 text-sm"
-        >
-          {anakList.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.nama}
-            </option>
-          ))}
-        </select>
+        <Card className="mb-6">
+          <Select label="Pilih Anak" value={anakId ?? ""} onChange={(e) => setAnakId(Number(e.target.value))}>
+            {anakList.map((a) => (
+              <option key={a.id} value={a.id}>{a.nama} - {a.kelas_rombel?.nama ?? "-"}</option>
+            ))}
+          </Select>
+        </Card>
       )}
 
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <section>
-          <h2 className="text-sm font-semibold text-gray-700">Progres Hafalan Terbaru</h2>
-          <div className="mt-2 space-y-2">
-            {progres.length === 0 && <p className="text-sm text-gray-400">Belum ada catatan.</p>}
-            {progres.map((p) => (
-              <div key={p.id} className="rounded-lg border border-gray-200 bg-white p-3 text-sm">
-                <p className="font-medium">{p.mapel_plus.nama} · {p.materi}</p>
-                <p className="text-xs text-gray-500">{p.tanggal_setoran} · {p.status}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      {loading ? (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          <Card>
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Progres Hafalan</h3>
+            <div className="space-y-2">
+              {progres.length === 0 ? (
+                <p className="text-sm text-slate-400">Belum ada catatan.</p>
+              ) : progres.map((p) => (
+                <div key={p.id} className="p-3 rounded-xl bg-slate-50/50">
+                  <div className="flex items-start justify-between">
+                    <p className="text-sm font-medium text-slate-800">{p.mapel_plus.nama}</p>
+                    <Badge variant={HAFALAN_VARIANT[p.status] || "default"}>{p.status}</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">{p.materi}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{p.tanggal_setoran}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-        <section>
-          <h2 className="text-sm font-semibold text-gray-700">Catatan Guru</h2>
-          <div className="mt-2 space-y-2">
-            {catatan.length === 0 && <p className="text-sm text-gray-400">Belum ada catatan.</p>}
-            {catatan.map((c) => (
-              <div key={c.id} className="rounded-lg border border-gray-200 bg-white p-3 text-sm">
-                <p>{c.catatan}</p>
-                <p className="text-xs text-gray-500">{c.tanggal}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+          <Card>
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Catatan Guru</h3>
+            <div className="space-y-2">
+              {catatan.length === 0 ? (
+                <p className="text-sm text-slate-400">Belum ada catatan.</p>
+              ) : catatan.map((c) => (
+                <div key={c.id} className="p-3 rounded-xl bg-slate-50/50">
+                  <p className="text-sm text-slate-700">{c.catatan}</p>
+                  <p className="text-xs text-slate-400 mt-1">{c.tanggal}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-        <section className="md:col-span-2">
-          <h2 className="text-sm font-semibold text-gray-700">Presensi Terbaru</h2>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {presensi.length === 0 && <p className="text-sm text-gray-400">Belum ada data.</p>}
-            {presensi.slice(0, 20).map((p) => (
-              <span
-                key={p.id}
-                className={`rounded-full px-3 py-1 text-xs ${
-                  p.status === "Hadir"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : p.status === "Alpa"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-amber-100 text-amber-700"
-                }`}
-              >
-                {p.tanggal} · {p.status}
-              </span>
-            ))}
-          </div>
-        </section>
-      </div>
+          <Card className="md:col-span-2">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Presensi Terbaru</h3>
+            <div className="flex flex-wrap gap-2">
+              {presensi.length === 0 ? (
+                <p className="text-sm text-slate-400">Belum ada data presensi.</p>
+              ) : presensi.slice(0, 20).map((p) => (
+                <Badge key={p.id} variant={STATUS_VARIANT[p.status] || "default"}>
+                  {p.tanggal} - {p.status}
+                </Badge>
+              ))}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
