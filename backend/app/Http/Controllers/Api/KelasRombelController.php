@@ -34,6 +34,7 @@ class KelasRombelController extends Controller
     {
         $data = $request->validate([
             'nama' => ['sometimes', 'string', 'max:20'],
+            'tingkat' => ['sometimes', 'integer', 'min:7', 'max:9'],
             'wali_kelas_id' => ['nullable', 'exists:users,id'],
         ]);
 
@@ -44,6 +45,15 @@ class KelasRombelController extends Controller
 
     public function destroy(KelasRombel $kelasRombel)
     {
+        $jumlahSiswa = $kelasRombel->siswas()->count();
+        if ($jumlahSiswa > 0) {
+            abort(422, "Kelas ini masih memiliki {$jumlahSiswa} siswa. Pindahkan siswa ke kelas lain terlebih dahulu.");
+        }
+
+        if ($kelasRombel->guruMapelKelas()->exists()) {
+            abort(422, 'Kelas ini masih tercatat di penugasan guru. Hapus penugasannya terlebih dahulu.');
+        }
+
         $kelasRombel->delete();
 
         return response()->noContent();

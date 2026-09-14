@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\MapelPlus;
+use App\Models\PredikatRange;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -47,6 +48,18 @@ class DatabaseSeeder extends Seeder
 
         foreach ($mapels as $mapel) {
             MapelPlus::firstOrCreate(['kode' => $mapel['kode']], $mapel);
+        }
+
+        // Rentang predikat default mengikuti pola e-rapor Kurikulum Merdeka — bisa diubah admin
+        $predikats = [
+            ['nama' => 'Sangat Baik', 'nilai_min' => 86, 'nilai_max' => 100],
+            ['nama' => 'Baik', 'nilai_min' => 71, 'nilai_max' => 85.99],
+            ['nama' => 'Cukup', 'nilai_min' => 56, 'nilai_max' => 70.99],
+            ['nama' => 'Perlu Bimbingan', 'nilai_min' => 0, 'nilai_max' => 55.99],
+        ];
+
+        foreach ($predikats as $predikat) {
+            PredikatRange::firstOrCreate(['nama' => $predikat['nama']], $predikat);
         }
     }
 }

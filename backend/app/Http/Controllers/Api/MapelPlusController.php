@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\MapelPlus;
+use App\Models\Nilai;
 use Illuminate\Http\Request;
 
 class MapelPlusController extends Controller
@@ -36,5 +37,27 @@ class MapelPlusController extends Controller
         $mapelPlus->update($data);
 
         return $mapelPlus;
+    }
+
+    /** Hapus mapel + jenis assessment-nya. Diblokir jika sudah ada nilai/hafalan/pengajaran. */
+    public function destroy(MapelPlus $mapelPlus)
+    {
+        $punyaNilai = Nilai::whereHas('jenisAssessment', fn ($q) => $q->where('mapel_plus_id', $mapelPlus->id))->exists();
+
+        if ($punyaNilai) {
+            abort(422, 'Mapel ini masih memiliki data nilai siswa. Tidak bisa dihapus.');
+        }
+
+        if ($mapelPlus->progresHafalans()->exists()) {
+            abort(422, 'Mapel ini masih memiliki data progres hafalan. Tidak bisa dihapus.');
+        }
+
+        if ($mapelPlus->guruMapelKelas()->exists()) {
+            abort(422, 'Mapel ini masih tercatat di penugasan guru. Hapus penugasannya terlebih dahulu.');
+        }
+
+        $mapelPlus->delete();
+
+        return response()->noContent();
     }
 }

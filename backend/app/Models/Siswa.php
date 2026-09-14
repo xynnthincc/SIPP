@@ -10,6 +10,7 @@ class Siswa extends Model
         'user_id', 'nis', 'nama', 'kelas_rombel_id',
         'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'is_aktif',
     ];
+
     protected $casts = ['tanggal_lahir' => 'date', 'is_aktif' => 'boolean'];
 
     public function user()
@@ -46,6 +47,11 @@ class Siswa extends Model
     public function catatanGurus()
     {
         return $this->hasMany(CatatanGuru::class);
+    }
+
+    public function deskripsiCapaians()
+    {
+        return $this->hasMany(DeskripsiCapaian::class);
     }
 
     public function rapors()

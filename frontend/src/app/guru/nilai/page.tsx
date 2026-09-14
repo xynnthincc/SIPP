@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { PageHeader, Card, Button, Input, Select, Skeleton, EmptyState } from "@/components/ui";
+import { PageHeader, Card, Button, Select, Skeleton, EmptyState } from "@/components/ui";
 
 interface JadwalItem {
   id: number;
@@ -16,6 +16,7 @@ interface JadwalItem {
 interface JenisAssessment {
   id: number;
   nama: string;
+  kategori: "formatif" | "sumatif";
   bobot: number;
 }
 
@@ -81,7 +82,9 @@ export default function NilaiGuruPage() {
             <div className="flex-1">
               <Select label="Jenis Assessment" value={jenisId ?? ""} onChange={(e) => setJenisId(Number(e.target.value) || null)} placeholder="Pilih jenis assessment">
                 {jenisList.map((j) => (
-                  <option key={j.id} value={j.id}>{j.nama} (bobot {j.bobot}%)</option>
+                  <option key={j.id} value={j.id}>
+                    {j.nama} ({j.kategori === "sumatif" ? `Sumatif · bobot ${j.bobot}%` : "Formatif · tidak dihitung"})
+                  </option>
                 ))}
               </Select>
             </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Rapor;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
@@ -37,6 +38,15 @@ class TahunAjaranController extends Controller
 
     public function destroy(TahunAjaran $tahunAjaran)
     {
+        $jumlahKelas = $tahunAjaran->kelasRombels()->count();
+        if ($jumlahKelas > 0) {
+            abort(422, "Tahun ajaran ini masih memiliki {$jumlahKelas} kelas. Hapus kelasnya terlebih dahulu.");
+        }
+
+        if (Rapor::whereIn('semester_id', $tahunAjaran->semesters()->pluck('id'))->exists()) {
+            abort(422, 'Tahun ajaran ini masih memiliki data rapor. Tidak bisa dihapus.');
+        }
+
         $tahunAjaran->delete();
 
         return response()->noContent();

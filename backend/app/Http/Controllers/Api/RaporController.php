@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ScopesSiswaAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Rapor;
 use App\Models\Siswa;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class RaporController extends Controller
 {
+    use ScopesSiswaAccess;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -27,7 +30,18 @@ class RaporController extends Controller
 
     public function show(Rapor $rapor)
     {
-        return $rapor->load('siswa.kelasRombel', 'siswa.nilais.jenisAssessment.mapelPlus', 'siswa.progresHafalans', 'siswa.presensis', 'semester');
+        $rapor->load('siswa.kelasRombel', 'siswa.nilais.jenisAssessment.mapelPlus', 'siswa.progresHafalans', 'siswa.presensis', 'semester');
+
+        // Sertakan deskripsi capaian mapel untuk semester rapor ini saja
+        $rapor->siswa->setRelation(
+            'deskripsiCapaians',
+            $rapor->siswa->deskripsiCapaians()
+                ->where('semester_id', $rapor->semester_id)
+                ->with('mapelPlus')
+                ->get()
+        );
+
+        return $rapor;
     }
 
     /** Wali kelas menyusun draft rapor untuk siswa binaannya */
@@ -47,11 +61,15 @@ class RaporController extends Controller
         ]);
     }
 
-    /** Wali kelas mengajukan rapor ke kepala sekolah untuk divalidasi */
+    /** Wali kelas mengajukan rapor ke kepala sekolah untuk divalidasi (rapor Ditolak boleh diajukan ulang setelah diperbaiki) */
     public function ajukan(Request $request, Rapor $rapor)
     {
         $this->pastikanWaliKelasSiswa($request, $rapor->siswa);
-        abort_unless($rapor->status === Rapor::STATUS_DRAFT, 422, 'Hanya rapor berstatus Draft yang dapat diajukan.');
+        abort_unless(
+            in_array($rapor->status, [Rapor::STATUS_DRAFT, Rapor::STATUS_DITOLAK]),
+            422,
+            'Hanya rapor berstatus Draft atau Ditolak yang dapat diajukan.'
+        );
 
         $data = $request->validate(['catatan_wali_kelas' => ['nullable', 'string']]);
 
@@ -94,20 +112,5 @@ class RaporController extends Controller
         $rapor->update(['status' => Rapor::STATUS_DITERBITKAN]);
 
         return $rapor;
-    }
-
-    private function pastikanWaliKelasSiswa(Request $request, Siswa $siswa): void
-    {
-        $user = $request->user();
-
-        if ($user->hasRole('admin')) {
-            return;
-        }
-
-        abort_unless(
-            $user->hasRole('wali_kelas') && $siswa->kelasRombel?->wali_kelas_id === $user->id,
-            403,
-            'Anda bukan wali kelas siswa ini.'
-        );
     }
 }

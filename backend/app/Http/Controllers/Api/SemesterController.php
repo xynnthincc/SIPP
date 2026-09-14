@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DeskripsiCapaian;
+use App\Models\GuruMapelKelas;
+use App\Models\Nilai;
+use App\Models\Rapor;
 use App\Models\Semester;
 use Illuminate\Http\Request;
 
@@ -37,5 +41,23 @@ class SemesterController extends Controller
         $semester->update($data);
 
         return $semester;
+    }
+
+    public function destroy(Semester $semester)
+    {
+        $dipakai = collect([
+            Rapor::where('semester_id', $semester->id)->exists(),
+            Nilai::where('semester_id', $semester->id)->exists(),
+            DeskripsiCapaian::where('semester_id', $semester->id)->exists(),
+            GuruMapelKelas::where('semester_id', $semester->id)->exists(),
+        ])->contains(true);
+
+        if ($dipakai) {
+            abort(422, 'Semester ini masih memiliki data nilai/rapor. Tidak bisa dihapus.');
+        }
+
+        $semester->delete();
+
+        return response()->noContent();
     }
 }

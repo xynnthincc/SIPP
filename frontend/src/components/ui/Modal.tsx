@@ -1,11 +1,13 @@
 "use client";
 
 import { ReactNode, useEffect, useCallback } from "react";
+import { Button } from "./Button";
 
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  description?: string;
   children: ReactNode;
   maxWidth?: "sm" | "md" | "lg";
 }
@@ -16,6 +18,7 @@ export function Modal({
   open,
   onClose,
   title,
+  description,
   children,
   maxWidth = "md",
 }: ModalProps) {
@@ -42,18 +45,24 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
       <div
-        className={`relative w-full ${maxWidthMap[maxWidth]} glass-strong rounded-2xl p-6 animate-slide-up`}
+        role="dialog"
+        aria-modal="true"
+        className={`relative w-full ${maxWidthMap[maxWidth]} bg-white rounded-2xl shadow-2xl border border-slate-200/70 animate-slide-up flex flex-col max-h-[90vh]`}
       >
-        {title && (
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
+        {(title || description) && (
+          <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b border-slate-100">
+            <div>
+              {title && <h2 className="text-lg font-semibold text-slate-800">{title}</h2>}
+              {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
+            </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/40 transition-colors cursor-pointer"
+              aria-label="Tutup"
+              className="p-1.5 -mt-0.5 -mr-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -61,7 +70,7 @@ export function Modal({
             </button>
           </div>
         )}
-        {children}
+        <div className="px-6 py-5 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -86,21 +95,21 @@ export function ConfirmModal({
 }) {
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="sm">
-      <p className="text-sm text-slate-600 mb-5">{message}</p>
+      <div className="flex items-start gap-4 mb-6">
+        <div className="shrink-0 p-2.5 rounded-full bg-red-50 border border-red-100 text-red-500">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed pt-1.5">{message}</p>
+      </div>
       <div className="flex justify-end gap-2">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-sm rounded-xl text-slate-600 hover:bg-white/50 transition-colors cursor-pointer"
-        >
+        <Button variant="outline" onClick={onClose} disabled={loading}>
           Batal
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={loading}
-          className="px-4 py-2 text-sm rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all disabled:opacity-50 cursor-pointer"
-        >
+        </Button>
+        <Button variant="danger" onClick={onConfirm} loading={loading}>
           {loading ? "Menghapus..." : confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

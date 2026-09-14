@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -11,9 +11,15 @@ interface NavItem {
   label: string;
 }
 
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
 interface DashboardShellProps {
   allowedRoles: Role[];
   navItems: NavItem[];
+  navGroups?: NavGroup[];
   children: ReactNode;
 }
 
@@ -64,6 +70,11 @@ function SidebarIcon({ name }: { name: string }) {
         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
       </svg>
     ),
+    master: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+      </svg>
+    ),
     hafalan: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
@@ -91,6 +102,7 @@ function SidebarIcon({ name }: { name: string }) {
 export function DashboardShell({
   allowedRoles,
   navItems,
+  navGroups = [],
   children,
 }: DashboardShellProps) {
   const { user, loading, logout } = useAuth();
@@ -111,6 +123,18 @@ export function DashboardShell({
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
+  function isActiveItem(item: NavItem): boolean {
+    return pathname === item.href || pathname.startsWith(item.href + "/");
+  }
+
+  const [openGroups, setOpenGroups] = useState<string[]>(() =>
+    navGroups.filter((g) => g.items.some((i) => isActiveItem(i))).map((g) => g.label)
+  );
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]);
+  }
+
   if (loading || !user || !allowedRoles.includes(user.role)) {
     return (
       <div className="flex flex-1 items-center justify-center min-h-screen">
@@ -125,11 +149,13 @@ export function DashboardShell({
   function getNavIconName(label: string): string {
     const map: Record<string, string> = {
       "Ringkasan": "ringkasan",
+      "Data Master": "master",
       "Tahun Ajaran & Semester": "tahun-ajaran",
       "Kelas/Rombel": "kelas",
       "Data Siswa": "siswa",
       "Data Guru": "guru",
       "Mata Pelajaran Plus": "mapel",
+      "Rentang Predikat": "nilai",
       "Jadwal Saya": "jadwal",
       "Input Presensi": "presensi",
       "Input Nilai": "nilai",
@@ -158,22 +184,61 @@ export function DashboardShell({
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {navItems.map((item) => {
-          const active = pathname === item.href;
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={closeMobile}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+              isActiveItem(item)
+                ? "bg-emerald-700/10 text-emerald-800 font-semibold"
+                : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-500/5"
+            }`}
+          >
+            <SidebarIcon name={getNavIconName(item.label)} />
+            {item.label}
+          </Link>
+        ))}
+
+        {navGroups.map((group) => {
+          const open = openGroups.includes(group.label);
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={closeMobile}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
-                active
-                  ? "bg-emerald-700/10 text-emerald-800 font-semibold"
-                  : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-500/5"
-              }`}
-            >
-              <SidebarIcon name={getNavIconName(item.label)} />
-              {item.label}
-            </Link>
+            <div key={group.label}>
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-emerald-700 hover:bg-emerald-500/5 transition-all duration-200 cursor-pointer"
+              >
+                <span className="flex items-center gap-3">
+                  <SidebarIcon name={getNavIconName(group.label)} />
+                  {group.label}
+                </span>
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              </button>
+              <div className={`mt-1 ml-5 pl-4 border-l border-slate-200 space-y-1 transition-all ${
+                open ? "block" : "hidden"
+              }`}>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobile}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                      isActiveItem(item)
+                        ? "bg-emerald-700/10 text-emerald-800 font-semibold"
+                        : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-500/5"
+                    }`}
+                  >
+                    <SidebarIcon name={getNavIconName(item.label)} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           );
         })}
       </nav>

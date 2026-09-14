@@ -22,4 +22,9 @@ class KelasRombel extends Model
     {
         return $this->hasMany(Siswa::class);
     }
+
+    public function guruMapelKelas()
+    {
+        return $this->hasMany(GuruMapelKelas::class);
+    }
 }

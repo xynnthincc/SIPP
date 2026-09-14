@@ -57,4 +57,20 @@ class GuruController extends Controller
 
         return $guru;
     }
+
+    /** Hapus guru + akun loginnya. Diblokir jika masih ada data pengajaran/catatan. */
+    public function destroy(Guru $guru)
+    {
+        if ($guru->guruMapelKelas()->exists()) {
+            abort(422, 'Guru masih tercatat mengampu mapel/kelas. Hapus penugasan mengajarnya terlebih dahulu.');
+        }
+
+        if ($guru->catatanGurus()->exists()) {
+            abort(422, 'Guru masih memiliki catatan terhadap siswa. Hapus catatan tersebut terlebih dahulu.');
+        }
+
+        $guru->delete();
+
+        return response()->noContent();
+    }
 }

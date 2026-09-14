@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class JenisAssessment extends Model
 {
-    protected $fillable = ['mapel_plus_id', 'nama', 'bobot'];
+    protected $fillable = ['mapel_plus_id', 'nama', 'kategori', 'bobot'];
 
     public function mapelPlus()
     {
