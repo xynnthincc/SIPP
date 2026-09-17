@@ -382,7 +382,7 @@ function RaporCetakView() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/admin/siswa/cetak-biodata?id=${data.siswa.id}`)}
+              onClick={() => router.push(`/biodata-cetak?id=${data.siswa.id}`)}
             >
               Cetak Biodata
             </Button>

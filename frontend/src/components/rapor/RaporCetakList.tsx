@@ -248,7 +248,7 @@ export default function RaporCetakList({
                     </Td>
                     <Td className="whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Link href={`/admin/siswa/cetak-biodata?id=${p.siswa.id}`}>
+                        <Link href={`/biodata-cetak?id=${p.siswa.id}`}>
                           <Button size="sm" variant="outline">Biodata</Button>
                         </Link>
                         <Link href={`/rapor-cetak?siswa_id=${p.siswa.id}&semester_id=${semesterId}`}>
