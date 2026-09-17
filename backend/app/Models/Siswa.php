@@ -62,11 +62,6 @@ class Siswa extends Model
         return $this->hasMany(DeskripsiCapaian::class);
     }
 
-    public function rapors()
-    {
-        return $this->hasMany(Rapor::class);
-    }
-
     public function nilaiMapels()
     {
         return $this->hasMany(NilaiMapel::class);

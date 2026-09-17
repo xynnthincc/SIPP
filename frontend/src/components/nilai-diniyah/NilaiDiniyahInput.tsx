@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { labelKelas } from "@/lib/kelas";
 import {
   PageHeader, Card, Button, Select, Skeleton, EmptyState, Alert,
   Table, TableHead, TableBody, Th, Td, TableRow, Badge,
@@ -211,13 +212,13 @@ export default function NilaiDiniyahInput() {
           <Select label="Semester" value={semesterId} onChange={(e) => { setSemesterId(e.target.value); setRekap(null); setError(null); setSavedMsg(null); }} placeholder="Pilih semester" disabled={semesters.length === 0}>
             {semesters.map((s) => (
               <option key={s.id} value={s.id}>
-                {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}{s.is_aktif ? " (Aktif)" : ""}
+                {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
               </option>
             ))}
           </Select>
           <Select label="Kelas" value={kelasId} onChange={(e) => { setKelasId(e.target.value); setSiswaId(""); setRekap(null); if (!e.target.value) setSiswas([]); else setLoadingSiswa(true); setError(null); setSavedMsg(null); }} placeholder="Pilih kelas">
             {kelasList.map((k) => (
-              <option key={k.id} value={k.id}>{`Kelas ${k.nama}`}</option>
+              <option key={k.id} value={k.id}>{labelKelas(k.nama) ?? k.nama}</option>
             ))}
           </Select>
           <Select label="Siswa" value={siswaId} onChange={(e) => { setSiswaId(e.target.value); setRekap(null); if (e.target.value && semesterId) setLoadingRekap(true); setError(null); setSavedMsg(null); }} placeholder={loadingSiswa ? "Memuat siswa…" : "Pilih siswa"} disabled={!kelasId || loadingSiswa}>

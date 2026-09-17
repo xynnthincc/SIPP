@@ -41,6 +41,21 @@ class JadwalController extends Controller
         return Jadwal::create($data);
     }
 
+    public function update(Request $request, Jadwal $jadwal)
+    {
+        $data = $request->validate([
+            'guru_mapel_kelas_id' => ['required', 'exists:guru_mapel_kelas,id'],
+            'hari' => ['required', 'in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu'],
+            'jam_mulai' => ['required', 'date_format:H:i'],
+            'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
+            'ruangan' => ['nullable', 'string'],
+        ]);
+
+        $jadwal->update($data);
+
+        return $jadwal;
+    }
+
     public function destroy(Jadwal $jadwal)
     {
         $jadwal->delete();

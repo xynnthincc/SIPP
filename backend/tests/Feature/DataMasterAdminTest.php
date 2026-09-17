@@ -8,7 +8,6 @@ use App\Models\JenisAssessment;
 use App\Models\KelasRombel;
 use App\Models\MapelPlus;
 use App\Models\Nilai;
-use App\Models\Rapor;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
@@ -191,19 +190,27 @@ class DataMasterAdminTest extends TestCase
         $this->assertDatabaseHas('tahun_ajarans', ['id' => $this->tahun->id]);
     }
 
-    public function test_semester_tidak_bisa_dihapus_jika_memiliki_rapor(): void
+    public function test_semester_tidak_bisa_dihapus_jika_memiliki_penugasan(): void
     {
-        Rapor::create([
-            'siswa_id' => $this->siswa->id,
+        $user = User::create([
+            'name' => 'Guru Tes',
+            'email' => 'guru-tes2@sipp.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_GURU_PESANTREN,
+        ]);
+        $guru = Guru::create(['user_id' => $user->id, 'nama' => 'Guru Tes']);
+        GuruMapelKelas::create([
+            'guru_id' => $guru->id,
+            'mapel_plus_id' => $this->mapel->id,
+            'kelas_rombel_id' => $this->kelas->id,
             'semester_id' => $this->semester->id,
-            'status' => Rapor::STATUS_DRAFT,
         ]);
 
         $this->actingAs($this->admin, 'sanctum')
             ->deleteJson("/api/semester/{$this->semester->id}")
             ->assertStatus(422);
 
-        Rapor::query()->delete();
+        GuruMapelKelas::query()->delete();
 
         $this->actingAs($this->admin, 'sanctum')
             ->deleteJson("/api/semester/{$this->semester->id}")

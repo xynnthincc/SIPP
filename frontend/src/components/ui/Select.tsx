@@ -52,6 +52,18 @@ interface SelectProps {
 /* ─────────────────────────────────────────────
    Helpers – parse <option> children
 ───────────────────────────────────────────── */
+// children <option> hasil interpolasi JSX berupa array campuran string/element;
+// String(array) menghasilkan koma, jadi digabung manual secara rekursif.
+function labelOf(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (Array.isArray(node)) return node.map(labelOf).join("");
+  if (typeof node === "object") {
+    const el = node as React.ReactElement<{ children?: React.ReactNode }>;
+    return labelOf(el.props?.children);
+  }
+  return String(node);
+}
+
 function parseOptions(children: React.ReactNode): { value: string; label: string; disabled?: boolean }[] {
   const opts: { value: string; label: string; disabled?: boolean }[] = [];
   const traverse = (node: React.ReactNode) => {
@@ -61,7 +73,7 @@ function parseOptions(children: React.ReactNode): { value: string; label: string
     if (el?.type === "option") {
       opts.push({
         value: String(el.props.value ?? ""),
-        label: String(el.props.children ?? ""),
+        label: labelOf(el.props.children),
         disabled: el.props.disabled,
       });
     }

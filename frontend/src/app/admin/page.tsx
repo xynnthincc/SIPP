@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { labelKelas } from "@/lib/kelas";
 import { Badge, Skeleton } from "@/components/ui";
 
 interface Statistik {
@@ -10,10 +11,12 @@ interface Statistik {
   jumlahGuru: number;
   jumlahMapel: number;
   jumlahKelas: number;
-  raporSelesai: number;
-  raporTotal: number;
   siswaAktif: number | null;
   mapelProgres: number;
+}
+
+interface ProgresItem {
+  lengkap: boolean;
 }
 
 function useStatistik() {
@@ -26,12 +29,10 @@ function useStatistik() {
       api.get("/guru"),
       api.get("/mapel-plus"),
       api.get("/kelas-rombel"),
-      api.get("/rapors"),
     ])
-      .then(([siswa, guru, mapel, kelas, rapor]) => {
+      .then(([siswa, guru, mapel, kelas]) => {
         if (!aktif) return;
         const daftarSiswa = siswa.data.data ?? siswa.data;
-        const daftarRapor = rapor.data;
         const mapelList = mapel.data;
         const guruList = guru.data;
         const kelasList = kelas.data;
@@ -42,17 +43,11 @@ function useStatistik() {
             : Array.isArray(daftarSiswa)
               ? daftarSiswa.length
               : 0;
-        const totalRapor = Array.isArray(daftarRapor) ? daftarRapor.length : 0;
-        const selesai = Array.isArray(daftarRapor)
-          ? daftarRapor.filter((r: { status: string }) => r.status === "Diterbitkan").length
-          : 0;
         setData({
           jumlahSiswa: totalSiswa,
           jumlahGuru: Array.isArray(guruList) ? guruList.length : 0,
           jumlahMapel: Array.isArray(mapelList) ? mapelList.length : 0,
           jumlahKelas: Array.isArray(kelasList) ? kelasList.length : 0,
-          raporSelesai: selesai,
-          raporTotal: totalRapor,
           // Jumlah "aktif" hanya akurat bila daftar siswa tidak terpotong paginasi
           siswaAktif:
             Array.isArray(daftarSiswa) && daftarSiswa.length === totalSiswa
@@ -62,6 +57,40 @@ function useStatistik() {
             ? mapelList.filter((m: { punya_progres_hafalan: boolean }) => m.punya_progres_hafalan).length
             : 0,
         });
+      })
+      .catch(() => {
+        if (aktif) setData(null);
+      });
+    return () => {
+      aktif = false;
+    };
+  }, []);
+
+  return data;
+}
+
+// Kesiapan rapor semester aktif: berapa siswa yang nilai mapel & praktiknya lengkap
+function useRaporProgres() {
+  const [data, setData] = useState<{ lengkap: number; total: number } | null>(null);
+
+  useEffect(() => {
+    let aktif = true;
+    api
+      .get<{ is_aktif: boolean; id: number }[]>("/semester")
+      .then((semRes) => {
+        const aktifSem = semRes.data.find((s) => s.is_aktif);
+        if (!aktifSem) return null;
+        return api
+          .get<ProgresItem[]>("/rapor/progres", { params: { semester_id: aktifSem.id } })
+          .then((r) => {
+            if (aktif) {
+              setData({
+                lengkap: r.data.filter((p) => p.lengkap).length,
+                total: r.data.length,
+              });
+            }
+            return null;
+          });
       })
       .catch(() => {
         if (aktif) setData(null);
@@ -171,7 +200,7 @@ function SetoranRow({ item }: { item: SetoranHafalan }) {
           </p>
           <Badge variant={HAFALAN_VARIANT[item.status] ?? "default"}>{item.status}</Badge>
         </div>
-        <p className="text-xs text-slate-400">{item.siswa?.kelas_rombel?.nama ?? "Tanpa kelas"}</p>
+        <p className="text-xs text-slate-400">{labelKelas(item.siswa?.kelas_rombel?.nama) ?? "Tanpa kelas"}</p>
         <p className="text-sm text-slate-600 mt-1 truncate">{item.materi}</p>
         <p className="text-[11px] text-slate-400 mt-0.5">
           {item.mapel_plus?.nama ?? "-"} • {formatTanggal(item.tanggal_setoran)}
@@ -184,6 +213,7 @@ function SetoranRow({ item }: { item: SetoranHafalan }) {
 export default function AdminHomePage() {
   const { user } = useAuth();
   const stat = useStatistik();
+  const raporProgres = useRaporProgres();
   const [presensi, setPresensi] = useState<PresensiItem[] | null>(null);
   const [setoran, setSetoran] = useState<SetoranHafalan[] | null>(null);
 
@@ -243,8 +273,8 @@ export default function AdminHomePage() {
       }));
   }, [presensi]);
 
-  const raporPersen = stat && stat.raporTotal > 0
-    ? Math.min(100, Math.round((stat.raporSelesai / stat.raporTotal) * 100))
+  const raporPersen = raporProgres && raporProgres.total > 0
+    ? Math.min(100, Math.round((raporProgres.lengkap / raporProgres.total) * 100))
     : 0;
 
   const greeting = `Assalamu'alaikum, ${user?.name?.split(" ")[0] ?? "Administrator"} 👋`;
@@ -328,10 +358,10 @@ export default function AdminHomePage() {
           )}
         </div>
 
-        {/* Rapor progress */}
+        {/* Rapor siap cetak */}
         <div className="bg-white rounded-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 h-full">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-semibold text-slate-500">Rapor Terbit</span>
+            <span className="text-sm font-semibold text-slate-500">Rapor Siap Cetak</span>
             <div className="relative w-10 h-10 rounded-lg bg-emerald-700/10 text-emerald-800 flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75" />
@@ -339,7 +369,7 @@ export default function AdminHomePage() {
             </div>
           </div>
           <h3 className="text-3xl font-bold text-slate-900 mb-2">
-            {stat ? `${stat.raporSelesai}` : "—"}
+            {raporProgres ? `${raporProgres.lengkap}` : "—"}
           </h3>
           <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2">
             <div
@@ -347,7 +377,9 @@ export default function AdminHomePage() {
               style={{ width: `${raporPersen}%` }}
             />
           </div>
-          <p className="text-sm text-slate-500 mt-2">{raporPersen}% dari total rapor</p>
+          <p className="text-sm text-slate-500 mt-2">
+            {raporProgres ? `${raporPersen}% dari ${raporProgres.total} siswa nilai lengkap` : "Memuat…"}
+          </p>
         </div>
       </div>
 

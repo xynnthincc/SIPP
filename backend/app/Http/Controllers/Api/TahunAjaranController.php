@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Rapor;
+use App\Models\DeskripsiCapaian;
+use App\Models\GuruMapelKelas;
+use App\Models\Nilai;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
@@ -55,8 +57,12 @@ class TahunAjaranController extends Controller
             abort(422, "Tahun ajaran ini masih memiliki {$jumlahKelas} kelas. Hapus kelasnya terlebih dahulu.");
         }
 
-        if (Rapor::whereIn('semester_id', $tahunAjaran->semesters()->pluck('id'))->exists()) {
-            abort(422, 'Tahun ajaran ini masih memiliki data rapor. Tidak bisa dihapus.');
+        $semesterIds = $tahunAjaran->semesters()->pluck('id');
+        $adaData = Nilai::whereIn('semester_id', $semesterIds)->exists()
+            || DeskripsiCapaian::whereIn('semester_id', $semesterIds)->exists()
+            || GuruMapelKelas::whereIn('semester_id', $semesterIds)->exists();
+        if ($adaData) {
+            abort(422, 'Tahun ajaran ini masih memiliki data nilai/penugasan. Tidak bisa dihapus.');
         }
 
         $tahunAjaran->delete();

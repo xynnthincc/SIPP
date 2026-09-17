@@ -8,7 +8,6 @@ use App\Models\KelasRombel;
 use App\Models\MapelPlus;
 use App\Models\Nilai;
 use App\Models\PredikatRange;
-use App\Models\Rapor;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
@@ -125,22 +124,6 @@ class PenilaianPolaEraporTest extends TestCase
             ->assertJsonPath('0.predikat', 'Baik')
             ->assertJsonCount(3, '0.rincian');
         $this->assertEquals(84, $response->json('0.nilai_akhir'));
-    }
-
-    public function test_rapor_ditolak_bisa_diajukan_ulang(): void
-    {
-        $rapor = Rapor::create([
-            'siswa_id' => $this->siswa->id,
-            'semester_id' => $this->semester->id,
-            'status' => Rapor::STATUS_DITOLAK,
-            'disusun_oleh' => $this->waliKelas->id,
-        ]);
-
-        $response = $this->actingAs($this->waliKelas, 'sanctum')
-            ->postJson("/api/rapors/{$rapor->id}/ajukan", ['catatan_wali_kelas' => 'Sudah diperbaiki.']);
-
-        $response->assertStatus(200);
-        $this->assertSame(Rapor::STATUS_DIAJUKAN, $rapor->fresh()->status);
     }
 
     public function test_wali_kelas_lain_tidak_bisa_mengelola_siswa_bukan_binaannya(): void

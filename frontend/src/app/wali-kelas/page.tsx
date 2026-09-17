@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { labelKelas, labelTingkat } from "@/lib/kelas";
 import {
   PageHeader, Card, Badge, Button, Input, Skeleton, EmptyState, Pagination,
   Table, TableHead, TableBody, Th, Td, TableRow,
@@ -85,7 +86,7 @@ export default function SiswaBinaanPage() {
         title="Siswa Binaan"
         description={
           kelas
-            ? `Daftar siswa Kelas ${kelas.nama} — diampu sebagai wali kelas.`
+            ? `Daftar siswa ${labelKelas(kelas.nama) ?? "-"} — diampu sebagai wali kelas.`
             : "Daftar siswa di kelas yang Anda walikan."
         }
       />
@@ -104,7 +105,7 @@ export default function SiswaBinaanPage() {
             <Card>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Siswa</p>
               <p className="text-2xl font-bold text-slate-800 mt-1">{siswas.length}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Kelas {kelas.nama} • Tingkat {kelas.tingkat}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{labelKelas(kelas.nama) ?? "-"} • {labelTingkat(kelas.tingkat)}</p>
             </Card>
             <Card>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laki-laki</p>

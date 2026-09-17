@@ -171,6 +171,7 @@ export function DashboardShell({
       "Data Guru": "guru",
       "Mata Pelajaran Plus": "mapel",
       "Rentang Predikat": "nilai",
+      "Jadwal & Pengampu": "jadwal",
       "Jadwal Saya": "jadwal",
       "Input Presensi": "presensi",
       "Input Nilai": "nilai",
@@ -179,7 +180,7 @@ export function DashboardShell({
       "Siswa Binaan": "siswa",
       "Rapor Pesantren": "rapor",
       "Progres Anak": "progres",
-      "Validasi Rapor": "validasi",
+      "Cetak Rapor": "rapor",
     };
     return map[label] || "ringkasan";
   }

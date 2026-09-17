@@ -31,9 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // Bisa diakses semua role login (read-only, discope di controller sesuai role)
-    Route::get('/rapors', [RaporController::class, 'index']);
-    Route::get('/rapors/{rapor}', [RaporController::class, 'show']);
-    Route::get('/rapors/{rapor}/cetak', [RaporController::class, 'cetak']);
+    Route::get('/rapor/cetak', [RaporController::class, 'cetak']);
+    Route::get('/rapor/progres', [RaporController::class, 'progres']);
     Route::get('/sekolah', [SekolahController::class, 'show']);
     Route::get('/nilai-diniyah/rekap', [NilaiDiniyahController::class, 'rekap']);
     Route::get('/praktik-item', [PraktikItemController::class, 'index']);
@@ -64,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('kelas-rombel', KelasRombelController::class)->except(['show', 'index']);
         Route::apiResource('guru', GuruController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('mapel-plus', MapelPlusController::class)->parameters(['mapel-plus' => 'mapelPlus'])->only(['store', 'update', 'destroy']);
-        Route::apiResource('guru-mapel-kelas', GuruMapelKelasController::class)->only(['index', 'store', 'destroy']);
+        Route::apiResource('guru-mapel-kelas', GuruMapelKelasController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('jenis-assessment', JenisAssessmentController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('predikat-range', PredikatRangeController::class)->only(['store', 'update', 'destroy']);
         Route::post('/siswas/{siswa}/wali', [SiswaController::class, 'tambahWali']);
@@ -81,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Guru Pesantren: input jadwal-nya, presensi, assessment, nilai, progres, catatan ──
     Route::middleware('role:guru_pesantren,admin')->group(function () {
-        Route::apiResource('jadwal', JadwalController::class)->only(['store', 'destroy']);
+        Route::apiResource('jadwal', JadwalController::class)->only(['store', 'update', 'destroy']);
         Route::post('/presensi/massal', [PresensiController::class, 'storeMassal']);
         Route::post('/nilai/massal', [NilaiController::class, 'storeMassal']);
         Route::post('/progres-hafalan', [ProgresHafalanController::class, 'store']);
@@ -93,16 +92,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/nilai-diniyah/simpan', [NilaiDiniyahController::class, 'simpan']);
     });
 
-    // ── Wali Kelas: menyusun & mengajukan rapor siswa binaannya ──
+    // ── Wali Kelas: deskripsi capaian rapor siswa binaannya ──
     Route::middleware('role:wali_kelas,admin')->group(function () {
-        Route::post('/rapors', [RaporController::class, 'store']);
-        Route::post('/rapors/{rapor}/ajukan', [RaporController::class, 'ajukan']);
         Route::post('/deskripsi-capaian', [DeskripsiCapaianController::class, 'store']);
-    });
-
-    // ── Kepala Sekolah: validasi & terbitkan rapor ──
-    Route::middleware('role:kepala_sekolah,admin')->group(function () {
-        Route::post('/rapors/{rapor}/validasi', [RaporController::class, 'validasi']);
-        Route::post('/rapors/{rapor}/terbitkan', [RaporController::class, 'terbitkan']);
     });
 });

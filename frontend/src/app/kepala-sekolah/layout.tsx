@@ -1,6 +1,6 @@
 import { DashboardShell } from "@/components/DashboardShell";
 
-const navItems = [{ href: "/kepala-sekolah", label: "Validasi Rapor" }];
+const navItems = [{ href: "/kepala-sekolah", label: "Cetak Rapor" }];
 
 export default function KepalaSekolahLayout({ children }: { children: React.ReactNode }) {
   return (

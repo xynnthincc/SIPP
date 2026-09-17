@@ -147,7 +147,6 @@ export interface LogEditNilai {
 }
 
 export interface RaporCetak {
-  status: string;
   sekolah: Sekolah;
   siswa: { id: number; nama: string; nis: string };
   kelas: { nama: string; tingkat: number } | null;

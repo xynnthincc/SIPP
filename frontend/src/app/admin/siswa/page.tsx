@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { labelKelas } from "@/lib/kelas";
 import {
   PageHeader, Card, Button, Input, Select, Table, TableHead, TableBody, Th, Td, TableRow,
   Badge, Skeleton, EmptyState, ConfirmModal, IconButton, Alert, Pagination,
@@ -204,7 +205,7 @@ export default function SiswaPage() {
                     </div>
                   </Td>
                   <Td className="font-mono text-xs text-slate-500">{s.nis}</Td>
-                  <Td>{s.kelas_rombel?.nama ?? <span className="text-slate-400">-</span>}</Td>
+                  <Td>{labelKelas(s.kelas_rombel?.nama) ?? <span className="text-slate-400">-</span>}</Td>
                   <Td className="text-slate-500">{s.jenis_kelamin === "L" ? "Laki-laki" : "Perempuan"}</Td>
                   <Td>
                     <Badge variant={s.is_aktif !== false ? "success" : "default"}>

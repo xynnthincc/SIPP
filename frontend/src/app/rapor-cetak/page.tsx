@@ -1,20 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { labelKelas, labelTingkat } from "@/lib/kelas";
 import { RaporCetak } from "@/lib/types";
 import { Button, Alert, Skeleton } from "@/components/ui";
 
-export default function RaporCetakPage() {
-  const params = useParams<{ raporId: string }>();
+function RaporCetakView() {
+  const searchParams = useSearchParams();
+  const siswaId = searchParams.get("siswa_id");
+  const semesterId = searchParams.get("semester_id");
   const router = useRouter();
   const [data, setData] = useState<RaporCetak | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const muat = useCallback(() => {
-    api.get<RaporCetak>(`/rapors/${params.raporId}/cetak`).then((res) => {
+    if (!siswaId) return;
+    api.get<RaporCetak>("/rapor/cetak", {
+      params: { siswa_id: siswaId, semester_id: semesterId ?? undefined },
+    }).then((res) => {
       setData(res.data);
       setLoading(false);
     }).catch((err: unknown) => {
@@ -22,7 +28,7 @@ export default function RaporCetakPage() {
       setError(pesan?.message ?? "Gagal memuat rapor.");
       setLoading(false);
     });
-  }, [params.raporId]);
+  }, [siswaId, semesterId]);
 
   useEffect(() => { muat(); }, [muat]);
 
@@ -60,8 +66,12 @@ export default function RaporCetakPage() {
       </div>
 
       <div className="cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8">
-        {loading ? (
+        {loading && siswaId ? (
           <Skeleton className="h-96 w-full" />
+        ) : !siswaId ? (
+          <div className="py-10">
+            <Alert variant="danger">Parameter siswa_id tidak ditemukan. Buka rapor dari menu dashboard.</Alert>
+          </div>
         ) : error ? (
           <div className="py-10">
             <Alert variant="danger" onClose={() => setError(null)}>{error}</Alert>
@@ -88,7 +98,7 @@ export default function RaporCetakPage() {
               <tbody>
                 <tr><td className="w-28">Nama Siswa</td><td className="font-bold">: {data.siswa.nama}</td></tr>
                 <tr><td>NIS</td><td className="font-bold">: {data.siswa.nis}</td></tr>
-                <tr><td>Kelas</td><td className="font-bold">: {data.kelas ? `${data.kelas.nama} (Tingkat ${data.kelas.tingkat})` : "-"}</td></tr>
+                <tr><td>Kelas</td><td className="font-bold">: {data.kelas ? `${labelKelas(data.kelas.nama) ?? data.kelas.nama} (${labelTingkat(data.kelas.tingkat)})` : "-"}</td></tr>
                 <tr><td>Wali Kelas</td><td className="font-bold">: {data.wali_kelas ?? "-"}</td></tr>
               </tbody>
             </table>
@@ -232,5 +242,13 @@ export default function RaporCetakPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+export default function RaporCetakPage() {
+  return (
+    <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+      <RaporCetakView />
+    </Suspense>
   );
 }

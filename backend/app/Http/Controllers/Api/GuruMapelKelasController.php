@@ -28,6 +28,20 @@ class GuruMapelKelasController extends Controller
         return GuruMapelKelas::create($data);
     }
 
+    public function update(Request $request, GuruMapelKelas $guruMapelKelas)
+    {
+        $data = $request->validate([
+            'guru_id' => ['required', 'exists:gurus,id'],
+            'mapel_plus_id' => ['required', 'exists:mapel_plus,id'],
+            'kelas_rombel_id' => ['required', 'exists:kelas_rombels,id'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+        ]);
+
+        $guruMapelKelas->update($data);
+
+        return $guruMapelKelas;
+    }
+
     public function destroy(GuruMapelKelas $guruMapelKelas)
     {
         $guruMapelKelas->delete();

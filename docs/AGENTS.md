@@ -12,7 +12,13 @@ UI, pesan error/validasi API, dan komentar kode semuanya **Bahasa Indonesia**. T
 ## Stack — jangan ikuti docs yang usang
 - `docs/SETUP.md` dan `docs/README.md` usang: masih menyebut Laravel 11 / Next.js 15 / Supabase (Postgres) dan "stack belum ditetapkan". Yang benar di `composer.json` / `package.json` / `.env`: **Laravel 13, Next.js 16, MySQL** (`DB_CONNECTION=mysql`, database `sipp`). Trust kode, bukan docs.
 - Auth API = **token**: `POST /api/login` → `{ user, token }`; frontend menyimpan token di `localStorage` (`sipp_token`, `sipp_user`) dan mengirim `Authorization: Bearer`. Frontend `src/lib/api.ts` otomatis redirect `/login` saat 401. Jangan ubah ke cookie/session.
-- Rapor API tanpa implementasi PDF: kolom `file_pdf` di tabel `rapors` sudah disiapkan tapi belum ada generatornya.
+
+## Alur rapor (revisi besar — ikuti e-rapor lama)
+Rapor adalah **cetakan real-time dari data nilai**, TANPA status/validasi/penerbitan (mengikuti alur aplikasi lama `e-rapor-plus`):
+- `GET /api/rapor/cetak?siswa_id=&semester_id=` — komposisi cetak dihitung on-the-fly (nilai mapel efektif, praktik, pembiasaan, sikap, kehadiran, peringkat kelas, predikat). Semester default: yang aktif.
+- Yang boleh cetak: admin & kepala sekolah (semua siswa), wali kelas (siswa binaannya), siswa (dirinya), orang tua (anaknya). **Guru pesantren tidak boleh cetak** (403).
+- `GET /api/rapor/progres?semester_id=&kelas_rombel_id=` — indikator kelengkapan nilai per siswa (mapel/praktik terisi, pembiasaan/sikap/kehadiran). Akses: admin, kepala sekolah, wali kelas (scoped kelasnya). Progres hanyalah indikator, BUKAN gerbang cetak.
+- Nilai boleh direvisi kapan pun (selama `penilaian_dibuka`); rapor selalu menampilkan data terbaru. Tabel & model `rapors` sudah dihapus.
 
 ## Perintah
 
@@ -42,8 +48,7 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 - Semua route API di `backend/routes/api.php`, dikelompokkan dengan guard `->middleware('role:a,b')` (alias didaftarkan di `bootstrap/app.php` → `EnsureUserHasRole`).
 - Setiap endpoint yang menampilkan data siswa **wajib discope kepemilikan**, bukan cuma role: guru → hanya siswa diampu; wali_kelas → siswa binaan (`wali_kelas_id` kelasnya); siswa → dirinya sendiri (`user_id`); orang_tua → anak terdaftar (relasi `anakWali` via pivot `siswa_wali`). Gunakan kembali trait `backend/app/Http/Controllers/Concerns/ScopesSiswaAccess.php` atau pola serupa. Jangan longgarkan demi kemudahan development.
 
-## Alur rapor (jangan dilewati/ubah)
-Draft → Diajukan (wali kelas) → Divalidasi/Ditolak (kepala sekolah) → Diterbitkan (kepala sekolah). Transisi status di-enforce dengan `abort_unless` di `RaporController` (mis. rapor hanya bisa divalidasi setelah Diajukan, hanya bisa diterbitkan setelah Divalidasi). Belum ada endpoint ekspor/PDF — saat dibangun, jadikan hanya tersedia untuk rapor berstatus Diterbitkan.
+## Alur rapor — lihat bagian "Alur rapor" di atas (real-time, tanpa validasi)
 
 ## Quirk struktur & penamaan
 - Nama tabel non-default (cek migration/model sebelum menulis tabel baru): `siswas`, `gurus`, `kelas_rombels`, `mapel_plus`, `rapors`, `presensis`, `nilais`, `progres_hafalans`, `catatan_gurus`, pivot `siswa_wali`.

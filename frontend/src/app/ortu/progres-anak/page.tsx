@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { PageHeader, Card, Select, Badge, Skeleton } from "@/components/ui";
+import { labelKelas } from "@/lib/kelas";
+import { PageHeader, Card, Select, Badge, Skeleton, Button } from "@/components/ui";
 
 interface Anak {
   id: number;
   nis: string;
   nama: string;
   kelas_rombel: { nama: string } | null;
+}
+
+interface SemesterLite {
+  id: number;
+  nama: string;
+  is_aktif: boolean;
+  tahun_ajaran: { nama: string } | null;
 }
 
 interface ProgresHafalan {
@@ -51,6 +60,13 @@ export default function ProgresAnakPage() {
   const [catatan, setCatatan] = useState<CatatanGuru[]>([]);
   const [presensi, setPresensi] = useState<Presensi[]>([]);
   const [loading, setLoading] = useState(true);
+  const [semesterAktif, setSemesterAktif] = useState<SemesterLite | null>(null);
+
+  useEffect(() => {
+    api.get<SemesterLite[]>("/semester").then((res) => {
+      setSemesterAktif(res.data.find((s) => s.is_aktif) ?? res.data[0] ?? null);
+    }).catch(() => setSemesterAktif(null));
+  }, []);
 
   useEffect(() => {
     api.get<Anak[]>("/siswa").then((res) => {
@@ -82,7 +98,7 @@ export default function ProgresAnakPage() {
         <Card className="mb-6">
           <Select label="Pilih Anak" value={anakId ?? ""} onChange={(e) => { setAnakId(Number(e.target.value)); setLoading(true); }}>
             {anakList.map((a) => (
-              <option key={a.id} value={a.id}>{a.nama} - {a.kelas_rombel?.nama ?? "-"}</option>
+              <option key={a.id} value={a.id}>{a.nama} - {labelKelas(a.kelas_rombel?.nama) ?? "-"}</option>
             ))}
           </Select>
         </Card>
@@ -138,6 +154,32 @@ export default function ProgresAnakPage() {
                 </Badge>
               ))}
             </div>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Rapor Anak</h3>
+            {semesterAktif ? (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400">
+                  Rapor direal-time dari data nilai — Semester {semesterAktif.nama} {semesterAktif.tahun_ajaran?.nama ?? ""}
+                </p>
+                {anakList.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/50">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">{a.nama}</p>
+                      <p className="text-xs text-slate-400">
+                        NIS {a.nis} • {labelKelas(a.kelas_rombel?.nama) ?? "-"}
+                      </p>
+                    </div>
+                    <Link href={`/rapor-cetak?siswa_id=${a.id}&semester_id=${semesterAktif.id}`} className="shrink-0">
+                      <Button size="sm" variant="outline">Lihat &amp; Cetak</Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">Belum ada semester aktif.</p>
+            )}
           </Card>
         </div>
       )}

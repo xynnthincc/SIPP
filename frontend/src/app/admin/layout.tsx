@@ -10,6 +10,7 @@ const navGroups = [
     items: [
       { href: "/admin/tahun-ajaran", label: "Tahun Ajaran & Semester" },
       { href: "/admin/kelas", label: "Kelas/Rombel" },
+      { href: "/admin/jadwal", label: "Jadwal & Pengampu" },
       { href: "/admin/siswa", label: "Data Siswa" },
       { href: "/admin/guru", label: "Data Guru" },
       { href: "/admin/mapel-plus", label: "Mata Pelajaran Plus" },

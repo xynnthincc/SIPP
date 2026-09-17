@@ -7,7 +7,6 @@ use App\Models\GuruMapelKelas;
 use App\Models\KelasRombel;
 use App\Models\MapelPlus;
 use App\Models\PraktikItem;
-use App\Models\Rapor;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
@@ -175,7 +174,7 @@ class RaporDiniyahTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_cetak_rapor_hanya_untuk_status_diterbitkan(): void
+    public function test_cetak_rapor_realtime_tanpa_validasi(): void
     {
         $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/nilai-diniyah/simpan', [
@@ -184,38 +183,76 @@ class RaporDiniyahTest extends TestCase
                 'nilai_mapel' => [['mapel_plus_id' => $this->mapel->id, 'kkm' => 75, 'nilai' => 85]],
             ]);
 
-        $rapor = Rapor::create([
-            'siswa_id' => $this->siswa->id,
-            'semester_id' => $this->semester->id,
-            'status' => Rapor::STATUS_DRAFT,
-        ]);
-
+        // Rapor langsung bisa dicetak dari data nilai — tanpa status/validasi
         $this->actingAs($this->admin, 'sanctum')
-            ->getJson("/api/rapors/{$rapor->id}/cetak")
-            ->assertStatus(422);
-
-        $rapor->update(['status' => Rapor::STATUS_DITERBITKAN]);
-
-        $this->actingAs($this->admin, 'sanctum')
-            ->getJson("/api/rapors/{$rapor->id}/cetak")
+            ->getJson('/api/rapor/cetak?siswa_id='.$this->siswa->id.'&semester_id='.$this->semester->id)
             ->assertStatus(200)
-            ->assertJsonPath('status', Rapor::STATUS_DITERBITKAN)
             ->assertJsonPath('siswa.id', $this->siswa->id)
             ->assertJsonPath('peringkat', 1)
             ->assertJsonPath('mapel.0.nilai', 85)
-            ->assertJsonPath('mapel.0.terbilang', 'خمسة وثمانون');
+            ->assertJsonPath('mapel.0.terbilang', 'خمسة وثمانون')
+            ->assertJsonMissingPath('status');
     }
 
     public function test_guru_tidak_boleh_cetak_rapor(): void
     {
-        $rapor = Rapor::create([
-            'siswa_id' => $this->siswa->id,
-            'semester_id' => $this->semester->id,
-            'status' => Rapor::STATUS_DITERBITKAN,
+        $this->actingAs($this->guru, 'sanctum')
+            ->getJson('/api/rapor/cetak?siswa_id='.$this->siswa->id.'&semester_id='.$this->semester->id)
+            ->assertStatus(403);
+    }
+
+    public function test_wali_kelas_boleh_cetak_rapor_siswa_binaannya(): void
+    {
+        $this->actingAs($this->wali, 'sanctum')
+            ->getJson('/api/rapor/cetak?siswa_id='.$this->siswa->id.'&semester_id='.$this->semester->id)
+            ->assertStatus(200);
+    }
+
+    public function test_wali_kelas_tidak_boleh_cetak_rapor_kelas_lain(): void
+    {
+        $waliLain = User::create([
+            'name' => 'Wali Kelas Lain',
+            'email' => 'wali-lain@sipp.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_WALI_KELAS,
+        ]);
+        KelasRombel::create([
+            'nama' => 'VII-B',
+            'tingkat' => 7,
+            'tahun_ajaran_id' => $this->semester->tahun_ajaran_id,
+            'wali_kelas_id' => $waliLain->id,
         ]);
 
+        $this->actingAs($waliLain, 'sanctum')
+            ->getJson('/api/rapor/cetak?siswa_id='.$this->siswa->id.'&semester_id='.$this->semester->id)
+            ->assertStatus(403);
+    }
+
+    public function test_progres_kelengkapan_nilai_siswa_binaan(): void
+    {
+        $this->actingAs($this->wali, 'sanctum')
+            ->postJson('/api/nilai-diniyah/simpan', [
+                'siswa_id' => $this->siswa->id,
+                'semester_id' => $this->semester->id,
+                'nilai_mapel' => [['mapel_plus_id' => $this->mapel->id, 'kkm' => 75, 'nilai' => 85]],
+            ]);
+
+        $this->actingAs($this->wali, 'sanctum')
+            ->getJson('/api/rapor/progres?semester_id='.$this->semester->id)
+            ->assertStatus(200)
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.siswa.id', $this->siswa->id)
+            ->assertJsonPath('0.mapel_terisi', 1)
+            ->assertJsonPath('0.mapel_total', 1)
+            ->assertJsonPath('0.praktik_terisi', 0)
+            ->assertJsonPath('0.praktik_total', 1)
+            ->assertJsonPath('0.lengkap', false);
+    }
+
+    public function test_progres_guru_ditolak(): void
+    {
         $this->actingAs($this->guru, 'sanctum')
-            ->getJson("/api/rapors/{$rapor->id}/cetak")
+            ->getJson('/api/rapor/progres?semester_id='.$this->semester->id)
             ->assertStatus(403);
     }
 

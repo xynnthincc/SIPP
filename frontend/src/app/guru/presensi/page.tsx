@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { labelKelas } from "@/lib/kelas";
 import { PageHeader, Card, Button, Select, Skeleton, EmptyState } from "@/components/ui";
 
 interface JadwalItem {
@@ -81,7 +82,7 @@ export default function PresensiPage() {
             >
               {jadwals.map((j) => (
                 <option key={j.id} value={j.id}>
-                  {j.hari} - {j.guru_mapel_kelas.mapel_plus.nama} ({j.guru_mapel_kelas.kelas_rombel.nama})
+                  {`${j.hari} · ${j.guru_mapel_kelas.mapel_plus.nama} · ${labelKelas(j.guru_mapel_kelas.kelas_rombel.nama) ?? j.guru_mapel_kelas.kelas_rombel.nama}`}
                 </option>
               ))}
             </Select>
@@ -100,9 +101,14 @@ export default function PresensiPage() {
           <Card className="divide-y divide-slate-100">
             {siswas.map((s) => (
               <div key={s.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{s.nama}</p>
-                  <p className="text-xs text-slate-400 font-mono">{s.nis}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center text-sm font-semibold shrink-0">
+                    {s.nama.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">{s.nama}</p>
+                    <p className="text-xs text-slate-400 font-mono">NIS {s.nis}</p>
+                  </div>
                 </div>
                 <div className="flex gap-1.5">
                   {(["Hadir", "Sakit", "Izin", "Alpa"] as Status[]).map((st) => (

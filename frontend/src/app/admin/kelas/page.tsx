@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { labelTingkat } from "@/lib/kelas";
 import {
   PageHeader, Card, Button, Table, TableHead, TableBody, Th, Td, TableRow,
   Badge, Skeleton, EmptyState, ConfirmModal, IconButton, Alert,
@@ -86,7 +87,7 @@ export default function KelasPage() {
                 <TableRow key={k.id}>
                   <Td className="font-medium text-slate-800">{k.nama}</Td>
                   <Td>
-                    <Badge variant="info">Tingkat {k.tingkat}</Badge>
+                    <Badge variant="info">{labelTingkat(k.tingkat)}</Badge>
                   </Td>
                   <Td>{k.wali_kelas?.name ?? <span className="text-slate-400">-</span>}</Td>
                   <Td>

@@ -59,11 +59,11 @@ export default function ProgresHafalanPage() {
       {loading ? (
         <Skeleton className="h-60 w-full" />
       ) : (
-        <Card className="max-w-xl">
+        <Card>
           <form onSubmit={handleSubmit} className="space-y-4">
             <Select label="Siswa" value={form.siswa_id} onChange={(e) => setForm({ ...form, siswa_id: e.target.value })} required placeholder="Pilih siswa">
               {siswas.map((s) => (
-                <option key={s.id} value={s.id}>{s.nama} ({s.nis})</option>
+                <option key={s.id} value={s.id}>{s.nama} (NIS {s.nis})</option>
               ))}
             </Select>
 

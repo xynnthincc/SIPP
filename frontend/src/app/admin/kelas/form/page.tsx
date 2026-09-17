@@ -114,9 +114,9 @@ function KelasForm() {
             value={form.tingkat}
             onChange={(e) => setForm({ ...form, tingkat: e.target.value })}
           >
-            <option value="7">Tingkat 7</option>
-            <option value="8">Tingkat 8</option>
-            <option value="9">Tingkat 9</option>
+            <option value="7">Tamhidi</option>
+            <option value="8">Qitsmu Awwal</option>
+            <option value="9">Qitsmu Tsani</option>
           </Select>
           {!isEdit && (
             <Select
@@ -126,7 +126,7 @@ function KelasForm() {
             >
               {tahunList.map((t) => (
                 <option key={t.id} value={String(t.id)}>
-                  {t.nama}{t.is_aktif ? " (Aktif)" : ""}
+                  {t.nama}
                 </option>
               ))}
             </Select>
