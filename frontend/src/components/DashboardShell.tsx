@@ -175,6 +175,7 @@ export function DashboardShell({
     const map: Record<string, string> = {
       "Ringkasan": "ringkasan",
       "Manajemen Akademik": "kelompok-akademik",
+      "Sivitas Akademika": "tenaga",
       "Civitas Academica": "tenaga",
       "Konfigurasi & Evaluasi": "penilaian",
       "Kelompok Akademik": "kelompok-akademik",

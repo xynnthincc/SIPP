@@ -15,7 +15,7 @@ const navGroups = [
     ],
   },
   {
-    label: "Civitas Academica",
+    label: "Sivitas Akademika",
     items: [
       { href: "/admin/guru", label: "Data Guru" },
       { href: "/admin/siswa", label: "Data Siswa" },
