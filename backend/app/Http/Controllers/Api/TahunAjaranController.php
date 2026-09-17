@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rapor;
+use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 
@@ -21,7 +22,18 @@ class TahunAjaranController extends Controller
             'is_aktif' => ['boolean'],
         ]);
 
-        return TahunAjaran::create($data);
+        $tahunAjaran = TahunAjaran::create($data);
+
+        // Tahun ajaran baru otomatis dibekali semester Ganjil & Genap
+        // (sesuai janji form admin); statusnya menyusul diaktifkan admin.
+        foreach (['Ganjil', 'Genap'] as $nama) {
+            Semester::firstOrCreate(
+                ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => $nama],
+                ['is_aktif' => false, 'penilaian_dibuka' => false]
+            );
+        }
+
+        return $tahunAjaran->load('semesters');
     }
 
     public function update(Request $request, TahunAjaran $tahunAjaran)

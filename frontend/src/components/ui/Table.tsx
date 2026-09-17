@@ -44,12 +44,14 @@ export function Th({
 export function Td({
   children,
   className = "",
+  colSpan,
 }: {
   children: ReactNode;
   className?: string;
+  colSpan?: number;
 }) {
   return (
-    <td className={`px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm text-slate-700 align-middle ${className}`}>{children}</td>
+    <td colSpan={colSpan} className={`px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm text-slate-700 align-middle ${className}`}>{children}</td>
   );
 }
 

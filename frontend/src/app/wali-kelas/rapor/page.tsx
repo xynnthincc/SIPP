@@ -97,7 +97,7 @@ export default function RaporWaliKelasPage() {
         setRapors(raporRes.data);
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -124,7 +124,7 @@ export default function RaporWaliKelasPage() {
       });
       setDeskripsi(peta);
       setDetailLoading(false);
-    });
+    }).catch(() => setDetailLoading(false));
   }
 
   function raporUntuk(siswaId: number) {

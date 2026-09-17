@@ -55,8 +55,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Admin: kelola seluruh data master, tahun ajaran, hak akses ──
     Route::middleware('role:admin')->group(function () {
-        Route::apiResource('tahun-ajaran', TahunAjaranController::class)->except('show');
-        Route::apiResource('semester', SemesterController::class)->only(['index', 'store', 'update', 'destroy']);
+        // Catatan: index sengaja TIDAK didaftarkan di sini — GET /tahun-ajaran & /semester
+        // sudah terdaftar di atas untuk semua role. Route dengan method+URI identik yang
+        // didaftarkan terakhir akan MENIMPA yang pertama, sehingga index versi admin-only
+        // akan menutup akses role lain (bug 403 untuk wali kelas).
+        Route::apiResource('tahun-ajaran', TahunAjaranController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('semester', SemesterController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('kelas-rombel', KelasRombelController::class)->except(['show', 'index']);
         Route::apiResource('guru', GuruController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('mapel-plus', MapelPlusController::class)->parameters(['mapel-plus' => 'mapelPlus'])->only(['store', 'update', 'destroy']);

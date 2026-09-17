@@ -72,6 +72,16 @@ export default function TahunAjaranPage() {
     await load();
   }
 
+  async function tambahSemester(ta: TahunAjaran, nama: "Ganjil" | "Genap") {
+    try {
+      await api.post("/semester", { tahun_ajaran_id: ta.id, nama });
+      await load();
+    } catch (err: unknown) {
+      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setHapusError(pesan?.message ?? `Gagal menambahkan semester ${nama}.`);
+    }
+  }
+
   async function handleHapusTA() {
     if (!hapusTA) return;
     setHapusLoading(true);
@@ -174,6 +184,22 @@ export default function TahunAjaranPage() {
                     </div>
                   </div>
                 ))}
+
+                {/* Semester yang belum ada bisa ditambahkan manual (mis. TA lama yang dibuat sebelum pembuatan otomatis) */}
+                {(["Ganjil", "Genap"] as const)
+                  .filter((n) => !ta.semesters?.some((s) => s.nama === n))
+                  .map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => tambahSemester(ta, n)}
+                      className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-200 text-sm text-slate-400 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors cursor-pointer"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                      Tambah Semester {n}
+                    </button>
+                  ))}
               </div>
             </Card>
           ))}

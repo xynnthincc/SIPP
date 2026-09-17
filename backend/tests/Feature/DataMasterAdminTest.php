@@ -161,6 +161,27 @@ class DataMasterAdminTest extends TestCase
         $this->assertDatabaseHas('kelas_rombels', ['id' => $this->kelas->id]);
     }
 
+    public function test_tahun_ajaran_baru_otomatis_dibekali_semester_ganjil_genap(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/tahun-ajaran', ['nama' => '2027/2028'])
+            ->assertStatus(201)
+            ->assertJsonCount(2, 'semesters');
+
+        $this->assertDatabaseHas('semesters', ['tahun_ajaran_id' => 2, 'nama' => 'Ganjil']);
+        $this->assertDatabaseHas('semesters', ['tahun_ajaran_id' => 2, 'nama' => 'Genap']);
+    }
+
+    public function test_semester_duplikat_dalam_satu_tahun_ajaran_ditolak(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/semester', [
+                'tahun_ajaran_id' => $this->tahun->id,
+                'nama' => 'Ganjil',
+            ])
+            ->assertStatus(422);
+    }
+
     public function test_tahun_ajaran_tidak_bisa_dihapus_jika_memiliki_kelas(): void
     {
         $this->actingAs($this->admin, 'sanctum')

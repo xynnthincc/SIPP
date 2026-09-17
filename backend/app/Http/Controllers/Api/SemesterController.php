@@ -28,6 +28,11 @@ class SemesterController extends Controller
             'penilaian_dibuka' => ['boolean'],
         ]);
 
+        $sudahAda = Semester::where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+            ->where('nama', $data['nama'])
+            ->exists();
+        abort_if($sudahAda, 422, "Semester {$data['nama']} untuk tahun ajaran ini sudah ada.");
+
         return Semester::create($data);
     }
 

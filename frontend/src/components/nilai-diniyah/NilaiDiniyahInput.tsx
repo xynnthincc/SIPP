@@ -91,16 +91,21 @@ export default function NilaiDiniyahInput() {
       setSemesters(res.data);
       const aktif = res.data.find((s) => s.is_aktif);
       if (aktif) setSemesterId(String(aktif.id));
-    });
-    api.get<KelasLite[]>("/kelas-rombel").then((res) => setKelasList(res.data));
+    }).catch(() => setSemesters([]));
+    api.get<KelasLite[]>("/kelas-rombel").then((res) => setKelasList(res.data)).catch(() => setKelasList([]));
   }, []);
 
   const muatSiswa = useCallback(() => {
     if (!kelasId) return;
     api.get("/siswa", { params: { kelas_rombel_id: kelasId } }).then((res) => {
-      setSiswas(res.data.data ?? res.data);
+      const daftar: SiswaLite[] = res.data.data ?? res.data;
+      daftar.sort((a, b) => a.nama.localeCompare(b.nama, "id-ID"));
+      setSiswas(daftar);
       setLoadingSiswa(false);
-    }).catch(() => setLoadingSiswa(false));
+    }).catch(() => {
+      setSiswas([]);
+      setLoadingSiswa(false);
+    });
   }, [kelasId]);
 
   const muatRekap = useCallback(() => {
@@ -132,7 +137,12 @@ export default function NilaiDiniyahInput() {
       setError(null);
       setSavedMsg(null);
       setLoadingRekap(false);
-    }).catch(() => setLoadingRekap(false));
+    }).catch((err: unknown) => {
+      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setRekap(null);
+      setError(pesan ?? "Gagal memuat rekap nilai diniyah untuk siswa ini.");
+      setLoadingRekap(false);
+    });
   }, [siswaId, semesterId]);
 
   useEffect(() => { muatSiswa(); }, [muatSiswa]);
@@ -201,18 +211,18 @@ export default function NilaiDiniyahInput() {
           <Select label="Semester" value={semesterId} onChange={(e) => { setSemesterId(e.target.value); setRekap(null); setError(null); setSavedMsg(null); }} placeholder="Pilih semester" disabled={semesters.length === 0}>
             {semesters.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.tahun_ajaran?.nama ?? ""} — {s.nama}{s.is_aktif ? " (Aktif)" : ""}
+                {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}{s.is_aktif ? " (Aktif)" : ""}
               </option>
             ))}
           </Select>
           <Select label="Kelas" value={kelasId} onChange={(e) => { setKelasId(e.target.value); setSiswaId(""); setRekap(null); if (!e.target.value) setSiswas([]); else setLoadingSiswa(true); setError(null); setSavedMsg(null); }} placeholder="Pilih kelas">
             {kelasList.map((k) => (
-              <option key={k.id} value={k.id}>{k.nama}</option>
+              <option key={k.id} value={k.id}>{`Kelas ${k.nama}`}</option>
             ))}
           </Select>
-          <Select label="Siswa" value={siswaId} onChange={(e) => { setSiswaId(e.target.value); setRekap(null); if (e.target.value) setLoadingRekap(true); setError(null); setSavedMsg(null); }} placeholder={loadingSiswa ? "Memuat siswa…" : "Pilih siswa"} disabled={!kelasId || loadingSiswa}>
+          <Select label="Siswa" value={siswaId} onChange={(e) => { setSiswaId(e.target.value); setRekap(null); if (e.target.value && semesterId) setLoadingRekap(true); setError(null); setSavedMsg(null); }} placeholder={loadingSiswa ? "Memuat siswa…" : "Pilih siswa"} disabled={!kelasId || loadingSiswa}>
             {siswas.map((s) => (
-              <option key={s.id} value={s.id}>{s.nama} — {s.nis}</option>
+              <option key={s.id} value={s.id}>{`${s.nama} (NIS ${s.nis})`}</option>
             ))}
           </Select>
         </div>
@@ -227,7 +237,9 @@ export default function NilaiDiniyahInput() {
       {loadingRekap ? (
         <Skeleton className="h-64 w-full" />
       ) : !rekap ? (
-        siswaId ? null : (
+        siswaId ? (
+          <EmptyState title="Gagal memuat rekap" description="Rekap nilai diniyah tidak dapat dimuat. Coba pilih siswa kembali." />
+        ) : (
           <EmptyState title="Pilih kelas & siswa" description="Pilih semester, kelas, lalu siswa untuk mulai menginput nilai diniyah." />
         )
       ) : (

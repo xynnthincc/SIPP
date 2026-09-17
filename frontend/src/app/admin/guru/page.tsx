@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
-  PageHeader, Card, Button, Table, TableHead, TableBody, Th, Td, TableRow,
+  PageHeader, Card, Button, Input, Table, TableHead, TableBody, Th, Td, TableRow,
   Badge, Skeleton, EmptyState, Modal, ConfirmModal, IconButton, Alert, Pagination,
 } from "@/components/ui";
 
@@ -41,10 +41,24 @@ export default function GuruPage() {
   const [praktikLoading, setPraktikLoading] = useState(false);
   const [praktikError, setPraktikError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
+  const [committedSearch, setCommittedSearch] = useState("");
 
-  const lastPage = Math.max(1, Math.ceil(data.length / PER_HALAMAN));
+  // Daftar guru di-load sekaligus (tanpa paginasi server), jadi pencarian difilter di client
+  const hasilCari = useMemo(() => {
+    const kata = committedSearch.trim().toLowerCase();
+    if (!kata) return data;
+    return data.filter(
+      (g) =>
+        g.nama.toLowerCase().includes(kata) ||
+        g.user.email.toLowerCase().includes(kata) ||
+        (g.nip ?? "").includes(kata)
+    );
+  }, [data, committedSearch]);
+
+  const lastPage = Math.max(1, Math.ceil(hasilCari.length / PER_HALAMAN));
   const safePage = Math.min(page, lastPage);
-  const tampil = data.slice((safePage - 1) * PER_HALAMAN, safePage * PER_HALAMAN);
+  const tampil = hasilCari.slice((safePage - 1) * PER_HALAMAN, safePage * PER_HALAMAN);
 
   const load = useCallback(() => {
     api.get<Guru[]>("/guru").then((res) => {
@@ -62,6 +76,11 @@ export default function GuruPage() {
   async function toggleAktif(g: Guru) {
     await api.put(`/guru/${g.id}`, { is_aktif: !g.is_aktif });
     await load();
+  }
+
+  function cari() {
+    setCommittedSearch(searchInput);
+    setPage(1);
   }
 
   async function handleHapus() {
@@ -158,6 +177,29 @@ export default function GuruPage() {
         )}
       </Modal>
 
+      {/* Filter — layout sama seperti Data Siswa */}
+      <Card className="mb-5 sm:mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Cari nama, email, atau NIP…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") cari();
+              }}
+            />
+          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={cari}
+          >
+            Cari
+          </Button>
+        </div>
+      </Card>
+
       {loading ? (
         <Skeleton className="h-40 w-full" />
       ) : data.length === 0 ? (
@@ -207,14 +249,21 @@ export default function GuruPage() {
                   </Td>
                 </TableRow>
               ))}
+              {tampil.length === 0 && (
+                <TableRow>
+                  <Td colSpan={5} className="text-center text-slate-400 py-8">
+                    Tidak ada guru yang cocok dengan pencarian &ldquo;{committedSearch}&rdquo;.
+                  </Td>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           <Pagination
             page={safePage}
             lastPage={lastPage}
-            total={data.length}
-            from={data.length === 0 ? 0 : (safePage - 1) * PER_HALAMAN + 1}
-            to={Math.min(safePage * PER_HALAMAN, data.length)}
+            total={hasilCari.length}
+            from={hasilCari.length === 0 ? 0 : (safePage - 1) * PER_HALAMAN + 1}
+            to={Math.min(safePage * PER_HALAMAN, hasilCari.length)}
             label="guru"
             onPageChange={setPage}
           />
