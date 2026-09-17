@@ -6,31 +6,26 @@ const navItems = [
 
 const navGroups = [
   {
-    label: "Kelompok Akademik",
+    label: "Manajemen Akademik",
     items: [
       { href: "/admin/tahun-ajaran", label: "Tahun Ajaran & Semester" },
       { href: "/admin/kelas", label: "Kelas/Rombel" },
+      { href: "/admin/jadwal", label: "Jadwal & Pengampu" },
       { href: "/admin/mapel-plus", label: "Mata Pelajaran Plus" },
-      { href: "/admin/predikat", label: "Rentang Predikat" },
     ],
   },
   {
-    label: "Tenaga & Peserta Didik",
+    label: "Civitas Academica",
     items: [
       { href: "/admin/guru", label: "Data Guru" },
       { href: "/admin/siswa", label: "Data Siswa" },
-      { href: "/admin/jadwal", label: "Jadwal & Pengampu" },
     ],
   },
   {
-    label: "Penilaian",
+    label: "Konfigurasi & Evaluasi",
     items: [
       { href: "/admin/praktik", label: "Praktik & Hafalan" },
-    ],
-  },
-  {
-    label: "Sekolah",
-    items: [
+      { href: "/admin/predikat", label: "Rentang Predikat" },
       { href: "/admin/sekolah", label: "Profil Sekolah" },
     ],
   },

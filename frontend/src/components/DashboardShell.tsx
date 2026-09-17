@@ -174,6 +174,9 @@ export function DashboardShell({
   function getNavIconName(label: string): string {
     const map: Record<string, string> = {
       "Ringkasan": "ringkasan",
+      "Manajemen Akademik": "kelompok-akademik",
+      "Civitas Academica": "tenaga",
+      "Konfigurasi & Evaluasi": "penilaian",
       "Kelompok Akademik": "kelompok-akademik",
       "Tenaga & Peserta Didik": "tenaga",
       "Penilaian": "penilaian",
