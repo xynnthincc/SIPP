@@ -105,7 +105,7 @@ export default function SiswaBinaanPage() {
             <Card>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Siswa</p>
               <p className="text-2xl font-bold text-slate-800 mt-1">{siswas.length}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{labelKelas(kelas.nama) ?? "-"} • {labelTingkat(kelas.tingkat)}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{labelKelas(kelas.nama) ?? "-"} • Tingkat {labelTingkat(kelas.tingkat)}</p>
             </Card>
             <Card>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Laki-laki</p>

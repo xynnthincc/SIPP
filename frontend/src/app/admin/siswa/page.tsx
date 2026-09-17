@@ -214,6 +214,7 @@ export default function SiswaPage() {
                   </Td>
                   <Td className="whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
+                      <IconButton icon="print" variant="print" label="Cetak biodata" onClick={() => router.push(`/admin/siswa/cetak-biodata?id=${s.id}`)} />
                       <IconButton icon="edit" variant="edit" label="Edit siswa" onClick={() => router.push(`/admin/siswa/form?id=${s.id}`)} />
                       <IconButton icon="trash" variant="delete" label="Hapus siswa" onClick={() => { setHapus(s); setHapusError(null); }} />
                     </div>

@@ -32,7 +32,8 @@ function KelasForm() {
   const idParam = searchParams.get("id");
   const isEdit = !!idParam;
 
-  const [form, setForm] = useState({ nama: "", tingkat: "7", tahun_ajaran_id: "" });
+  // "kelas" = jenjang diniyah (Tamhidi/Qitsmu → tingkat 7/8/9), "rombel" = huruf pecahan
+  const [form, setForm] = useState({ kelas: "7", rombel: "", tahun_ajaran_id: "" });
   const [tahunList, setTahunList] = useState<TahunAjaran[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
@@ -51,7 +52,14 @@ function KelasForm() {
   const load = useCallback(() => {
     api.get<KelasRombel[]>("/kelas-rombel").then((res) => {
       const k = res.data.find((x) => String(x.id) === idParam);
-      if (k) setForm({ nama: k.nama, tingkat: String(k.tingkat), tahun_ajaran_id: "" });
+      if (k) {
+        // "7A" → kelas 7 + rombel "A"
+        setForm({
+          kelas: String(k.tingkat),
+          rombel: k.nama.replace(/^\d+\s*/, ""),
+          tahun_ajaran_id: "",
+        });
+      }
       setLoading(false);
     });
   }, [idParam]);
@@ -64,13 +72,14 @@ function KelasForm() {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const nama = `${form.kelas}${form.rombel.trim()}`;
     try {
       if (isEdit) {
-        await api.put(`/kelas-rombel/${idParam}`, { nama: form.nama, tingkat: Number(form.tingkat) });
+        await api.put(`/kelas-rombel/${idParam}`, { nama, tingkat: Number(form.kelas) });
       } else {
         await api.post("/kelas-rombel", {
-          nama: form.nama,
-          tingkat: Number(form.tingkat),
+          nama,
+          tingkat: Number(form.kelas),
           tahun_ajaran_id: Number(form.tahun_ajaran_id),
         });
       }
@@ -102,22 +111,22 @@ function KelasForm() {
 
       <Card>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Input
-            label="Nama Kelas"
-            value={form.nama}
-            onChange={(e) => setForm({ ...form, nama: e.target.value })}
-            placeholder="contoh: VII-A"
-            required
-          />
           <Select
-            label="Tingkat"
-            value={form.tingkat}
-            onChange={(e) => setForm({ ...form, tingkat: e.target.value })}
+            label="Kelas"
+            value={form.kelas}
+            onChange={(e) => setForm({ ...form, kelas: e.target.value })}
           >
             <option value="7">Tamhidi</option>
             <option value="8">Qitsmu Awwal</option>
             <option value="9">Qitsmu Tsani</option>
           </Select>
+          <Input
+            label="Rombel"
+            value={form.rombel}
+            onChange={(e) => setForm({ ...form, rombel: e.target.value })}
+            placeholder="mis. A (boleh dikosongkan)"
+            maxLength={10}
+          />
           {!isEdit && (
             <Select
               label="Tahun Ajaran"

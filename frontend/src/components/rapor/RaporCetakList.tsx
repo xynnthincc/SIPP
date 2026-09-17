@@ -14,6 +14,7 @@ const PER_HALAMAN = 10;
 interface SemesterLite {
   id: number;
   nama: string;
+  is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
 
@@ -246,9 +247,14 @@ export default function RaporCetakList({
                       </div>
                     </Td>
                     <Td className="whitespace-nowrap text-right">
-                      <Link href={`/rapor-cetak?siswa_id=${p.siswa.id}&semester_id=${semesterId}`}>
-                        <Button size="sm">Cetak</Button>
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link href={`/admin/siswa/cetak-biodata?id=${p.siswa.id}`}>
+                          <Button size="sm" variant="outline">Biodata</Button>
+                        </Link>
+                        <Link href={`/rapor-cetak?siswa_id=${p.siswa.id}&semester_id=${semesterId}`}>
+                          <Button size="sm">Rapor</Button>
+                        </Link>
+                      </div>
                     </Td>
                   </TableRow>
                 );

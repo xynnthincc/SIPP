@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\SemesterController;
 use App\Http\Controllers\Api\SiswaController;
 use App\Http\Controllers\Api\TahunAjaranController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ── Publik ──────────────────────────────────────────────
@@ -70,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('sekolah', SekolahController::class)->only(['update']);
         Route::apiResource('praktik-item', PraktikItemController::class)->parameters(['praktik-item' => 'praktikItem'])->only(['store', 'update', 'destroy']);
         Route::post('/gurus/{guru}/praktik', [GuruController::class, 'simpanPraktik']);
+        Route::get('/user', [UserController::class, 'index']);
+        Route::put('/user/{user}', [UserController::class, 'update']);
     });
 
     // ── Admin & Wali Kelas: kelola data master siswa ──

@@ -55,6 +55,11 @@ class GuruController extends Controller
 
         $guru->update($data);
 
+        // Jaga nama akun login tetap sinkron dengan nama guru
+        if (isset($data['nama'])) {
+            $guru->user->update(['name' => $data['nama']]);
+        }
+
         return $guru;
     }
 

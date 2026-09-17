@@ -19,6 +19,7 @@ const navGroups = [
     items: [
       { href: "/admin/guru", label: "Data Guru" },
       { href: "/admin/siswa", label: "Data Siswa" },
+      { href: "/admin/pengguna", label: "Kelola Pengguna" },
     ],
   },
   {
