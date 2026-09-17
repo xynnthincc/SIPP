@@ -7,8 +7,8 @@ interface TableProps {
 
 export function Table({ children, className = "" }: TableProps) {
   return (
-    <div className={`overflow-x-auto rounded-xl ${className}`}>
-      <table className="w-full text-sm">{children}</table>
+    <div className={`w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin] ${className}`}>
+      <table className="w-full text-sm min-w-[600px] sm:min-w-[640px]">{children}</table>
     </div>
   );
 }
@@ -16,7 +16,7 @@ export function Table({ children, className = "" }: TableProps) {
 export function TableHead({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-slate-200/60">{children}</tr>
+      <tr className="border-b border-slate-200/60 bg-slate-50/40">{children}</tr>
     </thead>
   );
 }
@@ -34,7 +34,7 @@ export function Th({
 }) {
   return (
     <th
-      className={`text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider ${className}`}
+      className={`text-left px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${className}`}
     >
       {children}
     </th>
@@ -49,7 +49,7 @@ export function Td({
   className?: string;
 }) {
   return (
-    <td className={`px-4 py-3 text-slate-700 ${className}`}>{children}</td>
+    <td className={`px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm text-slate-700 align-middle ${className}`}>{children}</td>
   );
 }
 

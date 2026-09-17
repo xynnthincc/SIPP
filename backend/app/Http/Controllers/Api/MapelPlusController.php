@@ -11,7 +11,7 @@ class MapelPlusController extends Controller
 {
     public function index()
     {
-        return MapelPlus::withCount('jenisAssessments')->get();
+        return MapelPlus::withCount('jenisAssessments')->orderBy('urutan')->get();
     }
 
     public function store(Request $request)
@@ -19,6 +19,10 @@ class MapelPlusController extends Controller
         $data = $request->validate([
             'kode' => ['required', 'string', 'unique:mapel_plus,kode'],
             'nama' => ['required', 'string', 'max:100'],
+            'nama_ar' => ['nullable', 'string', 'max:100'],
+            'kelompok' => ['nullable', 'in:tahfidz,tahsin,kitab_kuning,bahasa_arab,akhlak'],
+            'kkm_default' => ['nullable', 'integer', 'between:1,100'],
+            'urutan' => ['nullable', 'integer', 'min:0'],
             'deskripsi' => ['nullable', 'string'],
             'punya_progres_hafalan' => ['boolean'],
         ]);
@@ -30,6 +34,10 @@ class MapelPlusController extends Controller
     {
         $data = $request->validate([
             'nama' => ['sometimes', 'string', 'max:100'],
+            'nama_ar' => ['nullable', 'string', 'max:100'],
+            'kelompok' => ['nullable', 'in:tahfidz,tahsin,kitab_kuning,bahasa_arab,akhlak'],
+            'kkm_default' => ['nullable', 'integer', 'between:1,100'],
+            'urutan' => ['nullable', 'integer', 'min:0'],
             'deskripsi' => ['nullable', 'string'],
             'punya_progres_hafalan' => ['boolean'],
         ]);
@@ -54,6 +62,10 @@ class MapelPlusController extends Controller
 
         if ($mapelPlus->guruMapelKelas()->exists()) {
             abort(422, 'Mapel ini masih tercatat di penugasan guru. Hapus penugasannya terlebih dahulu.');
+        }
+
+        if ($mapelPlus->nilaiMapels()->exists()) {
+            abort(422, 'Mapel ini masih memiliki data nilai diniyah siswa. Tidak bisa dihapus.');
         }
 
         $mapelPlus->delete();

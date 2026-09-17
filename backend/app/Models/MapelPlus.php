@@ -8,7 +8,10 @@ class MapelPlus extends Model
 {
     protected $table = 'mapel_plus';
 
-    protected $fillable = ['kode', 'nama', 'deskripsi', 'punya_progres_hafalan'];
+    protected $fillable = [
+        'kode', 'nama', 'nama_ar', 'kelompok', 'kkm_default', 'urutan',
+        'deskripsi', 'punya_progres_hafalan',
+    ];
 
     protected $casts = ['punya_progres_hafalan' => 'boolean'];
 
@@ -25,5 +28,10 @@ class MapelPlus extends Model
     public function guruMapelKelas()
     {
         return $this->hasMany(GuruMapelKelas::class);
+    }
+
+    public function nilaiMapels()
+    {
+        return $this->hasMany(NilaiMapel::class);
     }
 }

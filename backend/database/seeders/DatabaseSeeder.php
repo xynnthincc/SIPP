@@ -61,5 +61,8 @@ class DatabaseSeeder extends Seeder
         foreach ($predikats as $predikat) {
             PredikatRange::firstOrCreate(['nama' => $predikat['nama']], $predikat);
         }
+
+        // Data operasional pesantren: mapel plus, guru, kelas, pengampu, jadwal, siswa − idempoten
+        $this->call(DataPesantrenSeeder::class);
     }
 }

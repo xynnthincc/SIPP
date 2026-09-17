@@ -10,10 +10,13 @@ use App\Http\Controllers\Api\JenisAssessmentController;
 use App\Http\Controllers\Api\KelasRombelController;
 use App\Http\Controllers\Api\MapelPlusController;
 use App\Http\Controllers\Api\NilaiController;
+use App\Http\Controllers\Api\NilaiDiniyahController;
+use App\Http\Controllers\Api\PraktikItemController;
 use App\Http\Controllers\Api\PredikatRangeController;
 use App\Http\Controllers\Api\PresensiController;
 use App\Http\Controllers\Api\ProgresHafalanController;
 use App\Http\Controllers\Api\RaporController;
+use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\SemesterController;
 use App\Http\Controllers\Api\SiswaController;
 use App\Http\Controllers\Api\TahunAjaranController;
@@ -30,6 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Bisa diakses semua role login (read-only, discope di controller sesuai role)
     Route::get('/rapors', [RaporController::class, 'index']);
     Route::get('/rapors/{rapor}', [RaporController::class, 'show']);
+    Route::get('/rapors/{rapor}/cetak', [RaporController::class, 'cetak']);
+    Route::get('/sekolah', [SekolahController::class, 'show']);
+    Route::get('/nilai-diniyah/rekap', [NilaiDiniyahController::class, 'rekap']);
+    Route::get('/praktik-item', [PraktikItemController::class, 'index']);
     Route::get('/siswas/{siswa}/nilai-rekap/{semester}', [NilaiController::class, 'rekapSiswa']);
     Route::get('/progres-hafalan', [ProgresHafalanController::class, 'index']);
     Route::get('/catatan-guru', [CatatanGuruController::class, 'index']);
@@ -43,6 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/jenis-assessment', [JenisAssessmentController::class, 'index']);
     Route::get('/predikat-range', [PredikatRangeController::class, 'index']);
     Route::get('/deskripsi-capaian', [DeskripsiCapaianController::class, 'index']);
+    Route::get('/semester', [SemesterController::class, 'index']);
+    Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
 
     // ── Admin: kelola seluruh data master, tahun ajaran, hak akses ──
     Route::middleware('role:admin')->group(function () {
@@ -55,6 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('jenis-assessment', JenisAssessmentController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('predikat-range', PredikatRangeController::class)->only(['store', 'update', 'destroy']);
         Route::post('/siswas/{siswa}/wali', [SiswaController::class, 'tambahWali']);
+        Route::apiResource('sekolah', SekolahController::class)->only(['update']);
+        Route::apiResource('praktik-item', PraktikItemController::class)->parameters(['praktik-item' => 'praktikItem'])->only(['store', 'update', 'destroy']);
+        Route::post('/gurus/{guru}/praktik', [GuruController::class, 'simpanPraktik']);
     });
 
     // ── Admin & Wali Kelas: kelola data master siswa ──
@@ -70,6 +82,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/nilai/massal', [NilaiController::class, 'storeMassal']);
         Route::post('/progres-hafalan', [ProgresHafalanController::class, 'store']);
         Route::post('/catatan-guru', [CatatanGuruController::class, 'store']);
+    });
+
+    // ── Input Nilai Diniyah: wali kelas & guru yang berhak (akses diceck per-mapel/praktik) ──
+    Route::middleware('role:guru_pesantren,admin,wali_kelas')->group(function () {
+        Route::post('/nilai-diniyah/simpan', [NilaiDiniyahController::class, 'simpan']);
     });
 
     // ── Wali Kelas: menyusun & mengajukan rapor siswa binaannya ──

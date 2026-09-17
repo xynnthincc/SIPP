@@ -24,7 +24,7 @@ class ProgresHafalanController extends Controller
             abort(422, 'Parameter siswa_id wajib diisi untuk akun orang tua.');
         }
 
-        return ProgresHafalan::with('mapelPlus')
+        return ProgresHafalan::with('mapelPlus', 'siswa.kelasRombel')
             ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
             ->orderByDesc('tanggal_setoran')
             ->get();

@@ -13,7 +13,9 @@ const navGroups = [
       { href: "/admin/siswa", label: "Data Siswa" },
       { href: "/admin/guru", label: "Data Guru" },
       { href: "/admin/mapel-plus", label: "Mata Pelajaran Plus" },
+      { href: "/admin/praktik", label: "Praktik & Hafalan" },
       { href: "/admin/predikat", label: "Rentang Predikat" },
+      { href: "/admin/sekolah", label: "Profil Sekolah" },
     ],
   },
 ];

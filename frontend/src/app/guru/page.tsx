@@ -16,7 +16,9 @@ interface JadwalItem {
   };
 }
 
-const dayColors: Record<string, string> = {
+type HariWarna = "success" | "warning" | "danger" | "info" | "default" | "purple";
+
+const dayColors: Record<string, HariWarna> = {
   Senin: "info",
   Selasa: "success",
   Rabu: "warning",
@@ -61,7 +63,7 @@ export default function JadwalGuruPage() {
                     Kelas {j.guru_mapel_kelas.kelas_rombel.nama}
                   </p>
                 </div>
-                <Badge variant={(dayColors[j.hari] as any) || "default"}>{j.hari}</Badge>
+                <Badge variant={dayColors[j.hari] ?? "default"}>{j.hari}</Badge>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

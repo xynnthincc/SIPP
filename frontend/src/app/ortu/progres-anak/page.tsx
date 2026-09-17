@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { PageHeader, Card, Select, Badge, Skeleton, EmptyState } from "@/components/ui";
+import { PageHeader, Card, Select, Badge, Skeleton } from "@/components/ui";
 
 interface Anak {
   id: number;
@@ -62,7 +62,6 @@ export default function ProgresAnakPage() {
 
   useEffect(() => {
     if (!anakId) return;
-    setLoading(true);
     Promise.all([
       api.get<ProgresHafalan[]>("/progres-hafalan", { params: { siswa_id: anakId } }),
       api.get<CatatanGuru[]>("/catatan-guru", { params: { siswa_id: anakId } }),
@@ -81,7 +80,7 @@ export default function ProgresAnakPage() {
 
       {anakList.length > 1 && (
         <Card className="mb-6">
-          <Select label="Pilih Anak" value={anakId ?? ""} onChange={(e) => setAnakId(Number(e.target.value))}>
+          <Select label="Pilih Anak" value={anakId ?? ""} onChange={(e) => { setAnakId(Number(e.target.value)); setLoading(true); }}>
             {anakList.map((a) => (
               <option key={a.id} value={a.id}>{a.nama} - {a.kelas_rombel?.nama ?? "-"}</option>
             ))}

@@ -4,6 +4,7 @@ const navItems = [
   { href: "/guru", label: "Jadwal Saya" },
   { href: "/guru/presensi", label: "Input Presensi" },
   { href: "/guru/nilai", label: "Input Nilai" },
+  { href: "/guru/nilai-diniyah", label: "Input Nilai Diniyah" },
   { href: "/guru/progres-hafalan", label: "Progres Hafalan" },
 ];
 

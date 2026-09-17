@@ -10,3 +10,4 @@ export { EmptyState } from "./EmptyState";
 export { PageHeader } from "./PageHeader";
 export { Alert } from "./Alert";
 export { IconButton } from "./IconButton";
+export { Pagination } from "./Pagination";

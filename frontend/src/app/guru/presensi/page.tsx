@@ -39,8 +39,9 @@ export default function PresensiPage() {
   }, []);
 
   useEffect(() => {
+    if (!jadwalId) return;
     const jadwal = jadwals.find((j) => j.id === jadwalId);
-    if (!jadwal) { setSiswas([]); return; }
+    if (!jadwal) return;
     api.get("/siswa", { params: { kelas_rombel_id: jadwal.guru_mapel_kelas.kelas_rombel.id } }).then((res) => {
       const list: Siswa[] = res.data.data ?? res.data;
       setSiswas(list);
@@ -71,7 +72,11 @@ export default function PresensiPage() {
             <Select
               label="Jadwal"
               value={jadwalId ?? ""}
-              onChange={(e) => setJadwalId(Number(e.target.value) || null)}
+              onChange={(e) => {
+                const v = Number(e.target.value) || null;
+                setJadwalId(v);
+                if (!v) setSiswas([]);
+              }}
               placeholder="Pilih jadwal mengajar"
             >
               {jadwals.map((j) => (

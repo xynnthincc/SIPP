@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
-  PageHeader, Card, Button, Input, Skeleton, Modal, ConfirmModal, IconButton, Alert, EmptyState,
+  PageHeader, Card, Button, Skeleton, ConfirmModal, IconButton, Alert, EmptyState,
 } from "@/components/ui";
 
 interface Semester {
@@ -44,13 +45,9 @@ function TogglePill({
 }
 
 export default function TahunAjaranPage() {
+  const router = useRouter();
   const [data, setData] = useState<TahunAjaran[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<TahunAjaran | null>(null);
-  const [nama, setNama] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [hapusTA, setHapusTA] = useState<TahunAjaran | null>(null);
   const [hapusSemester, setHapusSemester] = useState<{ ta: TahunAjaran; semester: Semester } | null>(null);
   const [hapusLoading, setHapusLoading] = useState(false);
@@ -64,47 +61,6 @@ export default function TahunAjaranPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
-
-  function bukaTambah() {
-    setEditing(null);
-    setNama("");
-    setFormError(null);
-    setModalOpen(true);
-  }
-
-  function mulaiEdit(ta: TahunAjaran) {
-    setEditing(ta);
-    setNama(ta.nama);
-    setFormError(null);
-    setModalOpen(true);
-  }
-
-  function tutupForm() {
-    setModalOpen(false);
-    setEditing(null);
-    setNama("");
-    setFormError(null);
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setFormError(null);
-    try {
-      if (editing) {
-        await api.put(`/tahun-ajaran/${editing.id}`, { nama });
-      } else {
-        await api.post("/tahun-ajaran", { nama });
-      }
-      tutupForm();
-      await load();
-    } catch (err: unknown) {
-      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setFormError(pesan?.message ?? "Gagal menyimpan.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function toggleAktif(item: TahunAjaran) {
     await api.put(`/tahun-ajaran/${item.id}`, { is_aktif: !item.is_aktif });
@@ -153,7 +109,7 @@ export default function TahunAjaranPage() {
       <PageHeader
         title="Tahun Ajaran & Semester"
         description="Atur tahun ajaran dan periode penilaian."
-        action={<Button onClick={bukaTambah}>+ Tambah Tahun Ajaran</Button>}
+        action={<Button onClick={() => router.push("/admin/tahun-ajaran/form")}>+ Tambah Tahun Ajaran</Button>}
       />
 
       {hapusError && (
@@ -162,38 +118,13 @@ export default function TahunAjaranPage() {
         </div>
       )}
 
-      <Modal
-        open={modalOpen}
-        onClose={tutupForm}
-        title={editing ? `Edit Tahun Ajaran: ${editing.nama}` : "Tambah Tahun Ajaran"}
-        description="Tahun ajaran baru otomatis dibuat dengan semester Ganjil dan Genap."
-        maxWidth="sm"
-      >
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Nama Tahun Ajaran"
-            value={nama}
-            onChange={(e) => setNama(e.target.value)}
-            placeholder="contoh: 2026/2027"
-            required
-          />
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={tutupForm}>Batal</Button>
-            <Button type="submit" loading={saving}>
-              {editing ? "Simpan Perubahan" : "Simpan"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
       {loading ? (
         <Skeleton className="h-40 w-full" />
       ) : data.length === 0 ? (
         <EmptyState
           title="Belum ada tahun ajaran"
           description="Tambahkan tahun ajaran untuk mulai mengelola kelas dan penilaian."
-          action={<Button onClick={bukaTambah}>+ Tambah Tahun Ajaran</Button>}
+          action={<Button onClick={() => router.push("/admin/tahun-ajaran/form")}>+ Tambah Tahun Ajaran</Button>}
         />
       ) : (
         <div className="space-y-4">
@@ -209,7 +140,7 @@ export default function TahunAjaranPage() {
                   />
                 </div>
                 <div className="flex items-center gap-1">
-                  <IconButton icon="edit" variant="edit" label="Edit tahun ajaran" onClick={() => mulaiEdit(ta)} />
+                  <IconButton icon="edit" variant="edit" label="Edit tahun ajaran" onClick={() => router.push(`/admin/tahun-ajaran/form?id=${ta.id}`)} />
                   <IconButton icon="trash" variant="delete" label="Hapus tahun ajaran" onClick={() => { setHapusTA(ta); setHapusError(null); }} />
                 </div>
               </div>

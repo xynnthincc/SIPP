@@ -25,7 +25,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={`w-full px-4 py-2.5 text-sm glass-input placeholder:text-slate-400 ${
-            error ? "border-red-300 focus:border-red-500 focus:ring-red-500/20" : ""
+            error ? "input-error" : ""
           } ${className}`}
           {...props}
         />

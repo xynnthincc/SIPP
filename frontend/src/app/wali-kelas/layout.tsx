@@ -2,6 +2,7 @@ import { DashboardShell } from "@/components/DashboardShell";
 
 const navItems = [
   { href: "/wali-kelas", label: "Siswa Binaan" },
+  { href: "/wali-kelas/nilai-diniyah", label: "Input Nilai Diniyah" },
   { href: "/wali-kelas/rapor", label: "Rapor Pesantren" },
 ];
 

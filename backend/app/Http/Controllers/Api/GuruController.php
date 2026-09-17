@@ -13,7 +13,7 @@ class GuruController extends Controller
 {
     public function index()
     {
-        return Guru::with('user')->get();
+        return Guru::with('user', 'praktikItems')->get();
     }
 
     /** Buat akun user + profil guru sekaligus */
@@ -72,5 +72,20 @@ class GuruController extends Controller
         $guru->delete();
 
         return response()->noContent();
+    }
+
+    /** Atur item praktik/hafalan yang diampu seorang guru (sync, admin). */
+    public function simpanPraktik(Request $request, Guru $guru)
+    {
+        $data = $request->validate([
+            'praktik_item_ids' => ['array'],
+            'praktik_item_ids.*' => ['exists:praktik_items,id'],
+        ], [
+            'praktik_item_ids.*.exists' => 'Item praktik terpilih tidak valid.',
+        ]);
+
+        $guru->praktikItems()->sync($data['praktik_item_ids'] ?? []);
+
+        return $guru->load('praktikItems');
     }
 }

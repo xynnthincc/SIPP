@@ -7,9 +7,11 @@ interface CardProps {
 }
 
 export function Card({ children, className = "", hover = false }: CardProps) {
+  const hasCustomPadding = /(^|\s)p(x|y|t|b|l|r)?-\d+/.test(className);
+  const isZeroPadding = /(^|\s)p-0(\s|$)/.test(className);
   return (
     <div
-      className={`glass-card p-5 ${hover ? "hover:scale-[1.01] hover:shadow-xl" : ""} ${className}`}
+      className={`glass-card ${hasCustomPadding ? "" : "p-4 sm:p-5"} ${isZeroPadding ? "overflow-hidden" : ""} ${hover ? "hover:border-emerald-300/60" : ""} ${className}`}
     >
       {children}
     </div>

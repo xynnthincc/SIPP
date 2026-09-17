@@ -26,11 +26,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem("sipp_user");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-    setLoading(false);
+    const t = window.setTimeout(() => {
+      const stored = localStorage.getItem("sipp_user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+      setLoading(false);
+    }, 0);
+    return () => window.clearTimeout(t);
   }, []);
 
   async function login(email: string, password: string) {

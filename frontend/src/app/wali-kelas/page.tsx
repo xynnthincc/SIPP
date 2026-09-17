@@ -40,7 +40,7 @@ export default function SiswaBinaanPage() {
       ) : siswas.length === 0 ? (
         <EmptyState title="Tidak ada siswa" description="Kelas yang Anda walikan belum memiliki siswa." />
       ) : (
-        <Card>
+        <Card className="p-0">
           <Table>
             <TableHead>
               <Th>NIS</Th>

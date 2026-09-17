@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { PageHeader, Card, Button, Badge, Skeleton, EmptyState } from "@/components/ui";
+import { PageHeader, Card, Button, Badge, Skeleton, EmptyState, Pagination } from "@/components/ui";
 
 interface Rapor {
   id: number;
@@ -11,21 +12,48 @@ interface Rapor {
   siswa: { nis: string; nama: string; kelas_rombel: { nama: string } | null };
 }
 
+const PER_HALAMAN = 8;
+
+function HalamanRapor({ items, children }: { items: Rapor[]; children: (items: Rapor[]) => ReactNode }) {
+  const [page, setPage] = useState(1);
+  const lastPage = Math.max(1, Math.ceil(items.length / PER_HALAMAN));
+  const safePage = Math.min(page, lastPage);
+  const tampil = items.slice((safePage - 1) * PER_HALAMAN, safePage * PER_HALAMAN);
+
+  return (
+    <div className="space-y-3">
+      {children(tampil)}
+      <Pagination
+        page={safePage}
+        lastPage={lastPage}
+        total={items.length}
+        from={items.length === 0 ? 0 : (safePage - 1) * PER_HALAMAN + 1}
+        to={Math.min(safePage * PER_HALAMAN, items.length)}
+        label="rapor"
+        onPageChange={setPage}
+      />
+    </div>
+  );
+}
+
 export default function ValidasiRaporPage() {
   const [diajukan, setDiajukan] = useState<Rapor[]>([]);
   const [divalidasi, setDivalidasi] = useState<Rapor[]>([]);
+  const [terbit, setTerbit] = useState<Rapor[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  async function load() {
-    setLoading(true);
-    const [a, b] = await Promise.all([
+  function load() {
+    return Promise.all([
       api.get<Rapor[]>("/rapors", { params: { status: "Diajukan" } }),
       api.get<Rapor[]>("/rapors", { params: { status: "Divalidasi" } }),
-    ]);
-    setDiajukan(a.data);
-    setDivalidasi(b.data);
-    setLoading(false);
+      api.get<Rapor[]>("/rapors", { params: { status: "Diterbitkan" } }),
+    ]).then(([a, b, t]) => {
+      setDiajukan(a.data);
+      setDivalidasi(b.data);
+      setTerbit(t.data);
+      setLoading(false);
+    });
   }
 
   useEffect(() => { load(); }, []);
@@ -54,8 +82,8 @@ export default function ValidasiRaporPage() {
         ) : diajukan.length === 0 ? (
           <EmptyState title="Tidak ada rapor" description="Semua rapor sudah divalidasi atau belum ada yang diajukan." />
         ) : (
-          <div className="space-y-3">
-            {diajukan.map((r) => (
+          <HalamanRapor items={diajukan}>
+            {(tampil) => tampil.map((r) => (
               <Card key={r.id}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -78,7 +106,7 @@ export default function ValidasiRaporPage() {
                 </div>
               </Card>
             ))}
-          </div>
+          </HalamanRapor>
         )}
       </div>
 
@@ -90,8 +118,8 @@ export default function ValidasiRaporPage() {
         ) : divalidasi.length === 0 ? (
           <EmptyState title="Tidak ada rapor" description="Belum ada rapor yang menunggu penerbitan." />
         ) : (
-          <div className="space-y-3">
-            {divalidasi.map((r) => (
+          <HalamanRapor items={divalidasi}>
+            {(tampil) => tampil.map((r) => (
               <Card key={r.id}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
@@ -106,7 +134,38 @@ export default function ValidasiRaporPage() {
                 </div>
               </Card>
             ))}
-          </div>
+          </HalamanRapor>
+        )}
+      </div>
+
+      <div>
+        <PageHeader title="Sudah Diterbitkan" description="Rapor yang sudah diterima dan dapat dicetak." />
+
+        {loading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : terbit.length === 0 ? (
+          <EmptyState title="Belum ada rapor" description="Rapor diterbitkan akan tampil di sini." />
+        ) : (
+          <HalamanRapor items={terbit}>
+            {(tampil) => tampil.map((r) => (
+              <Card key={r.id}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-800">
+                      {r.siswa.nama} <span className="text-slate-400 font-mono text-xs">({r.siswa.nis})</span>
+                    </p>
+                    <p className="text-sm text-slate-500">{r.siswa.kelas_rombel?.nama}</p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Badge variant="success">Diterbitkan</Badge>
+                    <Link href={`/rapor-cetak/${r.id}`}>
+                      <Button size="sm" variant="outline">Cetak</Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </HalamanRapor>
         )}
       </div>
     </div>

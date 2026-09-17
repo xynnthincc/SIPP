@@ -123,16 +123,31 @@ export function DashboardShell({
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
+  // Dari semua item yang cocok (exact atau prefix), hanya item dengan href terpanjang
+  // (paling spesifik) yang aktif — supaya menu induk seperti /admin tidak ikut
+  // menyala terus saat berada di /admin/siswa
+  const semuaItem = [...navItems, ...navGroups.flatMap((g) => g.items)];
+  const itemAktif =
+    semuaItem
+      .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+      .sort((a, b) => b.href.length - a.href.length)[0] ?? null;
+
   function isActiveItem(item: NavItem): boolean {
-    return pathname === item.href || pathname.startsWith(item.href + "/");
+    return item === itemAktif;
   }
 
-  const [openGroups, setOpenGroups] = useState<string[]>(() =>
-    navGroups.filter((g) => g.items.some((i) => isActiveItem(i))).map((g) => g.label)
+  // Grup yang berisi item aktif terbuka otomatis (ikut navigasi), user bisa menimpa via toggle
+  const grupAutoTerbuka = new Set(
+    navGroups.filter((g) => g.items.some((i) => i === itemAktif)).map((g) => g.label)
   );
+  const [groupToggle, setGroupToggle] = useState<Record<string, boolean>>({});
+
+  function isGroupOpen(label: string): boolean {
+    return groupToggle[label] ?? grupAutoTerbuka.has(label);
+  }
 
   function toggleGroup(label: string) {
-    setOpenGroups((prev) => prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]);
+    setGroupToggle((prev) => ({ ...prev, [label]: !isGroupOpen(label) }));
   }
 
   if (loading || !user || !allowedRoles.includes(user.role)) {
@@ -171,8 +186,8 @@ export function DashboardShell({
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      <div className="px-5 py-6 flex flex-col items-center text-center border-b border-slate-100">
-        <div className="w-14 h-14 rounded-full bg-white border border-slate-100 shadow-md flex items-center justify-center overflow-hidden mb-3">
+      <div className="px-5 py-6 flex flex-col items-center text-center border-b border-slate-200/70">
+        <div className="w-14 h-14 rounded-full bg-white border border-slate-200/80 flex items-center justify-center overflow-hidden mb-3">
           <img
             src="/drs.png"
             alt="Logo SIPP Darussurur"
@@ -180,7 +195,7 @@ export function DashboardShell({
           />
         </div>
         <p className="text-lg font-semibold text-emerald-900">SIPP Darussurur</p>
-        <p className="text-xs text-slate-500 mt-0.5">{ROLE_LABELS[user.role]}</p>
+        <p className="text-xs text-slate-500 mt-0.5">Sistem Informasi Pembelajaran Pesantren</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -201,7 +216,7 @@ export function DashboardShell({
         ))}
 
         {navGroups.map((group) => {
-          const open = openGroups.includes(group.label);
+          const open = isGroupOpen(group.label);
           return (
             <div key={group.label}>
               <button
@@ -243,18 +258,7 @@ export function DashboardShell({
         })}
       </nav>
 
-      <div className="border-t border-slate-100 p-3">
-        <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-emerald-600/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-emerald-700 text-xs font-semibold">
-              {user.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-700 truncate">{user.name}</p>
-            <p className="text-xs text-slate-400 truncate">{user.email}</p>
-          </div>
-        </div>
+      <div className="border-t border-slate-200/70 p-3">
         <button
           onClick={() => logout()}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
@@ -271,7 +275,7 @@ export function DashboardShell({
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-72 flex-col bg-white border-r border-slate-200 shadow-sm fixed inset-y-0 left-0 z-30">
+      <aside className="hidden lg:flex w-72 flex-col bg-white/75 backdrop-blur-xl border-r border-slate-200/70 fixed inset-y-0 left-0 z-30">
         {sidebarContent}
       </aside>
 
@@ -285,7 +289,7 @@ export function DashboardShell({
 
       {/* Mobile sidebar drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 shadow-xl transition-transform duration-300 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/90 backdrop-blur-xl border-r border-slate-200/70 shadow-lg transition-transform duration-300 lg:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -303,30 +307,66 @@ export function DashboardShell({
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-72 flex flex-col min-h-screen">
-        {/* Mobile top bar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full overflow-hidden">
-              <img
-                src="/drs.png"
-                alt="Logo SIPP"
-                className="w-full h-full object-contain p-1"
-              />
+      <div className="flex-1 lg:ml-72 flex flex-col min-h-screen min-w-0 max-w-full overflow-x-hidden">
+        {/* Desktop navbar */}
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 items-center justify-between gap-4 px-8 bg-white/70 backdrop-blur-md border-b border-slate-200/70">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="w-9 h-9 rounded-xl bg-emerald-600/10 text-emerald-700 flex items-center justify-center shrink-0">
+              <SidebarIcon name={getNavIconName(itemAktif?.label ?? "")} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-800 truncate">{itemAktif?.label ?? "Dashboard"}</p>
+              <p className="text-[11px] text-slate-400 truncate">SIPP Darussurur</p>
             </div>
-            <span className="font-semibold text-sm text-slate-800">SIPP Darussurur</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden xl:inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium">
+              {ROLE_LABELS[user.role]}
+            </span>
+            <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200/80">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-slate-700 truncate max-w-40">{user.name}</p>
+                <p className="text-[11px] text-slate-400 truncate max-w-40">{user.email}</p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-emerald-600/10 border border-emerald-100 flex items-center justify-center shrink-0">
+                <span className="text-emerald-700 text-sm font-semibold">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        {/* Mobile top bar */}
+        <header className="lg:hidden flex items-center justify-between gap-3 px-4 py-3 bg-white/70 backdrop-blur-md border-b border-slate-200/70 sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full overflow-hidden">
+                <img
+                  src="/drs.png"
+                  alt="Logo SIPP"
+                  className="w-full h-full object-contain p-1"
+                />
+              </div>
+              <span className="font-semibold text-sm text-slate-800">SIPP Darussurur</span>
+            </div>
+          </div>
+          <div className="w-8 h-8 rounded-full bg-emerald-600/10 border border-emerald-100 flex items-center justify-center shrink-0">
+            <span className="text-emerald-700 text-xs font-semibold">
+              {user.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 min-w-0 max-w-full">{children}</main>
       </div>
     </div>
   );

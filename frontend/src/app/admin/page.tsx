@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { Badge, Skeleton } from "@/components/ui";
 
 interface Statistik {
   jumlahSiswa: number;
@@ -12,7 +12,7 @@ interface Statistik {
   jumlahKelas: number;
   raporSelesai: number;
   raporTotal: number;
-  siswaAktif: number;
+  siswaAktif: number | null;
   mapelProgres: number;
 }
 
@@ -33,13 +33,19 @@ function useStatistik() {
         const daftarSiswa = siswa.data.data ?? siswa.data;
         const daftarRapor = rapor.data;
         const mapelList = mapel.data;
-        const totalSiswa = Array.isArray(daftarSiswa) ? daftarSiswa.length : 0;
+        const guruList = guru.data;
+        const kelasList = kelas.data;
+        // /siswa untuk admin di-paginate 20/halaman: pakai meta `total` supaya hitungan tidak terpotong
+        const totalSiswa =
+          typeof siswa.data.total === "number"
+            ? siswa.data.total
+            : Array.isArray(daftarSiswa)
+              ? daftarSiswa.length
+              : 0;
         const totalRapor = Array.isArray(daftarRapor) ? daftarRapor.length : 0;
         const selesai = Array.isArray(daftarRapor)
           ? daftarRapor.filter((r: { status: string }) => r.status === "Diterbitkan").length
           : 0;
-        const guruList = guru.data;
-        const kelasList = kelas.data;
         setData({
           jumlahSiswa: totalSiswa,
           jumlahGuru: Array.isArray(guruList) ? guruList.length : 0,
@@ -47,8 +53,14 @@ function useStatistik() {
           jumlahKelas: Array.isArray(kelasList) ? kelasList.length : 0,
           raporSelesai: selesai,
           raporTotal: totalRapor,
-          siswaAktif: Array.isArray(daftarSiswa) ? daftarSiswa.filter((s: { is_aktif: boolean }) => s.is_aktif !== false).length : 0,
-          mapelProgres: mapelList.filter((m: { punya_progres_hafalan: boolean }) => m.punya_progres_hafalan).length,
+          // Jumlah "aktif" hanya akurat bila daftar siswa tidak terpotong paginasi
+          siswaAktif:
+            Array.isArray(daftarSiswa) && daftarSiswa.length === totalSiswa
+              ? daftarSiswa.filter((s: { is_aktif: boolean }) => s.is_aktif !== false).length
+              : null,
+          mapelProgres: Array.isArray(mapelList)
+            ? mapelList.filter((m: { punya_progres_hafalan: boolean }) => m.punya_progres_hafalan).length
+            : 0,
         });
       })
       .catch(() => {
@@ -103,36 +115,67 @@ function StatCard({
   );
 }
 
-interface ProgresItem {
-  siswa: string;
-  kelas: string;
-  juz: string;
-  persen: number;
+interface SetoranHafalan {
+  id: number;
+  siswa_id: number;
+  tanggal_setoran: string;
+  materi: string;
+  status: string;
+  mapel_plus: { nama: string } | null;
+  siswa: { nama: string; kelas_rombel: { nama: string } | null } | null;
 }
 
-function ProgresRow({ item }: { item: ProgresItem }) {
+interface PresensiItem {
+  id: number;
+  tanggal: string;
+  status: "Hadir" | "Sakit" | "Izin" | "Alpa";
+}
+
+const HAFALAN_VARIANT: Record<string, "success" | "warning" | "danger"> = {
+  Lancar: "success",
+  "Perlu Perbaikan": "warning",
+  Mengulang: "danger",
+};
+
+const LEGENDA_PRESENSI = [
+  { status: "Hadir", dot: "bg-emerald-500" },
+  { status: "Sakit", dot: "bg-amber-500" },
+  { status: "Izin", dot: "bg-blue-500" },
+  { status: "Alpa", dot: "bg-red-500" },
+] as const;
+
+function formatTanggal(nilai: string): string {
+  const d = new Date(nilai);
+  return Number.isNaN(d.getTime())
+    ? nilai
+    : d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatHari(nilai: string): string {
+  const d = new Date(nilai);
+  return Number.isNaN(d.getTime())
+    ? nilai
+    : d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+}
+
+function SetoranRow({ item }: { item: SetoranHafalan }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
+    <div className="flex items-start gap-3">
       <div className="w-11 h-11 rounded-full bg-emerald-700/10 text-emerald-800 flex items-center justify-center font-bold shrink-0">
-        {item.siswa.charAt(0)}
+        {item.siswa?.nama?.charAt(0) ?? "?"}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="flex justify-between items-end mb-1.5">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-800 truncate">{item.siswa}</p>
-            <p className="text-xs text-slate-400">{item.kelas}</p>
-          </div>
-          <span className="text-sm font-semibold text-emerald-700 align-baseline">
-            {item.persen}%
-          </span>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-medium text-slate-800 truncate">
+            {item.siswa?.nama ?? `Siswa #${item.siswa_id}`}
+          </p>
+          <Badge variant={HAFALAN_VARIANT[item.status] ?? "default"}>{item.status}</Badge>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-2">
-          <div
-            className="bg-gradient-to-r from-emerald-500 to-emerald-700 h-2 rounded-full transition-all duration-1000"
-            style={{ width: `${item.persen}%` }}
-          />
-        </div>
-        <p className="text-[11px] text-slate-400 mt-1">{item.juz}</p>
+        <p className="text-xs text-slate-400">{item.siswa?.kelas_rombel?.nama ?? "Tanpa kelas"}</p>
+        <p className="text-sm text-slate-600 mt-1 truncate">{item.materi}</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">
+          {item.mapel_plus?.nama ?? "-"} • {formatTanggal(item.tanggal_setoran)}
+        </p>
       </div>
     </div>
   );
@@ -141,16 +184,68 @@ function ProgresRow({ item }: { item: ProgresItem }) {
 export default function AdminHomePage() {
   const { user } = useAuth();
   const stat = useStatistik();
+  const [presensi, setPresensi] = useState<PresensiItem[] | null>(null);
+  const [setoran, setSetoran] = useState<SetoranHafalan[] | null>(null);
+
+  useEffect(() => {
+    let aktif = true;
+    api
+      .get<PresensiItem[]>("/presensi")
+      .then((r) => {
+        if (aktif) setPresensi(r.data);
+      })
+      .catch(() => {
+        if (aktif) setPresensi([]);
+      });
+    api
+      .get<SetoranHafalan[]>("/progres-hafalan")
+      .then((r) => {
+        if (aktif) setSetoran(r.data);
+      })
+      .catch(() => {
+        if (aktif) setSetoran([]);
+      });
+    return () => {
+      aktif = false;
+    };
+  }, []);
+
+  const rekapKehadiran = useMemo(() => {
+    if (!presensi) return null;
+    const hitung: Record<string, number> = { Hadir: 0, Sakit: 0, Izin: 0, Alpa: 0 };
+    for (const p of presensi) {
+      hitung[p.status] = (hitung[p.status] ?? 0) + 1;
+    }
+    const total = presensi.length;
+    return {
+      hitung,
+      total,
+      persenHadir: total > 0 ? Math.round((hitung.Hadir / total) * 100) : 0,
+    };
+  }, [presensi]);
+
+  const kehadiranPerHari = useMemo(() => {
+    if (!presensi) return [];
+    const perTanggal = new Map<string, { total: number; hadir: number }>();
+    for (const p of presensi) {
+      const cur = perTanggal.get(p.tanggal) ?? { total: 0, hadir: 0 };
+      cur.total += 1;
+      if (p.status === "Hadir") cur.hadir += 1;
+      perTanggal.set(p.tanggal, cur);
+    }
+    return [...perTanggal.entries()]
+      .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+      .slice(0, 7)
+      .reverse()
+      .map(([tanggal, v]) => ({
+        tanggal,
+        persen: v.total > 0 ? Math.round((v.hadir / v.total) * 100) : 0,
+      }));
+  }, [presensi]);
 
   const raporPersen = stat && stat.raporTotal > 0
     ? Math.min(100, Math.round((stat.raporSelesai / stat.raporTotal) * 100))
     : 0;
-
-  const progresItems: ProgresItem[] = [
-    { siswa: "Ahmad Fauzan", kelas: "Kelas 9A", juz: "Juz 30 & Juz 1", persen: 85 },
-    { siswa: "Muhammad Rizky", kelas: "Kelas 8B", juz: "Juz 30", persen: 60 },
-    { siswa: "Siti Aisyah", kelas: "Kelas 9C", juz: "Juz 30, Juz 1, Juz 2", persen: 92 },
-  ];
 
   const greeting = `Assalamu'alaikum, ${user?.name?.split(" ")[0] ?? "Administrator"} 👋`;
 
@@ -166,7 +261,7 @@ export default function AdminHomePage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Siswa" value={stat ? String(stat.jumlahSiswa) : "—"} icon="siswa" tone="mint" hint={stat ? `${stat.siswaAktif} aktif` : undefined} />
+        <StatCard label="Total Siswa" value={stat ? String(stat.jumlahSiswa) : "—"} icon="siswa" tone="mint" hint={stat && stat.siswaAktif !== null ? `${stat.siswaAktif} aktif` : undefined} />
         <StatCard label="Total Guru" value={stat ? String(stat.jumlahGuru) : "—"} icon="guru" tone="amber" hint="Staf pengajar" />
         <StatCard label="Mata Pelajaran" value={stat ? String(stat.jumlahMapel) : "—"} icon="mapel" tone="emerald" hint={stat ? `${stat.mapelProgres} dengan progres hafalan` : undefined} />
         <StatCard label="Kelas / Rombel" value={stat ? String(stat.jumlahKelas) : "—"} icon="kelas" tone="mint" hint="Rombongan belajar" />
@@ -174,32 +269,63 @@ export default function AdminHomePage() {
 
       {/* Rapor + Kehadiran */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        {/* Kehadiran chart placeholder */}
+        {/* Kehadiran chart dinamis dari /presensi */}
         <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-xl font-semibold text-slate-900">Statistik Kehadiran Siswa</h3>
-              <p className="text-sm text-slate-500">Ringkasan bulan ini</p>
+              <p className="text-sm text-slate-500">Persentase hadir 7 hari pertemuan terakhir</p>
             </div>
-            <Link
-              href="/admin/tahun-ajaran"
-              className="flex items-center gap-2 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              Filter <span className="text-xs">▾</span>
-            </Link>
+            {rekapKehadiran && (
+              <span className="px-3 py-1.5 rounded-lg bg-emerald-700/10 text-emerald-800 text-sm font-semibold">
+                {rekapKehadiran.persenHadir}% hadir
+              </span>
+            )}
           </div>
-          <div className="w-full h-64 bg-white rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-center px-6">
-            <div>
-              <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-700">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-                </svg>
+          {presensi === null || rekapKehadiran === null ? (
+            <Skeleton className="h-64 w-full" />
+          ) : kehadiranPerHari.length === 0 ? (
+            <div className="w-full h-64 bg-white rounded-lg border border-dashed border-slate-200 flex items-center justify-center text-center px-6">
+              <div>
+                <div className="w-12 h-12 mx-auto mb-3 flex items-center justify-center rounded-xl bg-emerald-700/10 text-emerald-700">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                  </svg>
+                </div>
+                <p className="text-sm text-slate-500">
+                  Grafik kehadiran akan tampil di sini setelah data presensi masuk.
+                </p>
               </div>
-              <p className="text-sm text-slate-500">
-                Grafik kehadiran akan tampil di sini setelah data presensi masuk.
-              </p>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div className="flex items-end justify-between gap-3 h-48">
+                {kehadiranPerHari.map((d) => (
+                  <div key={d.tanggal} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
+                    <span className="text-xs font-semibold text-slate-600">{d.persen}%</span>
+                    <div className="w-full max-w-14 bg-slate-100 rounded-t-lg h-28 flex flex-col justify-end overflow-hidden">
+                      <div
+                        className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-700"
+                        style={{ height: `${d.persen}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-slate-400 truncate">{formatHari(d.tanggal)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5 pt-4 border-t border-slate-100 text-sm">
+                <span className="text-slate-400">
+                  Total {rekapKehadiran.total} presensi tercatat
+                </span>
+                {LEGENDA_PRESENSI.map((l) => (
+                  <span key={l.status} className="inline-flex items-center gap-1.5 text-slate-600">
+                    <span className={`w-2.5 h-2.5 rounded-full ${l.dot}`} />
+                    {l.status} <span className="font-semibold">{rekapKehadiran.hitung[l.status] ?? 0}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Rapor progress */}
@@ -225,22 +351,31 @@ export default function AdminHomePage() {
         </div>
       </div>
 
-      {/* Progress Tahfidz */}
+      {/* Aktivitas hafalan terbaru */}
       <div className="bg-white rounded-xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-xl font-semibold text-slate-900">Progress Tahfidz Siswa</h3>
-            <p className="text-sm text-slate-500">Top Achievers — Semester Ganjil</p>
+            <h3 className="text-xl font-semibold text-slate-900">Aktivitas Hafalan Terbaru</h3>
+            <p className="text-sm text-slate-500">6 setoran hafalan siswa terakhir</p>
           </div>
-          <Link href="/guru/progres-hafalan" className="text-sm font-medium text-emerald-700 hover:underline">
-            Lihat Semua
-          </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {progresItems.map((item) => (
-            <ProgresRow key={item.siswa} item={item} />
-          ))}
-        </div>
+        {setoran === null ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : setoran.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Belum ada setoran hafalan yang dicatat guru.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {setoran.slice(0, 6).map((item) => (
+              <SetoranRow key={item.id} item={item} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

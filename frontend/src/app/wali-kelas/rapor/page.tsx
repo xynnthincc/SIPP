@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { PageHeader, Card, Button, Badge, Skeleton, EmptyState, Table, TableHead, TableBody, Th, Td, TableRow, Modal } from "@/components/ui";
+import { PageHeader, Card, Button, Badge, Skeleton, EmptyState, Table, TableHead, TableBody, Th, Td, TableRow, Modal, Pagination } from "@/components/ui";
+
+const PER_HALAMAN = 10;
 
 interface Siswa {
   id: number;
@@ -68,6 +71,11 @@ export default function RaporWaliKelasPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [deskripsiLoading, setDeskripsiLoading] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const [halaman, setHalaman] = useState(1);
+
+  const halamanTerakhir = Math.max(1, Math.ceil(siswas.length / PER_HALAMAN));
+  const halamanAman = Math.min(halaman, halamanTerakhir);
+  const siswaTampil = siswas.slice((halamanAman - 1) * PER_HALAMAN, halamanAman * PER_HALAMAN);
 
   const load = useCallback(() => {
     Promise.all([
@@ -164,7 +172,7 @@ export default function RaporWaliKelasPage() {
       ) : siswas.length === 0 ? (
         <EmptyState title="Tidak ada siswa" description="Tidak ada siswa yang perlu diraporkan." />
       ) : (
-        <Card>
+        <Card className="p-0">
           <Table>
             <TableHead>
               <Th>NIS</Th>
@@ -173,7 +181,7 @@ export default function RaporWaliKelasPage() {
               <Th>Aksi</Th>
             </TableHead>
             <TableBody>
-              {siswas.map((s) => {
+              {siswaTampil.map((s) => {
                 const rapor = raporUntuk(s.id);
                 const status = rapor?.status;
                 return (
@@ -185,7 +193,7 @@ export default function RaporWaliKelasPage() {
                         {status ?? "Belum disusun"}
                       </Badge>
                     </Td>
-                    <Td>
+                    <Td className="whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         {!rapor && (
                           <Button size="sm" onClick={() => susunDraft(s.id)}>Susun Draft</Button>
@@ -195,6 +203,11 @@ export default function RaporWaliKelasPage() {
                             {status === "Ditolak" ? "Ajukan Ulang" : "Ajukan"}
                           </Button>
                         )}
+                        {status === "Diterbitkan" && (
+                          <Link href={`/rapor-cetak/${rapor!.id}`}>
+                            <Button size="sm" variant="outline">Cetak</Button>
+                          </Link>
+                        )}
                         <Button size="sm" variant="outline" onClick={() => bukaDetail(s)}>Detail</Button>
                       </div>
                     </Td>
@@ -203,6 +216,15 @@ export default function RaporWaliKelasPage() {
               })}
             </TableBody>
           </Table>
+          <Pagination
+            page={halamanAman}
+            lastPage={halamanTerakhir}
+            total={siswas.length}
+            from={siswas.length === 0 ? 0 : (halamanAman - 1) * PER_HALAMAN + 1}
+            to={Math.min(halamanAman * PER_HALAMAN, siswas.length)}
+            label="siswa"
+            onPageChange={setHalaman}
+          />
         </Card>
       )}
 

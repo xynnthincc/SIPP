@@ -1,16 +1,21 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
-  PageHeader, Card, Button, Input, Select, Table, TableHead, TableBody, Th, Td, TableRow,
-  Badge, Skeleton, EmptyState, Modal, ConfirmModal, IconButton, Alert,
+  PageHeader, Card, Button, Table, TableHead, TableBody, Th, Td, TableRow,
+  Badge, Skeleton, EmptyState, ConfirmModal, IconButton, Alert,
 } from "@/components/ui";
 
 interface MapelPlus {
   id: number;
   kode: string;
   nama: string;
+  nama_ar: string | null;
+  kelompok: string | null;
+  kkm_default: number;
+  urutan: number;
   deskripsi: string | null;
   punya_progres_hafalan: boolean;
   jenis_assessments_count: number;
@@ -23,25 +28,14 @@ interface JenisAssessment {
   bobot: number;
 }
 
-const emptyMapel = { kode: "", nama: "", punya_progres_hafalan: false };
-
 export default function MapelPlusPage() {
+  const router = useRouter();
   const [data, setData] = useState<MapelPlus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mapelModal, setMapelModal] = useState(false);
-  const [editingMapel, setEditingMapel] = useState<MapelPlus | null>(null);
-  const [mapelForm, setMapelForm] = useState(emptyMapel);
-  const [mapelError, setMapelError] = useState<string | null>(null);
-  const [savingMapel, setSavingMapel] = useState(false);
 
   const [mapelTerbuka, setMapelTerbuka] = useState<number | null>(null);
   const [jenisList, setJenisList] = useState<JenisAssessment[]>([]);
   const [loadingJenis, setLoadingJenis] = useState(false);
-  const [jenisModal, setJenisModal] = useState(false);
-  const [editingJenis, setEditingJenis] = useState<JenisAssessment | null>(null);
-  const [jenisForm, setJenisForm] = useState({ nama: "", kategori: "sumatif", bobot: "100" });
-  const [jenisError, setJenisError] = useState<string | null>(null);
-  const [savingJenis, setSavingJenis] = useState(false);
   const [hapus, setHapus] = useState<{ tipe: "mapel" | "jenis"; id: number; nama: string } | null>(null);
   const [hapusLoading, setHapusLoading] = useState(false);
   const [hapusError, setHapusError] = useState<string | null>(null);
@@ -71,103 +65,6 @@ export default function MapelPlusPage() {
     muatJenis(id);
   }
 
-  function bukaTambahMapel() {
-    setEditingMapel(null);
-    setMapelForm(emptyMapel);
-    setMapelError(null);
-    setMapelModal(true);
-  }
-
-  function mulaiEditMapel(m: MapelPlus) {
-    setEditingMapel(m);
-    setMapelForm({ kode: m.kode, nama: m.nama, punya_progres_hafalan: m.punya_progres_hafalan });
-    setMapelError(null);
-    setMapelModal(true);
-  }
-
-  function tutupMapelModal() {
-    setMapelModal(false);
-    setEditingMapel(null);
-    setMapelForm(emptyMapel);
-    setMapelError(null);
-  }
-
-  async function handleMapelSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSavingMapel(true);
-    setMapelError(null);
-    try {
-      if (editingMapel) {
-        await api.put(`/mapel-plus/${editingMapel.id}`, {
-          nama: mapelForm.nama,
-          punya_progres_hafalan: mapelForm.punya_progres_hafalan,
-        });
-      } else {
-        await api.post("/mapel-plus", mapelForm);
-      }
-      tutupMapelModal();
-      await load();
-    } catch (err: unknown) {
-      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setMapelError(pesan?.message ?? "Gagal menyimpan mapel.");
-    } finally {
-      setSavingMapel(false);
-    }
-  }
-
-  function bukaTambahJenis() {
-    if (mapelTerbuka === null) return;
-    setEditingJenis(null);
-    setJenisForm({ nama: "", kategori: "sumatif", bobot: "100" });
-    setJenisError(null);
-    setJenisModal(true);
-  }
-
-  function mulaiEditJenis(j: JenisAssessment) {
-    setEditingJenis(j);
-    setJenisForm({ nama: j.nama, kategori: j.kategori, bobot: String(j.bobot) });
-    setJenisError(null);
-    setJenisModal(true);
-  }
-
-  function tutupJenisModal() {
-    setJenisModal(false);
-    setEditingJenis(null);
-    setJenisForm({ nama: "", kategori: "sumatif", bobot: "100" });
-    setJenisError(null);
-  }
-
-  async function handleJenisSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (mapelTerbuka === null) return;
-    setSavingJenis(true);
-    setJenisError(null);
-    try {
-      if (editingJenis) {
-        await api.put(`/jenis-assessment/${editingJenis.id}`, {
-          nama: jenisForm.nama,
-          kategori: jenisForm.kategori,
-          bobot: Number(jenisForm.bobot),
-        });
-      } else {
-        await api.post("/jenis-assessment", {
-          mapel_plus_id: mapelTerbuka,
-          nama: jenisForm.nama,
-          kategori: jenisForm.kategori,
-          bobot: Number(jenisForm.bobot),
-        });
-      }
-      tutupJenisModal();
-      await load();
-      muatJenis(mapelTerbuka);
-    } catch (err: unknown) {
-      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setJenisError(pesan?.message ?? "Gagal menyimpan jenis assessment.");
-    } finally {
-      setSavingJenis(false);
-    }
-  }
-
   async function handleHapus() {
     if (!hapus) return;
     setHapusLoading(true);
@@ -195,7 +92,7 @@ export default function MapelPlusPage() {
       <PageHeader
         title="Mata Pelajaran Plus"
         description="Tahfidz, Tahsin, Kitab Kuning, Bahasa Arab, Akhlak — beserta jenis assessment (formatif/sumatif)."
-        action={<Button onClick={bukaTambahMapel}>+ Tambah Mapel</Button>}
+        action={<Button onClick={() => router.push("/admin/mapel-plus/form")}>+ Tambah Mapel</Button>}
       />
 
       {hapusError && (
@@ -204,99 +101,13 @@ export default function MapelPlusPage() {
         </div>
       )}
 
-      <Modal
-        open={mapelModal}
-        onClose={tutupMapelModal}
-        title={editingMapel ? `Edit Mapel: ${editingMapel.nama}` : "Tambah Mata Pelajaran Plus"}
-        description="Mapel plus adalah mata pelajaran kepesantrenan di luar mapel umum."
-        maxWidth="sm"
-      >
-        <form onSubmit={handleMapelSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Kode"
-            value={mapelForm.kode}
-            onChange={(e) => setMapelForm({ ...mapelForm, kode: e.target.value.toUpperCase() })}
-            placeholder="TAHFIDZ"
-            required
-            disabled={!!editingMapel}
-            hint={editingMapel ? "Kode tidak dapat diubah" : undefined}
-          />
-          <Input
-            label="Nama Mapel"
-            value={mapelForm.nama}
-            onChange={(e) => setMapelForm({ ...mapelForm, nama: e.target.value })}
-            placeholder="Tahfidz Al-Quran"
-            required
-          />
-          <label className="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer pt-1">
-            <input
-              type="checkbox"
-              checked={mapelForm.punya_progres_hafalan}
-              onChange={(e) => setMapelForm({ ...mapelForm, punya_progres_hafalan: e.target.checked })}
-              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-            />
-            Punya tracker hafalan
-          </label>
-          {mapelError && <p className="text-sm text-red-600">{mapelError}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={tutupMapelModal}>Batal</Button>
-            <Button type="submit" loading={savingMapel}>
-              {editingMapel ? "Simpan Perubahan" : "Simpan Mapel"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal
-        open={jenisModal}
-        onClose={tutupJenisModal}
-        title={editingJenis ? `Edit: ${editingJenis.nama}` : "Tambah Jenis Assessment"}
-        description="Sumatif dihitung dengan bobotnya; formatif hanya sebagai umpan balik proses."
-        maxWidth="sm"
-      >
-        <form onSubmit={handleJenisSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Nama Jenis Assessment"
-            value={jenisForm.nama}
-            onChange={(e) => setJenisForm({ ...jenisForm, nama: e.target.value })}
-            placeholder="contoh: Ujian Tengah Semester"
-            required
-          />
-          <Select
-            label="Kategori"
-            value={jenisForm.kategori}
-            onChange={(e) => setJenisForm({ ...jenisForm, kategori: e.target.value })}
-          >
-            <option value="sumatif">Sumatif (dihitung)</option>
-            <option value="formatif">Formatif (proses)</option>
-          </Select>
-          <Input
-            label="Bobot (%)"
-            type="number"
-            min={0}
-            max={100}
-            value={jenisForm.bobot}
-            onChange={(e) => setJenisForm({ ...jenisForm, bobot: e.target.value })}
-            required
-            hint="Khusus sumatif — total bobot sumatif tiap mapel idealnya 100%"
-          />
-          {jenisError && <p className="text-sm text-red-600">{jenisError}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={tutupJenisModal}>Batal</Button>
-            <Button type="submit" loading={savingJenis}>
-              {editingJenis ? "Simpan Perubahan" : "Simpan Jenis"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
       {loading ? (
         <Skeleton className="h-40 w-full" />
       ) : data.length === 0 ? (
         <EmptyState
           title="Belum ada mapel plus"
           description="Tambahkan mata pelajaran kepesantrenan baru."
-          action={<Button onClick={bukaTambahMapel}>+ Tambah Mapel</Button>}
+          action={<Button onClick={() => router.push("/admin/mapel-plus/form")}>+ Tambah Mapel</Button>}
         />
       ) : (
         <div className="space-y-3">
@@ -307,17 +118,37 @@ export default function MapelPlusPage() {
                 <div className="flex items-center justify-between gap-3 px-5 py-4">
                   <button
                     onClick={() => toggleMapel(m.id)}
-                    className="flex flex-wrap items-center gap-3 text-left cursor-pointer min-w-0"
+                    className="flex flex-col items-start gap-2 text-left cursor-pointer min-w-0"
                   >
-                    <span className="font-mono text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5 shrink-0">
-                      {m.kode}
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-0.5">
+                        {m.kode}
+                      </span>
+                      {m.punya_progres_hafalan && (
+                        <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5">
+                          Hafalan
+                        </span>
+                      )}
                     </span>
-                    <span className="font-medium text-slate-800">{m.nama}</span>
-                    {m.punya_progres_hafalan && <Badge variant="success">Hafalan</Badge>}
-                    <Badge variant="default">{m.jenis_assessments_count} assessment</Badge>
+                    <span className="flex flex-wrap items-baseline gap-x-2.5 min-w-0 w-full">
+                      <span className="font-semibold text-slate-800">{m.nama}</span>
+                      {m.nama_ar && (
+                        <>
+                          <span className="text-slate-300 select-none">|</span>
+                          <span className="text-sm text-slate-500 font-medium" dir="rtl">{m.nama_ar}</span>
+                        </>
+                      )}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      KKM <span className="font-semibold text-slate-700">{Number(m.kkm_default)}</span>
+                      <span className="mx-1.5 text-slate-300">•</span>
+                      Urutan <span className="font-semibold text-slate-700">{Number(m.urutan)}</span>
+                      <span className="mx-1.5 text-slate-300">•</span>
+                      <span className="font-semibold text-slate-700">{m.jenis_assessments_count}</span> jenis assessment
+                    </span>
                   </button>
                   <div className="flex items-center gap-1 shrink-0">
-                    <IconButton icon="edit" variant="edit" label="Edit mapel" onClick={() => mulaiEditMapel(m)} />
+                    <IconButton icon="edit" variant="edit" label="Edit mapel" onClick={() => router.push(`/admin/mapel-plus/form?id=${m.id}`)} />
                     <IconButton
                       icon="trash"
                       variant="delete"
@@ -347,7 +178,7 @@ export default function MapelPlusPage() {
                       <>
                         <div className="flex items-center justify-between mb-3">
                           <p className="text-sm font-medium text-slate-600">Jenis Assessment</p>
-                          <Button size="sm" variant="outline" onClick={bukaTambahJenis}>+ Tambah Jenis</Button>
+                          <Button size="sm" variant="outline" onClick={() => router.push(`/admin/mapel-plus/jenis-form?mapel_id=${m.id}`)}>+ Tambah Jenis</Button>
                         </div>
                         {jenisList.length === 0 ? (
                           <p className="text-sm text-slate-400 mb-2">Belum ada jenis assessment untuk mapel ini.</p>
@@ -378,7 +209,7 @@ export default function MapelPlusPage() {
                                     </Td>
                                     <Td>
                                       <div className="flex items-center justify-end gap-1">
-                                        <IconButton icon="edit" variant="edit" label="Edit jenis assessment" onClick={() => mulaiEditJenis(j)} />
+                                        <IconButton icon="edit" variant="edit" label="Edit jenis assessment" onClick={() => router.push(`/admin/mapel-plus/jenis-form?mapel_id=${m.id}&id=${j.id}`)} />
                                         <IconButton
                                           icon="trash"
                                           variant="delete"
