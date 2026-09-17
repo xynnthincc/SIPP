@@ -114,7 +114,7 @@ export default function SiswaHomePage() {
     <div className="animate-fade-in space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <PageHeader
-          title={`Halo, ${user?.name?.split(" ")[0] ?? "Siswa"} 👋`}
+          title={`Halo, ${user?.name?.split(" ")[0] ?? "Siswa"}`}
           description="Ringkasan hafalan, kehadiran, dan rapor pesantren Anda."
         />
         <Link href="/siswa/rapor" className="shrink-0">

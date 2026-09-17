@@ -236,11 +236,11 @@ function CetakBiodataView() {
               variant="outline"
               onClick={() => router.push(`/rapor-cetak?siswa_id=${siswa.id}`)}
             >
-              📖 Cetak Rapor
+              Cetak Rapor
             </Button>
           )}
           <Button onClick={() => window.print()}>
-            🖨️ Cetak / Simpan sebagai PDF
+            Cetak / Simpan sebagai PDF
           </Button>
         </div>
       </div>
