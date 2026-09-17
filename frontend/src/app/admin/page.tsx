@@ -277,7 +277,7 @@ export default function AdminHomePage() {
     ? Math.min(100, Math.round((raporProgres.lengkap / raporProgres.total) * 100))
     : 0;
 
-  const greeting = `Assalamu'alaikum, ${user?.name?.split(" ")[0] ?? "Administrator"}`;
+  const greeting = `Assalamu'alaikum, ${user?.name?.split(" ")[0] ?? "Administrator"} 👋`;
 
   return (
     <div className="animate-fade-in max-w-7xl mx-auto">
