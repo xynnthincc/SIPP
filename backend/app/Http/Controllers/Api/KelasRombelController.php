@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\KelasRombel;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class KelasRombelController extends Controller
@@ -27,7 +28,10 @@ class KelasRombelController extends Controller
             'tahun_ajaran_id' => ['required', 'exists:tahun_ajarans,id'],
         ]);
 
-        return KelasRombel::create($data);
+        $kelas = KelasRombel::create($data);
+        $this->sinkronRoleWali($data['wali_kelas_id'] ?? null);
+
+        return $kelas;
     }
 
     public function update(Request $request, KelasRombel $kelasRombel)
@@ -38,7 +42,14 @@ class KelasRombelController extends Controller
             'wali_kelas_id' => ['nullable', 'exists:users,id'],
         ]);
 
+        $waliLama = $kelasRombel->wali_kelas_id;
         $kelasRombel->update($data);
+
+        // Sinkron role bila penunjukan wali kelas berubah
+        if (array_key_exists('wali_kelas_id', $data) && $data['wali_kelas_id'] !== $waliLama) {
+            $this->sinkronRoleWali($waliLama);
+            $this->sinkronRoleWali($data['wali_kelas_id']);
+        }
 
         return $kelasRombel;
     }
@@ -54,8 +65,35 @@ class KelasRombelController extends Controller
             abort(422, 'Kelas ini masih tercatat di penugasan guru. Hapus penugasannya terlebih dahulu.');
         }
 
+        $wali = $kelasRombel->wali_kelas_id;
         $kelasRombel->delete();
+        $this->sinkronRoleWali($wali);
 
         return response()->noContent();
+    }
+
+    /**
+     * Jaga konsistensi role: user yang ditunjuk wali kelas mendapat role
+     * wali_kelas; wali lama yang sudah tidak mengwalikan kelas mana pun
+     * dikembalikan ke guru_pesantren. Role selain keduanya tidak disentuh.
+     */
+    private function sinkronRoleWali(?int $userId): void
+    {
+        if ($userId === null) {
+            return;
+        }
+
+        $user = User::find($userId);
+        if (! $user || ! $user->guru) {
+            return;
+        }
+
+        if (KelasRombel::where('wali_kelas_id', $user->id)->exists()) {
+            if ($user->role === User::ROLE_GURU_PESANTREN) {
+                $user->update(['role' => User::ROLE_WALI_KELAS]);
+            }
+        } elseif ($user->role === User::ROLE_WALI_KELAS) {
+            $user->update(['role' => User::ROLE_GURU_PESANTREN]);
+        }
     }
 }

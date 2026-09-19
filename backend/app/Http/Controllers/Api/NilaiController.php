@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Concerns\ScopesSiswaAccess;
 use App\Http\Controllers\Controller;
+use App\Models\GuruMapelKelas;
+use App\Models\JenisAssessment;
 use App\Models\Nilai;
 use App\Models\PredikatRange;
 use App\Models\Semester;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 
 class NilaiController extends Controller
@@ -49,6 +52,28 @@ class NilaiController extends Controller
 
         $semester = Semester::findOrFail($data['semester_id']);
         abort_unless($semester->penilaian_dibuka, 422, 'Periode penilaian semester ini sudah ditutup.');
+
+        // Guru hanya boleh mencatat nilai pada mapel & kelas yang diampunya
+        // di semester tersebut; admin bebas.
+        $user = $request->user();
+        if ($user->hasRole('guru_pesantren')) {
+            $jenis = JenisAssessment::findOrFail($data['jenis_assessment_id']);
+            $kelasDiampu = GuruMapelKelas::where('guru_id', $user->guru?->id)
+                ->where('mapel_plus_id', $jenis->mapel_plus_id)
+                ->where('semester_id', $semester->id)
+                ->pluck('kelas_rombel_id');
+
+            $kelasSiswa = Siswa::whereIn('id', collect($data['nilai'])->pluck('siswa_id'))
+                ->pluck('kelas_rombel_id', 'id');
+
+            foreach ($kelasSiswa as $siswaId => $kelasRombelId) {
+                abort_unless(
+                    $kelasDiampu->contains($kelasRombelId),
+                    403,
+                    'Anda tidak mengampu mata pelajaran ini untuk salah satu siswa tersebut.'
+                );
+            }
+        }
 
         $hasil = collect($data['nilai'])->map(function ($item) use ($data, $request) {
             return Nilai::updateOrCreate(

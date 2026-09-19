@@ -64,5 +64,8 @@ class DatabaseSeeder extends Seeder
 
         // Data operasional pesantren: mapel plus, guru, kelas, pengampu, jadwal, siswa − idempoten
         $this->call(DataPesantrenSeeder::class);
+
+        // Jenis penilaian default untuk tiap mapel (UH/Tugas/UTS/UAS) − idempoten
+        $this->call(JenisAssessmentSeeder::class);
     }
 }

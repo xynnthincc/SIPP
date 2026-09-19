@@ -93,7 +93,11 @@ export default function NilaiDiniyahInput() {
       const aktif = res.data.find((s) => s.is_aktif);
       if (aktif) setSemesterId(String(aktif.id));
     }).catch(() => setSemesters([]));
-    api.get<KelasLite[]>("/kelas-rombel").then((res) => setKelasList(res.data)).catch(() => setKelasList([]));
+    api.get<KelasLite[]>("/kelas-rombel").then((res) => {
+      setKelasList(res.data);
+      // Wali kelas hanya punya satu kelas binaan — langsung terpilih otomatis
+      if (res.data.length === 1) setKelasId(String(res.data[0].id));
+    }).catch(() => setKelasList([]));
   }, []);
 
   const muatSiswa = useCallback(() => {
@@ -253,7 +257,7 @@ export default function NilaiDiniyahInput() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-semibold text-slate-800">Nilai Mapel Plus</h3>
-                <p className="text-xs text-slate-400">Nilai akhir mengikuti nilai langsung bila terisi; jika kosong memakai agregasi sumatif.</p>
+                <p className="text-xs text-slate-400">Nilai terisi = nilai akhir langsung dari guru mapel (menimpa perhitungan asesmen); jika kosong memakai agregasi sumatif asesmen.</p>
               </div>
               {rekap.log_edit && (
                 <p className="text-xs text-slate-400 text-right">
@@ -310,7 +314,12 @@ export default function NilaiDiniyahInput() {
                           <span className="text-sm text-slate-400">-</span>
                         )}
                       </Td>
-                      <Td className="text-center font-semibold text-slate-800">{m.nilai_akhir ?? "-"}</Td>
+                      <Td className="text-center font-semibold text-slate-800">
+                        {m.nilai_akhir ?? "-"}
+                        {m.nilai_akhir !== null && m.nilai_mapel?.nilai == null && (
+                          <span className="block text-[10px] font-normal text-slate-400">dari asesmen</span>
+                        )}
+                      </Td>
                       <Td className="text-center">
                         {m.predikat ? (
                           <Badge variant={PREDIKAT_VARIANT[m.predikat] ?? "default"}>{m.predikat}</Badge>

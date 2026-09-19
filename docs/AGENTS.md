@@ -20,6 +20,21 @@ Rapor adalah **cetakan real-time dari data nilai**, TANPA status/validasi/penerb
 - `GET /api/rapor/progres?semester_id=&kelas_rombel_id=` — indikator kelengkapan nilai per siswa (mapel/praktik terisi, pembiasaan/sikap/kehadiran). Akses: admin, kepala sekolah, wali kelas (scoped kelasnya). Progres hanyalah indikator, BUKAN gerbang cetak.
 - Nilai boleh direvisi kapan pun (selama `penilaian_dibuka`); rapor selalu menampilkan data terbaru. Tabel & model `rapors` sudah dihapus.
 
+## Export Excel daftar nilai (wali kelas)
+`GET /api/nilai-diniyah/export?semester_id=` (route `role:wali_kelas,admin`):
+- Wali kelas → otomatis kelas binaannya (tanpa parameter kelas); admin wajib kirim `kelas_rombel_id`. Guru & lainnya 403.
+- File `.xlsx` dibuat `PhpOffice\PhpSpreadsheet` (dependensi composer): kolom NIS, nama, 1 kolom per mapel (nilai efektif = langsung ?? agregasi sumatif), total, rata-rata (total / jumlah mapel), ranking — baris terurut ranking terbaik; total sama = ranking sama.
+- Frontend: tombol "Export Excel" di `RaporCetakList` (mode wali kelas), unduh via axios `responseType: "blob"` lalu `URL.createObjectURL` (token ada di header, link biasa tidak bisa).
+
+## Input nilai guru (asesmen OPSIONAL)
+Dua jalur input nilai guru mapel, keduanya berujung ke rapor yang sama:
+- **Nilai akhir langsung** (default yang disarankan): `POST /api/nilai-diniyah/massal` `{mapel_plus_id, kelas_rombel_id, semester_id, nilai:[{siswa_id, nilai}]}` → menulis `nilai_mapels` (nilai langsung). Halaman `/guru/nilai` mode "Nilai Akhir Langsung" (prefill via `GET /nilai-diniyah/massal`).
+- **Per asesmen** (opsional): `POST /api/nilai/massal` per jenis assessment; nilai akhir mapel = rata-rata tertimbang bobot asesmen sumatif.
+- **Prioritas nilai efektif** (dipakai rapor cetak, progres, export, rekap): `langsung ?? agregat sumatif` (`App\Support\NilaiDiniyah::nilaiPerMapel`). Nilai langsung menimpa perhitungan asesmen; dikosongkan (null) → kembali ke perhitungan asesmen.
+- **Korelasi wali kelas**: nilai yang diinput guru mapel langsung terlihat di rekap wali (`GET /nilai-diniyah/rekap`) kolom "Nilai" + "Nilai Akhir" (label "dari asesmen" bila turunan perhitungan).
+- Scope `nilai-diniyah/massal` (GET & POST): guru harus mengampu mapel tsb di kelas tsb semester itu; wali kelas hanya kelas binaannya; admin bebas. Siswa harus terdaftar di kelas tsb. `penilaian_dibuka` di-enforce.
+- Jenis assessment per mapel (`mapel_plus_id`). Seeder `JenisAssessmentSeeder` membuat default UH/Tugas/UTS/UAS (sumatif @25%) — jalankan `php artisan db:seed` ulang bila mapel baru ditambahkan.
+
 ## Perintah
 
 Backend (`backend/`):

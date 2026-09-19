@@ -93,6 +93,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Input Nilai Diniyah: wali kelas & guru yang berhak (akses diceck per-mapel/praktik) ──
     Route::middleware('role:guru_pesantren,admin,wali_kelas')->group(function () {
         Route::post('/nilai-diniyah/simpan', [NilaiDiniyahController::class, 'simpan']);
+        Route::get('/nilai-diniyah/massal', [NilaiDiniyahController::class, 'daftarMassal']);
+        Route::post('/nilai-diniyah/massal', [NilaiDiniyahController::class, 'simpanMassal']);
+    });
+
+    // ── Export Excel daftar nilai kelas: wali kelas (kelasnya) & admin ──
+    Route::middleware('role:wali_kelas,admin')->group(function () {
+        Route::get('/nilai-diniyah/export', [NilaiDiniyahController::class, 'export']);
     });
 
     // ── Wali Kelas: deskripsi capaian rapor siswa binaannya ──

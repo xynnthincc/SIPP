@@ -69,6 +69,39 @@ export default function RaporCetakList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  // Wali kelas hanya punya satu kelas binaan — tanpa tombol export khusus
+  const bolehExport = !bolehPilihKelas;
+
+  async function exportExcel() {
+    if (!semesterId) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      const res = await api.get("/nilai-diniyah/export", {
+        params: { semester_id: semesterId },
+        responseType: "blob",
+      });
+      const kelas = kelasList[0];
+      const sem = semesters.find((s) => String(s.id) === semesterId);
+      const namaKelas = kelas ? (labelKelas(kelas.nama) ?? kelas.nama).replace(/\s+/g, "") : "Kelas";
+      const namaFile = `Nilai_${namaKelas}_Semester${sem?.nama ?? ""}.xlsx`;
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = namaFile;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Gagal mengekspor Excel. Coba lagi.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -158,7 +191,7 @@ export default function RaporCetakList({
             <Select
               label="Semester"
               value={semesterId}
-              onChange={(e) => { setSemesterId(e.target.value); setPage(1); }}
+              onChange={(e) => { setSemesterId(e.target.value); setPage(1); setExportError(null); }}
               placeholder="Pilih semester"
               disabled={semesters.length === 0}
             >
@@ -184,7 +217,21 @@ export default function RaporCetakList({
               </Select>
             </div>
           )}
+          {bolehExport && (
+            <div className="sm:self-end">
+              <Button
+                variant="outline"
+                onClick={exportExcel}
+                loading={exporting}
+                disabled={!semesterId}
+                className="w-full sm:w-auto"
+              >
+                Export Excel
+              </Button>
+            </div>
+          )}
         </div>
+        {exportError && <p className="text-xs text-red-600 mt-2">{exportError}</p>}
       </Card>
 
       {loading ? (

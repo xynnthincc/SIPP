@@ -10,12 +10,20 @@ interface KelasRombel {
   id: number;
   nama: string;
   tingkat: number;
+  wali_kelas_id: number | null;
 }
 
 interface TahunAjaran {
   id: number;
   nama: string;
   is_aktif: boolean;
+}
+
+interface GuruItem {
+  id: number;
+  nama: string;
+  is_aktif: boolean;
+  user: { id: number; name: string; role: string };
 }
 
 export default function KelasFormPage() {
@@ -32,9 +40,10 @@ function KelasForm() {
   const idParam = searchParams.get("id");
   const isEdit = !!idParam;
 
-  // "kelas" = jenjang diniyah (Tamhidi/Qitsmu → tingkat 7/8/9), "rombel" = huruf pecahan
-  const [form, setForm] = useState({ kelas: "7", rombel: "", tahun_ajaran_id: "" });
+  // "kelas" = jenjang diniyah (Qitsmu → tingkat 7/8/9), "rombel" = huruf pecahan
+  const [form, setForm] = useState({ kelas: "7", rombel: "", tahun_ajaran_id: "", wali_kelas_id: "" });
   const [tahunList, setTahunList] = useState<TahunAjaran[]>([]);
+  const [guruList, setGuruList] = useState<GuruItem[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +56,10 @@ function KelasForm() {
         setForm((f) => ({ ...f, tahun_ajaran_id: String(aktif?.id ?? res.data[0]?.id ?? "") }));
       }
     });
+    api.get<GuruItem[]>("/guru").then((res) => {
+      // Hanya guru aktif yang bisa ditunjuk; tampilkan guru mapel & wali kelas
+      setGuruList(res.data.filter((g) => g.is_aktif));
+    });
   }, [isEdit]);
 
   const load = useCallback(() => {
@@ -58,6 +71,7 @@ function KelasForm() {
           kelas: String(k.tingkat),
           rombel: k.nama.replace(/^\d+\s*/, ""),
           tahun_ajaran_id: "",
+          wali_kelas_id: k.wali_kelas_id ? String(k.wali_kelas_id) : "",
         });
       }
       setLoading(false);
@@ -75,12 +89,17 @@ function KelasForm() {
     const nama = `${form.kelas}${form.rombel.trim()}`;
     try {
       if (isEdit) {
-        await api.put(`/kelas-rombel/${idParam}`, { nama, tingkat: Number(form.kelas) });
+        await api.put(`/kelas-rombel/${idParam}`, {
+          nama,
+          tingkat: Number(form.kelas),
+          wali_kelas_id: form.wali_kelas_id ? Number(form.wali_kelas_id) : null,
+        });
       } else {
         await api.post("/kelas-rombel", {
           nama,
           tingkat: Number(form.kelas),
           tahun_ajaran_id: Number(form.tahun_ajaran_id),
+          wali_kelas_id: form.wali_kelas_id ? Number(form.wali_kelas_id) : null,
         });
       }
       router.push("/admin/kelas");
@@ -116,9 +135,9 @@ function KelasForm() {
             value={form.kelas}
             onChange={(e) => setForm({ ...form, kelas: e.target.value })}
           >
-            <option value="7">Tamhidi</option>
-            <option value="8">Qitsmu Awwal</option>
-            <option value="9">Qitsmu Tsani</option>
+            <option value="7">Qitsmu Awwal</option>
+            <option value="8">Qitsmu Tsani</option>
+            <option value="9">Qitsmu Tsalats</option>
           </Select>
           <Input
             label="Rombel"
@@ -140,6 +159,23 @@ function KelasForm() {
               ))}
             </Select>
           )}
+          <div className={isEdit ? "sm:col-span-2" : ""}>
+            <Select
+              label="Wali Kelas"
+              value={form.wali_kelas_id}
+              onChange={(e) => setForm({ ...form, wali_kelas_id: e.target.value })}
+              placeholder="Belum ada wali kelas"
+            >
+              {guruList.map((g) => (
+                <option key={g.user.id} value={String(g.user.id)}>
+                  {g.nama}
+                </option>
+              ))}
+            </Select>
+            <p className="text-xs text-slate-400 mt-1.5">
+              Guru yang ditunjuk otomatis mendapat role wali kelas; jika dicopot, kembali jadi guru mapel.
+            </p>
+          </div>
           <div className="col-span-full flex justify-end gap-3 mt-2">
             <Link href="/admin/kelas">
               <Button type="button" variant="outline">Batal</Button>
