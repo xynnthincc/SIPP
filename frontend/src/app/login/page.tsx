@@ -96,7 +96,7 @@ export default function LoginPage() {
     "w-full pl-12 pr-4 py-2.5 sm:py-3.5 bg-gray-50/50 border border-gray-200 rounded-full text-base sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm";
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-gray-100 flex items-center justify-center p-3 sm:p-6 md:p-10 overflow-hidden overscroll-none select-none z-50">
+    <div className="fixed inset-0 w-full h-full bg-gray-100 flex items-center justify-center p-3 sm:p-6 md:p-10 overflow-hidden overscroll-none select-none z-50 touch-none">
       <main className="w-full max-w-5xl z-10 flex md:h-[600px] max-h-full bg-white rounded-2xl shadow-2xl overflow-hidden relative">
         {/* Panel kiri: latar gradien & branding (desktop saja) */}
         <div className="hidden md:flex flex-col justify-center items-start w-1/2 bg-linear-to-br from-teal-800 to-teal-500 text-white p-10 xl:p-12 relative overflow-hidden">
