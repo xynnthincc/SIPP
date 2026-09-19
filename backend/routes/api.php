@@ -68,7 +68,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('jenis-assessment', JenisAssessmentController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('predikat-range', PredikatRangeController::class)->only(['store', 'update', 'destroy']);
         Route::post('/siswas/{siswa}/wali', [SiswaController::class, 'tambahWali']);
-        Route::apiResource('sekolah', SekolahController::class)->only(['update']);
+        // Profil sekolah = singleton (tanpa ID); GET-nya terdaftar di grup publik login
+        Route::put('/sekolah', [SekolahController::class, 'update']);
         Route::apiResource('praktik-item', PraktikItemController::class)->parameters(['praktik-item' => 'praktikItem'])->only(['store', 'update', 'destroy']);
         Route::post('/gurus/{guru}/praktik', [GuruController::class, 'simpanPraktik']);
         Route::get('/user', [UserController::class, 'index']);

@@ -70,10 +70,15 @@ export default function LoginPage() {
     }
   }
 
+  // Input 16px di mobile agar iOS tidak auto-zoom saat fokus
+  const kelasInput =
+    "w-full pl-12 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-full text-base sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm";
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-      <main className="w-full max-w-5xl z-10 flex md:h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden relative">
-        {/* Panel kiri: latar gradien & branding */}
+    <div className="min-h-dvh bg-gray-100 flex px-4 py-6 sm:px-6 sm:py-10 relative overflow-hidden">
+      {/* m-auto: tercenter saat muat, tapi tetap bisa discroll normal saat konten lebih tinggi (layar pendek/landscape) */}
+      <main className="w-full max-w-5xl m-auto z-10 flex md:h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden relative">
+        {/* Panel kiri: latar gradien & branding (desktop saja) */}
         <div className="hidden md:flex flex-col justify-center items-start w-1/2 bg-linear-to-br from-teal-800 to-teal-500 text-white p-10 xl:p-12 relative overflow-hidden">
           <div className="absolute -top-[25%] -left-[10%] w-[300px] h-[300px] rounded-full bg-white/10 blur-[40px]" />
           <div className="absolute -bottom-10 right-[20%] w-[250px] h-[250px] rounded-full bg-white/15 blur-[50px]" />
@@ -90,7 +95,7 @@ export default function LoginPage() {
 
           <div className="relative">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden shrink-0">
                 <img
                   alt="Logo SMP Plus YPP Darussurur"
                   src="/drs.png"
@@ -112,24 +117,30 @@ export default function LoginPage() {
         </div>
 
         {/* Panel kanan: form login */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center p-8 sm:p-12 lg:p-16 bg-white relative">
-          <div className="w-full max-w-sm mx-auto">
-            <div className="mb-8 md:hidden flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-50 rounded-full border border-gray-100 flex items-center justify-center overflow-hidden">
-                <img
-                  alt="Logo SIPP"
-                  src="/drs.png"
-                  className="w-full h-full object-contain p-2"
-                />
+        <div className="w-full md:w-1/2 flex flex-col justify-center p-6 sm:p-10 md:p-12 lg:p-16 bg-white relative">
+          <div className="w-full max-w-sm mx-auto flex flex-col flex-1 justify-center">
+            {/* Branding mobile — aksen gradasi tipis supaya tidak polos */}
+            <div className="mb-6 md:hidden">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 bg-gray-50 rounded-full border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                  <img
+                    alt="Logo SIPP"
+                    src="/drs.png"
+                    className="w-full h-full object-contain p-2"
+                  />
+                </div>
+                <span className="text-lg font-semibold text-teal-900">
+                  SIPP Darussurur
+                </span>
               </div>
-              <span className="text-lg font-semibold text-teal-900">
-                SIPP Darussurur
-              </span>
+              <div className="h-1.5 w-16 rounded-full bg-linear-to-r from-teal-800 to-teal-500" />
             </div>
 
-            <h2 className="text-3xl text-gray-900 mb-8 font-bold">Masuk</h2>
+            <h2 className="text-2xl sm:text-3xl text-gray-900 mb-7 sm:mb-8 font-bold">
+              Masuk
+            </h2>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
               {error && (
                 <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
                   {error}
@@ -144,8 +155,9 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email atau username"
                   autoComplete="email"
+                  inputMode="email"
                   required
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50/50 border border-gray-200 rounded-full text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm"
+                  className={kelasInput}
                 />
               </div>
 
@@ -158,7 +170,7 @@ export default function LoginPage() {
                   placeholder="Password"
                   autoComplete="current-password"
                   required
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50/50 border border-gray-200 rounded-full text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm"
+                  className={`${kelasInput} pr-12`}
                 />
                 <button
                   type="button"
@@ -170,7 +182,7 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <div className="flex justify-between items-center mt-1 mb-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-2 justify-between items-center mt-1 mb-2 sm:mb-3">
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -194,7 +206,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-linear-to-r from-teal-800 to-teal-500 text-white rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-teal-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full py-3.5 px-4 bg-linear-to-r from-teal-800 to-teal-500 text-white rounded-full text-base sm:text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-teal-500/30 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -208,7 +220,8 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <div className="absolute bottom-6 left-0 right-0 text-center text-gray-400 text-xs">
+          {/* Hak cipta mengikuti alur (bukan absolute) agar tidak menimpa form di layar kecil */}
+          <div className="mt-6 text-center text-gray-400 text-xs">
             © 2026 SIPP Darussurur. Versi 1.0.0
           </div>
         </div>
