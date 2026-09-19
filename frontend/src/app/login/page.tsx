@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 function PersonIcon() {
@@ -70,12 +70,33 @@ export default function LoginPage() {
     }
   }
 
+  useEffect(() => {
+    // Kunci total scrolling browser di level body & html saat berada di halaman login
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    const origBodyOverflow = document.body.style.overflow;
+    const origBodyPosition = document.body.style.position;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+
+    return () => {
+      document.documentElement.style.overflow = origHtmlOverflow;
+      document.body.style.overflow = origBodyOverflow;
+      document.body.style.position = origBodyPosition;
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
+  }, []);
+
   // Input 16px di mobile agar iOS tidak auto-zoom saat fokus
   const kelasInput =
     "w-full pl-12 pr-4 py-2.5 sm:py-3.5 bg-gray-50/50 border border-gray-200 rounded-full text-base sm:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-sm";
 
   return (
-    <div className="h-dvh max-h-dvh w-full bg-gray-100 flex items-center justify-center p-3 sm:p-6 md:p-10 relative overflow-hidden select-none">
+    <div className="fixed inset-0 w-full h-full bg-gray-100 flex items-center justify-center p-3 sm:p-6 md:p-10 overflow-hidden overscroll-none select-none z-50">
       <main className="w-full max-w-5xl z-10 flex md:h-[600px] max-h-full bg-white rounded-2xl shadow-2xl overflow-hidden relative">
         {/* Panel kiri: latar gradien & branding (desktop saja) */}
         <div className="hidden md:flex flex-col justify-center items-start w-1/2 bg-linear-to-br from-teal-800 to-teal-500 text-white p-10 xl:p-12 relative overflow-hidden">

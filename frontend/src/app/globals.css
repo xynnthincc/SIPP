@@ -59,9 +59,11 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 body {
+  overscroll-behavior: none;
   font-family: var(--font-sans);
   color: var(--text-primary);
   background: var(--surface-bg);
