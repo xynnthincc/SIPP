@@ -29,15 +29,22 @@ jobs:
           npm ci
           npm run build
 
+      - name: Clean FTP Host
+        id: ftp
+        run: |
+          CLEAN_HOST=$(echo "${{ secrets.FTP_HOST }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||')
+          echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+
       - name: Sync Frontend to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: public_html/sipp/
           local-dir: frontend/out/
           dangerous-clean-slate: false
+          security: loose
 
   deploy-backend:
     name: Sync Backend Code
@@ -46,15 +53,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Clean FTP Host
+        id: ftp
+        run: |
+          CLEAN_HOST=$(echo "${{ secrets.FTP_HOST }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||')
+          echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+
       - name: Sync Backend to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_HOST }}
+          server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: public_html/api-sipp/
           local-dir: backend/
           dangerous-clean-slate: false
+          security: loose
           exclude: |
             **/.git*
             **/.git*/**
