@@ -45,6 +45,10 @@ jobs:
           local-dir: frontend/out/
           dangerous-clean-slate: false
           security: loose
+          exclude: |
+            **/.ftp-deploy-sync
+            **/.git*
+            **/.git*/**
 
   deploy-backend:
     name: Sync Backend Code
@@ -69,12 +73,19 @@ jobs:
           local-dir: backend/
           dangerous-clean-slate: false
           security: loose
+          timeout: 60000
           exclude: |
+            **/.ftp-deploy-sync
             **/.git*
             **/.git*/**
             **/vendor/**
             **/node_modules/**
             **/.env
             **/.env.*
-            **/storage/**
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
             **/tests/**
+            **/*.log
+            **/bootstrap/cache/**
