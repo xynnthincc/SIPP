@@ -11,6 +11,12 @@
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
+  # RSC payload Next.js static export: browser meminta path bertitik
+  # (/admin/__next.admin.__PAGE__.txt) sedangkan file tersimpan sebagai direktori
+  # (/admin/__next.admin/__PAGE__.txt) — tulis ulang bertingkat lalu satu tingkat.
+  RewriteRule ^(.*/__next\.[^/]*)\.([^/.]+)\.__PAGE__\.txt$ $1/$2/__PAGE__.txt [N]
+  RewriteRule ^(.*/__next\.[^/]*)\.__PAGE__\.txt$ $1/__PAGE__.txt [L]
+
   # Route Next.js trailing slash: /admin/guru -> /admin/guru/index.html
   RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
   RewriteRule ^(.*)/?$ /$1/index.html [L]
