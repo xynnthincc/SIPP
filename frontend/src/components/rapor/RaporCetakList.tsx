@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { labelSemester } from "@/lib/semester";
 import {
   PageHeader, Card, Button, Badge, Select, Skeleton, EmptyState, Pagination,
   Table, TableHead, TableBody, Th, Td, TableRow,
@@ -14,6 +15,7 @@ const PER_HALAMAN = 10;
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
@@ -87,7 +89,7 @@ export default function RaporCetakList({
       const kelas = kelasList[0];
       const sem = semesters.find((s) => String(s.id) === semesterId);
       const namaKelas = kelas ? (labelKelas(kelas.nama) ?? kelas.nama).replace(/\s+/g, "") : "Kelas";
-      const namaFile = `Nilai_${namaKelas}_Semester${sem?.nama ?? ""}.xlsx`;
+      const namaFile = `Nilai_${namaKelas}_Semester${sem?.nama ?? ""}${sem?.jenis === "Sementara" ? "Sementara" : ""}.xlsx`;
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
@@ -197,7 +199,7 @@ export default function RaporCetakList({
             >
               {semesters.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
+                  {labelSemester(s)}
                 </option>
               ))}
             </Select>

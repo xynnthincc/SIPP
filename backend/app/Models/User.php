@@ -3,21 +3,26 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens;
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory;
 
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_GURU_PESANTREN = 'guru_pesantren';
+
     public const ROLE_WALI_KELAS = 'wali_kelas';
+
     public const ROLE_KEPALA_SEKOLAH = 'kepala_sekolah';
+
     public const ROLE_SISWA = 'siswa';
+
     public const ROLE_ORANG_TUA = 'orang_tua';
 
     /**
@@ -58,6 +63,16 @@ class User extends Authenticatable
     public function kelasDiwalikan()
     {
         return $this->hasMany(KelasRombel::class, 'wali_kelas_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
     }
 
     /**

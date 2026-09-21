@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { labelSemester } from "@/lib/semester";
 import { PageHeader, Card, Button, Select, Input, Skeleton, Alert } from "@/components/ui";
 
 const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
@@ -12,6 +13,8 @@ const HARI = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
+  is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
 
@@ -262,7 +265,7 @@ function JadwalPengampuForm() {
               >
                 {semesters.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
+                    {labelSemester(s)}
                   </option>
                 ))}
               </Select>

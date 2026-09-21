@@ -11,6 +11,7 @@ import {
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
@@ -72,7 +73,7 @@ export default function RaporSiswaPage() {
                   <Td className="text-slate-400">{i + 1}</Td>
                   <Td>
                     <span className="font-medium text-slate-800">
-                      Semester {s.nama}
+                      Semester {s.nama}{s.jenis === "Sementara" && " (Sementara)"}
                     </span>
                     {s.tahun_ajaran?.nama && (
                       <span className="text-slate-400"> · {s.tahun_ajaran.nama}</span>

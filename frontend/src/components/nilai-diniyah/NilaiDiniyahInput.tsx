@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { labelSemester } from "@/lib/semester";
 import {
   PageHeader, Card, Button, Select, Skeleton, EmptyState, Alert,
   Table, TableHead, TableBody, Th, Td, TableRow, Badge,
@@ -11,8 +12,8 @@ import {
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
-  penilaian_dibuka: boolean;
   tahun_ajaran: { nama: string } | null;
 }
 
@@ -216,7 +217,7 @@ export default function NilaiDiniyahInput() {
           <Select label="Semester" value={semesterId} onChange={(e) => { setSemesterId(e.target.value); setRekap(null); setError(null); setSavedMsg(null); }} placeholder="Pilih semester" disabled={semesters.length === 0}>
             {semesters.map((s) => (
               <option key={s.id} value={s.id}>
-                {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
+                  {labelSemester(s)}
               </option>
             ))}
           </Select>

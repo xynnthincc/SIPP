@@ -16,6 +16,7 @@ interface Anak {
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
@@ -161,7 +162,7 @@ export default function ProgresAnakPage() {
             {semesterAktif ? (
               <div className="space-y-2">
                 <p className="text-xs text-slate-400">
-                  Rapor direal-time dari data nilai — Semester {semesterAktif.nama} {semesterAktif.tahun_ajaran?.nama ?? ""}
+                  Rapor direal-time dari data nilai — Semester {semesterAktif.nama}{semesterAktif.jenis === "Sementara" && " (Sementara)"} {semesterAktif.tahun_ajaran?.nama ?? ""}
                 </p>
                 {anakList.map((a) => (
                   <div key={a.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/50">

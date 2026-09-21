@@ -3,14 +3,17 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatatanGuruController;
 use App\Http\Controllers\Api\DeskripsiCapaianController;
+use App\Http\Controllers\Api\DeviceTokenController;
 use App\Http\Controllers\Api\GuruController;
 use App\Http\Controllers\Api\GuruMapelKelasController;
+use App\Http\Controllers\Api\IzinController;
 use App\Http\Controllers\Api\JadwalController;
 use App\Http\Controllers\Api\JenisAssessmentController;
 use App\Http\Controllers\Api\KelasRombelController;
 use App\Http\Controllers\Api\MapelPlusController;
 use App\Http\Controllers\Api\NilaiController;
 use App\Http\Controllers\Api\NilaiDiniyahController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PraktikItemController;
 use App\Http\Controllers\Api\PredikatRangeController;
 use App\Http\Controllers\Api\PresensiController;
@@ -33,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Bisa diakses semua role login (read-only, discope di controller sesuai role)
     Route::get('/rapor/cetak', [RaporController::class, 'cetak']);
+    Route::get('/rapor/pdf', [RaporController::class, 'pdf']);
     Route::get('/rapor/progres', [RaporController::class, 'progres']);
     Route::get('/sekolah', [SekolahController::class, 'show']);
     Route::get('/nilai-diniyah/rekap', [NilaiDiniyahController::class, 'rekap']);
@@ -45,6 +49,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/jadwal', [JadwalController::class, 'index']);
 
     Route::get('/kelas-rombel', [KelasRombelController::class, 'index']);
+
+    // Notifikasi & perangkat (semua role)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/device-token', [DeviceTokenController::class, 'store']);
+    Route::delete('/device-token', [DeviceTokenController::class, 'destroy']);
+
+    // Izin digital — daftar di-scope per role di controller
+    Route::get('/izin', [IzinController::class, 'index']);
     Route::get('/siswa', [SiswaController::class, 'index']);
     Route::get('/mapel-plus', [MapelPlusController::class, 'index']);
     Route::get('/jenis-assessment', [JenisAssessmentController::class, 'index']);
@@ -79,8 +93,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Admin & Wali Kelas: kelola data master siswa ──
     Route::middleware('role:admin,wali_kelas')->group(function () {
         Route::apiResource('siswa', SiswaController::class)->except(['show', 'index']);
+        Route::post('/siswas/{siswa}/foto', [SiswaController::class, 'uploadFoto']);
     });
     Route::get('/siswa/{siswa}', [SiswaController::class, 'show']);
+
+    // ── Izin Digital: orang tua mengajukan, wali kelas menanggapi ──
+    Route::middleware('role:orang_tua,admin')->group(function () {
+        Route::post('/izin', [IzinController::class, 'store']);
+    });
+    Route::middleware('role:wali_kelas,admin')->group(function () {
+        Route::post('/izin/{izin}/status', [IzinController::class, 'updateStatus']);
+    });
 
     // ── Guru Pesantren: input jadwal-nya, presensi, assessment, nilai, progres, catatan ──
     Route::middleware('role:guru_pesantren,admin')->group(function () {

@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class CatatanGuru extends Model
 {
     protected $table = 'catatan_gurus';
-    protected $fillable = ['siswa_id', 'guru_id', 'tanggal', 'catatan'];
+
+    protected $fillable = ['siswa_id', 'guru_id', 'tanggal', 'catatan', 'lampiran'];
+
     protected $casts = ['tanggal' => 'date'];
 
     public function siswa()

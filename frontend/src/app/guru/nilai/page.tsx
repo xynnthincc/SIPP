@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { labelSemester } from "@/lib/semester";
 import { PageHeader, Card, Button, Select, Skeleton, EmptyState, Alert } from "@/components/ui";
 
 type Mode = "asesmen" | "langsung";
@@ -10,6 +11,7 @@ type Mode = "asesmen" | "langsung";
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
@@ -279,7 +281,7 @@ export default function NilaiGuruPage() {
           >
             {semesters.map((s) => (
               <option key={s.id} value={s.id}>
-                {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
+                  {labelSemester(s)}
               </option>
             ))}
           </Select>

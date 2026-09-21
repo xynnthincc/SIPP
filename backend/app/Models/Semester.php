@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Semester extends Model
 {
-    protected $fillable = ['tahun_ajaran_id', 'nama', 'is_aktif', 'penilaian_dibuka', 'tempat_tanggal_rapot'];
+    protected $fillable = ['tahun_ajaran_id', 'nama', 'jenis', 'is_aktif', 'penilaian_dibuka', 'tempat_tanggal_rapot'];
 
     protected $casts = ['is_aktif' => 'boolean', 'penilaian_dibuka' => 'boolean'];
 

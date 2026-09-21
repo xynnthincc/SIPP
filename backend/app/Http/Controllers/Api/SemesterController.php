@@ -15,6 +15,8 @@ class SemesterController extends Controller
     {
         return Semester::with('tahunAjaran')
             ->when($request->tahun_ajaran_id, fn ($q, $id) => $q->where('tahun_ajaran_id', $id))
+            ->orderBy('nama')
+            ->orderBy('jenis')
             ->get();
     }
 
@@ -23,14 +25,17 @@ class SemesterController extends Controller
         $data = $request->validate([
             'tahun_ajaran_id' => ['required', 'exists:tahun_ajarans,id'],
             'nama' => ['required', 'in:Ganjil,Genap'],
+            'jenis' => ['nullable', 'in:Akhir,Sementara'],
             'is_aktif' => ['boolean'],
             'penilaian_dibuka' => ['boolean'],
         ]);
+        $data['jenis'] ??= 'Akhir';
 
         $sudahAda = Semester::where('tahun_ajaran_id', $data['tahun_ajaran_id'])
             ->where('nama', $data['nama'])
+            ->where('jenis', $data['jenis'])
             ->exists();
-        abort_if($sudahAda, 422, "Semester {$data['nama']} untuk tahun ajaran ini sudah ada.");
+        abort_if($sudahAda, 422, "Semester {$data['nama']} ({$data['jenis']}) untuk tahun ajaran ini sudah ada.");
 
         return Semester::create($data);
     }
@@ -38,9 +43,19 @@ class SemesterController extends Controller
     public function update(Request $request, Semester $semester)
     {
         $data = $request->validate([
+            'jenis' => ['nullable', 'in:Akhir,Sementara'],
             'is_aktif' => ['boolean'],
             'penilaian_dibuka' => ['boolean'],
+            'tempat_tanggal_rapot' => ['nullable', 'string', 'max:255'],
         ]);
+        $data['jenis'] ??= $semester->jenis;
+
+        $bentrok = isset($data['jenis']) && $data['jenis'] !== $semester->jenis
+            && Semester::where('tahun_ajaran_id', $semester->tahun_ajaran_id)
+                ->where('nama', $semester->nama)
+                ->where('jenis', $data['jenis'])
+                ->exists();
+        abort_if($bentrok, 422, "Semester {$semester->nama} ({$data['jenis']}) untuk tahun ajaran ini sudah ada.");
 
         $semester->update($data);
 

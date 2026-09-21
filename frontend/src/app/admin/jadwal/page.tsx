@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { labelSemester } from "@/lib/semester";
 import {
   PageHeader, Card, Button, Badge, Select, Skeleton, EmptyState,
   ConfirmModal, IconButton, Alert, Pagination,
@@ -16,6 +17,8 @@ const PER_HALAMAN_PENGAMPU = 10;
 interface SemesterLite {
   id: number;
   nama: string;
+  jenis: "Akhir" | "Sementara";
+  is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
 
@@ -175,7 +178,7 @@ export default function JadwalAdminPage() {
             >
               {semesters.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {`Semester ${s.nama} ${s.tahun_ajaran?.nama ?? ""}`.trim()}
+                  {labelSemester(s)}
                 </option>
               ))}
             </Select>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ScopesSiswaAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SiswaController extends Controller
 {
@@ -126,6 +127,22 @@ class SiswaController extends Controller
         $siswa->delete();
 
         return response()->noContent();
+    }
+
+    /** Hubungkan siswa dengan akun orang tua/wali */
+    /** Upload foto siswa (avatar) — kolom `foto` sebelumnya cuma string placeholder */
+    public function uploadFoto(Request $request, Siswa $siswa)
+    {
+        $this->pastikanWaliKelasSiswa($request, $siswa);
+
+        $data = $request->validate([
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $path = $request->file('foto')->store('siswa', 'public');
+        $siswa->update(['foto' => $path]);
+
+        return response()->json(['foto' => Storage::disk('public')->url($path)]);
     }
 
     /** Hubungkan siswa dengan akun orang tua/wali */

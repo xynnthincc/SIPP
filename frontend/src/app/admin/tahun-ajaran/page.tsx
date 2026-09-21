@@ -10,6 +10,7 @@ import {
 interface Semester {
   id: number;
   nama: "Ganjil" | "Genap";
+  jenis: "Akhir" | "Sementara";
   is_aktif: boolean;
   penilaian_dibuka: boolean;
 }
@@ -72,9 +73,9 @@ export default function TahunAjaranPage() {
     await load();
   }
 
-  async function tambahSemester(ta: TahunAjaran, nama: "Ganjil" | "Genap") {
+  async function tambahSemester(ta: TahunAjaran, nama: "Ganjil" | "Genap", jenis: "Akhir" | "Sementara") {
     try {
-      await api.post("/semester", { tahun_ajaran_id: ta.id, nama });
+      await api.post("/semester", { tahun_ajaran_id: ta.id, nama, jenis });
       await load();
     } catch (err: unknown) {
       const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
@@ -163,6 +164,11 @@ export default function TahunAjaranPage() {
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium text-slate-700">Semester {s.nama}</span>
+                      {s.jenis === "Sementara" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          Sementara
+                        </span>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-2">
                       <TogglePill
@@ -185,21 +191,24 @@ export default function TahunAjaranPage() {
                   </div>
                 ))}
 
-                {/* Semester yang belum ada bisa ditambahkan manual (mis. TA lama yang dibuat sebelum pembuatan otomatis) */}
-                {(["Ganjil", "Genap"] as const)
-                  .filter((n) => !ta.semesters?.some((s) => s.nama === n))
-                  .map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => tambahSemester(ta, n)}
-                      className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-200 text-sm text-slate-400 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors cursor-pointer"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      Tambah Semester {n}
-                    </button>
-                  ))}
+                {/* Kombinasi semester yang belum ada bisa ditambahkan manual:
+                    Ganjil/Genap × Akhir/Sementara (wadah rapor tengah semester punya nilai terpisah) */}
+                {(["Ganjil", "Genap"] as const).flatMap((n) =>
+                  (["Akhir", "Sementara"] as const)
+                    .filter((j) => !ta.semesters?.some((s) => s.nama === n && s.jenis === j))
+                    .map((j) => (
+                      <button
+                        key={`${n}-${j}`}
+                        onClick={() => tambahSemester(ta, n, j)}
+                        className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-slate-200 text-sm text-slate-400 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Tambah Semester {n}{j === "Sementara" ? " (Sementara)" : ""}
+                      </button>
+                    ))
+                )}
               </div>
             </Card>
           ))}
@@ -220,7 +229,7 @@ export default function TahunAjaranPage() {
         onConfirm={handleHapusSemester}
         loading={hapusLoading}
         title="Hapus Semester"
-        message={`Yakin ingin menghapus semester ${hapusSemester?.semester.nama} dari tahun ajaran ${hapusSemester?.ta.nama}?`}
+        message={`Yakin ingin menghapus semester ${hapusSemester?.semester.nama}${hapusSemester?.semester.jenis === "Sementara" ? " (Sementara)" : ""} dari tahun ajaran ${hapusSemester?.ta.nama}?`}
       />
     </div>
   );

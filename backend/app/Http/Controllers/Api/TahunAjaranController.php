@@ -14,7 +14,7 @@ class TahunAjaranController extends Controller
 {
     public function index()
     {
-        return TahunAjaran::with('semesters')->latest()->get();
+        return TahunAjaran::with(['semesters' => fn ($q) => $q->orderBy('nama')->orderBy('jenis')])->latest()->get();
     }
 
     public function store(Request $request)
@@ -26,11 +26,12 @@ class TahunAjaranController extends Controller
 
         $tahunAjaran = TahunAjaran::create($data);
 
-        // Tahun ajaran baru otomatis dibekali semester Ganjil & Genap
+        // Tahun ajaran baru otomatis dibekali semester Ganjil & Genap (jenis Akhir)
         // (sesuai janji form admin); statusnya menyusul diaktifkan admin.
+        // Wadah "Sementara" (rapor tengah semester) ditambahkan manual oleh admin.
         foreach (['Ganjil', 'Genap'] as $nama) {
             Semester::firstOrCreate(
-                ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => $nama],
+                ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => $nama, 'jenis' => 'Akhir'],
                 ['is_aktif' => false, 'penilaian_dibuka' => false]
             );
         }

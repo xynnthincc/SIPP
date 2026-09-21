@@ -151,7 +151,7 @@ export interface RaporCetak {
   siswa: { id: number; nama: string; nis: string };
   kelas: { nama: string; tingkat: number } | null;
   wali_kelas: string | null;
-  semester: { nama: string; tahun: string; tempat_tanggal_rapot: string | null };
+  semester: { nama: string; jenis: "Akhir" | "Sementara"; tahun: string; tempat_tanggal_rapot: string | null };
   mapel: {
     nama_id: string;
     nama_ar: string | null;

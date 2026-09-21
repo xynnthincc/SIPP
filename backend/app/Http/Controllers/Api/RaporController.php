@@ -16,6 +16,7 @@ use App\Models\Siswa;
 use App\Support\ArabBilangan;
 use App\Support\NilaiDiniyah;
 use Illuminate\Http\Request;
+use Spatie\Browsershot\Browsershot;
 
 class RaporController extends Controller
 {
@@ -39,6 +40,45 @@ class RaporController extends Controller
         $this->pastikanBolehCetak($request, $siswa);
 
         return response()->json($this->komposisiCetak($siswa, $semester));
+    }
+
+    /**
+     * Rapor sebagai dokumen (untuk share dari aplikasi).
+     * Driver `html` (default) mengembalikan HTML siap render/print;
+     * driver `chrome` menghasilkan PDF sungguhan via Browsershot (node+puppeteer).
+     */
+    public function pdf(Request $request)
+    {
+        $data = $request->validate([
+            'siswa_id' => ['required', 'exists:siswas,id'],
+            'semester_id' => ['nullable', 'exists:semesters,id'],
+        ]);
+
+        $siswa = Siswa::with('kelasRombel')->findOrFail($data['siswa_id']);
+        $semester = isset($data['semester_id'])
+            ? Semester::findOrFail($data['semester_id'])
+            : Semester::where('is_aktif', true)->firstOrFail();
+
+        $this->pastikanBolehCetak($request, $siswa);
+
+        $html = view('pdf.rapor', ['rapor' => $this->komposisiCetak($siswa, $semester)])->render();
+
+        $driver = config('services.rapor.pdf_driver', 'html');
+        if ($driver === 'chrome' && class_exists(Browsershot::class)) {
+            try {
+                $pdf = Browsershot::html($html)
+                    ->format('A4')
+                    ->margins(14, 10, 14, 10)
+                    ->showOutline()
+                    ->pdf();
+
+                return response($pdf)->header('Content-Type', 'application/pdf');
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
     }
 
     /**
@@ -159,6 +199,7 @@ class RaporController extends Controller
             'semester' => [
                 'id' => $semester->id,
                 'nama' => $semester->nama,
+                'jenis' => $semester->jenis,
                 'tahun' => $semester->tahunAjaran->nama,
                 'tempat_tanggal_rapot' => $semester->tempat_tanggal_rapot,
             ],

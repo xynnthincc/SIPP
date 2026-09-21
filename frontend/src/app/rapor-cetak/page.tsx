@@ -50,6 +50,7 @@ function RaporCetakView() {
   const predikat =
     data?.predikat ||
     (data?.peringkat ? predikatByRank(data.peringkat) : predikatByRank(999));
+  const isSementara = data?.semester.jenis === "Sementara";
 
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white">
@@ -374,7 +375,7 @@ function RaporCetakView() {
             ← Kembali
           </Button>
           <p className="text-sm text-slate-600 font-medium">
-            Pratinjau Rapor — {data?.siswa.nama ?? "Memuat…"}
+            Pratinjau {isSementara ? "Rapor Sementara" : "Rapor"} — {data?.siswa.nama ?? "Memuat…"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -415,9 +416,10 @@ function RaporCetakView() {
               <div className="kop-judul">
                 <div className="arab-besar">التقرير نتائج الدراسية</div>
                 <div className="indo-kecil">المدرسة الوسطى معهد الإسلامية دار السرور</div>
-                <div className="judul-utama">LAPORAN</div>
+                <div className="judul-utama">{isSementara ? "LAPORAN SEMENTARA" : "LAPORAN"}</div>
                 <div className="sub-utama">HASIL BELAJAR PESERTA DIDIK</div>
                 <div className="sub-utama">SEKOLAH MENENGAH PERTAMA PLUS</div>
+                {isSementara && <div className="sub-utama">( PENILAIAN TENGAH SEMESTER )</div>}
               </div>
 
               <table className="sampul-identitas">
@@ -593,7 +595,10 @@ function RaporCetakView() {
                     <td className="isi">{data.sekolah.alamat || "-"}</td>
                     <td className="label-ar">نصف السنة</td>
                     <td className="label-id">Semester</td>
-                    <td className="isi">{data.semester.nama}</td>
+                    <td className="isi">
+                      {data.semester.nama}
+                      {isSementara ? " (Sementara)" : ""}
+                    </td>
                   </tr>
                   <tr>
                     <td className="label-ar">اسم الطالب/الطالبة</td>

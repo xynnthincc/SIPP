@@ -57,6 +57,11 @@ class Siswa extends Model
         return $this->hasMany(CatatanGuru::class);
     }
 
+    public function izins()
+    {
+        return $this->hasMany(Izin::class);
+    }
+
     public function deskripsiCapaians()
     {
         return $this->hasMany(DeskripsiCapaian::class);

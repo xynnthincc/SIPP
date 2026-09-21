@@ -20,6 +20,12 @@ Rapor adalah **cetakan real-time dari data nilai**, TANPA status/validasi/penerb
 - `GET /api/rapor/progres?semester_id=&kelas_rombel_id=` — indikator kelengkapan nilai per siswa (mapel/praktik terisi, pembiasaan/sikap/kehadiran). Akses: admin, kepala sekolah, wali kelas (scoped kelasnya). Progres hanyalah indikator, BUKAN gerbang cetak.
 - Nilai boleh direvisi kapan pun (selama `penilaian_dibuka`); rapor selalu menampilkan data terbaru. Tabel & model `rapors` sudah dihapus.
 
+## Rapor sementara (wadah tengah semester)
+- `semesters.jenis` enum `Akhir`|`Sementara` (default `Akhir`; migrasi `2026_09_21_000001`). Satu tahun ajaran boleh punya "Ganjil Akhir" + "Ganjil Sementara" berdampingan — duplikat kombinasi nama+jenis dalam satu TA ditolak 422 (`SemesterController@store/update`).
+- Wadah Sementara = **wadah nilai terpisah**: semua input (nilai mapel/praktik, pembiasaan, sikap, kehadiran) tetap di-scope `semester_id` seperti biasa — guru/wali memilih semester "(Sementara)" saat menginput. TA baru tetap auto-create Ganjil/Genap jenis Akhir; wadah Sementara dibuat manual admin dari halaman Tahun Ajaran.
+- Rapor wadah Sementara: format & hak akses sama dengan rapor akhir (real-time, tanpa biodata — biodata tetap halaman cetak terpisah). Web: judul kop "LAPORAN SEMENTARA" + baris "( PENILAIAN TENGAH SEMESTER )", identitas semester tampil "Ganjil (Sementara)". PDF server (`pdf/rapor.blade.php`): "Laporan Hasil Belajar — SEMENTARA".
+- Frontend: penandaan wadah Sementara di semua dropdown memakai `labelSemester()` (`frontend/src/lib/semester.ts`); payload rapor (`/rapor/cetak` & `/rapor/pdf`) menyertakan `semester.jenis`.
+
 ## Export Excel daftar nilai (wali kelas)
 `GET /api/nilai-diniyah/export?semester_id=` (route `role:wali_kelas,admin`):
 - Wali kelas → otomatis kelas binaannya (tanpa parameter kelas); admin wajib kirim `kelas_rombel_id`. Guru & lainnya 403.
@@ -47,6 +53,18 @@ vendor/bin/phpunit                           # test
 vendor/bin/pint                              # formatting (laravel/pint)
 ```
 Seeder membuat akun `admin@sipp.sch.id` / `password`, tahun ajaran 2026/2027 (aktif) + semester Ganjil (`penilaian_dibuka`), dan 5 mapel plus: Tahfidz, Tahsin, Kitab Kuning, Bahasa Arab, Akhlak.
+
+## Notifikasi, Izin Digital, Upload, Rapor PDF (module aplikasi mobile)
+
+Backend konsumsi aplikasi mobile (KMP repo terpisah) — tetap token/stateless:
+
+- **Notifikasi**: tabel `notifications` (custom, bukan bawaan Laravel) + `device_tokens`. `App\Services\PushService` menyimpan baris DB **dan** mengirim push FCM bila dikonfigurasi (HTTP v1 + OAuth2 JWT dari service account; `config/services.php` `fcm`). Env: `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT` (path absolut JSON). Jika kosong → push dilewati, notifikasi tetap tersimpan di DB (aman untuk dev/test).
+- Endpoint semuanya role login: `GET/POST/PATCH... /api/notifications`, `POST /api/notifications/read-all`, `POST /api/notifications/{id}/read`, `POST|DELETE /api/device-token`.
+- Pemicu notif saat ini: catatan guru dibuat (`catatan_gurus` → ortu anak), izin diajukan (`izins` → wali kelas), izin ditanggapi (→ pengaju). Tambahkan `app(Services\PushService::class)->notify(...)` di tempat lain sesuai kebutuhan.
+- **Izin digital**: tabel `izins`. `GET /api/izin` discope per role di controller (ortu→anak, siswa→diri, wali_kelas→kelas binaan, admin/kepala→semua). `POST /api/izin` (role `orang_tua,admin`) mendukung field `lampiran` (file). `POST /api/izin/{izin}/status` (role `wali_kelas,admin`) body `status: disetujui|ditolak` (+`catatan`, opsional).
+- **Upload**: file disimpan `Storage::disk('public')` (jalankan `php artisan storage:link`), path di kolom `foto` / `lampiran`. `POST /api/siswas/{siswa}/foto` (role `admin,wali_kelas`) upload avatar siswa.
+- **Rapor PDF**: `GET /api/rapor/pdf?siswa_id=&semester_id=` — hak akses sama dengan `/rapor/cetak`. Driver `services.rapor.pdf_driver`: `html` (default, kembalikan HTML Blade `resources/views/pdf/rapor.blade.php`) atau `chrome` (PDF via Spatie Browsershot + node/puppeteer; fallback HTML bila package/node tidak ada). Env: `RAPOR_PDF_DRIVER`.
+- Note: `User` TIDAK lagi memakai trait `Notifiable` (digantikan relasi `notifications()` custom). Aplikasi KMP repo terpisah belum dibuat.
 
 Frontend (`frontend/`):
 ```bash
