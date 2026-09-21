@@ -41,7 +41,7 @@ jobs:
           server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: public_html/sipp/
+          server-dir: domains/smpplusdarussururcimahi.sch.id/public_html/sipp/
           local-dir: frontend/out/
           dangerous-clean-slate: true
           security: loose
@@ -65,7 +65,7 @@ jobs:
           server: ${{ steps.ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: public_html/api-sipp/
+          server-dir: domains/smpplusdarussururcimahi.sch.id/public_html/api-sipp/
           local-dir: backend/
           dangerous-clean-slate: false
           security: loose
