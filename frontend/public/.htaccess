@@ -22,3 +22,13 @@
   # Fallback ke 404
   ErrorDocument 404 /404.html
 </IfModule>
+
+# Izinkan akses ke __next.admin RSC payload dirs (Next.js App Router)
+<IfModule mod_authz_core.c>
+  <FilesMatch "^__">
+    Require all granted
+  </FilesMatch>
+</IfModule>
+
+# Nonaktifkan blocking __* oleh LiteSpeed/Apache
+Options -MultiViews
