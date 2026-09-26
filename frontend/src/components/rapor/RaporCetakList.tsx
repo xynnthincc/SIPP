@@ -74,19 +74,21 @@ export default function RaporCetakList({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  // Wali kelas hanya punya satu kelas binaan — tanpa tombol export khusus
-  const bolehExport = !bolehPilihKelas;
-
+  // Export Excel: wali kelas → kelas binaannya otomatis; admin → wajib pilih kelas
   async function exportExcel() {
     if (!semesterId) return;
+    if (bolehPilihKelas && !kelasId) {
+      setExportError("Pilih kelas dulu untuk mengekspor Excel.");
+      return;
+    }
     setExporting(true);
     setExportError(null);
     try {
       const res = await api.get("/nilai-diniyah/export", {
-        params: { semester_id: semesterId },
+        params: { semester_id: semesterId, kelas_rombel_id: kelasId || undefined },
         responseType: "blob",
       });
-      const kelas = kelasList[0];
+      const kelas = kelasList.find((k) => String(k.id) === kelasId) ?? kelasList[0];
       const sem = semesters.find((s) => String(s.id) === semesterId);
       const namaKelas = kelas ? (labelKelas(kelas.nama) ?? kelas.nama).replace(/\s+/g, "") : "Kelas";
       const namaFile = `Nilai_${namaKelas}_Semester${sem?.nama ?? ""}${sem?.jenis === "Sementara" ? "Sementara" : ""}.xlsx`;
@@ -219,19 +221,18 @@ export default function RaporCetakList({
               </Select>
             </div>
           )}
-          {bolehExport && (
-            <div className="sm:self-end">
-              <Button
-                variant="outline"
-                onClick={exportExcel}
-                loading={exporting}
-                disabled={!semesterId}
-                className="w-full sm:w-auto"
-              >
-                Export Excel
-              </Button>
-            </div>
-          )}
+          <div className="sm:self-end">
+            <Button
+              variant="outline"
+              onClick={exportExcel}
+              loading={exporting}
+              disabled={!semesterId || (bolehPilihKelas && !kelasId)}
+              title={bolehPilihKelas && !kelasId ? "Pilih kelas dulu" : undefined}
+              className="w-full sm:w-auto"
+            >
+              Export Excel
+            </Button>
+          </div>
         </div>
         {exportError && <p className="text-xs text-red-600 mt-2">{exportError}</p>}
       </Card>
