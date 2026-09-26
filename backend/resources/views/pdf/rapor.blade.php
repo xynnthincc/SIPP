@@ -78,7 +78,9 @@
             font-size: 10pt;
         }
         .id { font-size: 9pt; }
-        .center { text-align: center; }
+        .center { text-align: center; font-weight: bold; }
+        .ar-center { font-weight: bold; }
+        .ar-sm { font-weight: bold; }
         .right  { text-align: right; }
         .bold   { font-weight: bold; }
         .sm     { font-size: 9pt; }
@@ -146,6 +148,10 @@
         }
         .section-header .id-title {
             font-size: 9pt;
+            font-weight: bold;
+        }
+        th .id {
+            font-weight: bold;
         }
 
         /* ── ttd ── */

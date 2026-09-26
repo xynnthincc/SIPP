@@ -292,7 +292,8 @@ function RaporCetakView() {
               padding: 1px 4px;
               vertical-align: top;
               font-size: var(--fs-ar);
-              font-weight: bold;
+              font-weight: normal;
+              line-height: 1.3;
             }
             table.identitas td.label-ar {
               white-space: nowrap;
@@ -304,16 +305,27 @@ function RaporCetakView() {
             table.identitas td.label-id {
               white-space: nowrap;
               direction: ltr;
-              text-align: left;
+              text-align: right;
               font-size: var(--fs-id);
               font-weight: normal;
               font-style: italic;
             }
+            table.identitas td.titik {
+              white-space: nowrap;
+              text-align: center;
+              font-weight: normal;
+            }
+            table.identitas tr:nth-child(odd) td {
+              padding-bottom: 0;
+            }
+            table.identitas tr:nth-child(even) td {
+              padding-bottom: 6px;
+            }
             table.identitas td.isi {
               direction: ltr;
-              text-align: left;
+              text-align: right;
               font-size: var(--fs-ar);
-              font-weight: bold;
+              font-weight: normal;
             }
 
             /* Tabel Nilai Utama (Direction: RTL)
@@ -332,7 +344,7 @@ function RaporCetakView() {
               border: 1px solid #000;
               padding: 5px 6px;
               font-size: var(--fs-ar);
-              font-weight: normal;
+              font-weight: bold;
               text-align: center;
               vertical-align: middle;
               line-height: 1.3;
@@ -480,7 +492,7 @@ function RaporCetakView() {
             table.sub thead th .th-id {
               display: block;
               font-size: var(--fs-id);
-              font-weight: normal;
+              font-weight: bold;
               direction: ltr;
               unicode-bidi: isolate;
             }
@@ -713,16 +725,20 @@ function RaporCetakView() {
             <div className="lembar break-page">
               <table className="identitas">
                 <colgroup>
-                  <col style={{ width: "19%" }} />
+                  <col style={{ width: "16%" }} />
+                  <col style={{ width: "3%" }} />
                   <col style={{ width: "42%" }} />
-                  <col style={{ width: "17.5%" }} />
+                  <col style={{ width: "14.5%" }} />
+                  <col style={{ width: "3%" }} />
                   <col style={{ width: "21.5%" }} />
                 </colgroup>
                 <tbody>
                   <tr>
-                    <td className="label-ar">اسم المدرسة&nbsp;&nbsp;:</td>
+                    <td className="label-ar">اسم المدرسة</td>
+                    <td className="titik">:</td>
                     <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
-                    <td className="label-ar">قسم&nbsp;&nbsp;:</td>
+                    <td className="label-ar">قسم</td>
+                    <td className="titik">:</td>
                     <td className="isi">
                       {data.kelas ? `${labelKelas(data.kelas.nama)} (${labelTingkat(data.kelas.tingkat)})` : "-"}
                     </td>
@@ -730,13 +746,17 @@ function RaporCetakView() {
                   <tr>
                     <td className="label-id">Nama Sekolah</td>
                     <td />
+                    <td />
                     <td className="label-id">Kelas</td>
+                    <td />
                     <td />
                   </tr>
                   <tr>
-                    <td className="label-ar">عنوان المدرسة&nbsp;&nbsp;:</td>
+                    <td className="label-ar">عنوان المدرسة</td>
+                    <td className="titik">:</td>
                     <td className="isi">{data.sekolah.alamat || "-"}</td>
-                    <td className="label-ar">نصف السنة&nbsp;&nbsp;:</td>
+                    <td className="label-ar">نصف السنة</td>
+                    <td className="titik">:</td>
                     <td className="isi">
                       {data.semester.nama}
                       {isSementara ? " (Sementara)" : ""}
@@ -745,18 +765,24 @@ function RaporCetakView() {
                   <tr>
                     <td className="label-id">Alamat Sekolah</td>
                     <td />
+                    <td />
                     <td className="label-id">Semester</td>
+                    <td />
                     <td />
                   </tr>
                   <tr>
-                    <td className="label-ar">اسم الطالب/الطالبة&nbsp;&nbsp;:</td>
+                    <td className="label-ar">اسم الطالب/الطالبة</td>
+                    <td className="titik">:</td>
                     <td className="isi" rowSpan={2}>{data.siswa.nama}</td>
-                    <td className="label-ar">سنة الدراسة&nbsp;&nbsp;:</td>
+                    <td className="label-ar">سنة الدراسة</td>
+                    <td className="titik">:</td>
                     <td className="isi">{data.semester.tahun}</td>
                   </tr>
                   <tr>
                     <td className="label-id">Nama Siswa</td>
+                    <td />
                     <td className="label-id">Tahun Pelajaran</td>
+                    <td />
                     <td />
                   </tr>
                 </tbody>
@@ -769,7 +795,7 @@ function RaporCetakView() {
                       <span className="th-ar">رقم</span>
                       <span className="th-id">Nomor</span>
                     </th>
-                    <th colSpan={2} style={{ width: "28.6%" }}>
+                    <th colSpan={2} rowSpan={2} style={{ width: "28.6%", verticalAlign: "middle" }}>
                       <span className="th-ar">قنوان الدروس</span>
                       <span className="th-id">Mata Pelajaran</span>
                     </th>
@@ -787,13 +813,13 @@ function RaporCetakView() {
                     </th>
                   </tr>
                   <tr className="sub">
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">حروف</span>
-                      <span className="th-id">Huruf</span>
-                    </th>
                     <th style={{ width: "9.1%" }}>
                       <span className="th-ar">شخصية</span>
                       <span className="th-id">Angka</span>
+                    </th>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">حروف</span>
+                      <span className="th-id">Huruf</span>
                     </th>
                   </tr>
                 </thead>

@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
         // Mata pelajaran kepesantrenan sesuai kurikulum pesantren (revisi client)
         $mapels = [
             ['kode' => 'QURAN', 'nama' => 'Al-Qur\'an', 'punya_progres_hafalan' => true],
-            ['kode' => 'BAGDADY', 'nama' => 'Qaidah Baghdadiyah', 'punya_progres_hafalan' => false],
+            ['kode' => 'BAGDADY', 'nama' => 'Eja Baghdadi', 'punya_progres_hafalan' => false],
             ['kode' => 'FIQIH', 'nama' => 'Fiqih', 'punya_progres_hafalan' => false],
             ['kode' => 'TAUHID', 'nama' => 'Tauhid', 'punya_progres_hafalan' => false],
             ['kode' => 'AKHLAK', 'nama' => 'Akhlaq', 'punya_progres_hafalan' => false],

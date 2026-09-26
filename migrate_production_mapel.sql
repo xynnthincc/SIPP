@@ -9,7 +9,7 @@
 --
 -- Ringkasan perubahan:
 --   EDIT (riwayat nilai & penugasan dipertahankan):
---     BAGDADY -> "Qaidah Baghdadiyah" (ar: قاعدة بغدادية)
+--     BAGDADY -> "Eja Baghdadi" (ar: قاعدة بغدادية)
 --     QURAN   -> "Al-Qur'an"
 --     BHS_ARAB-> nama_ar: اللغة العربية
 --   TAMBAH: TAJWID (Tajwid), TARIKH (Tarikh) + jenis assessment default
@@ -29,7 +29,7 @@ WHERE m.`kode` IN ('TAHFIDZ', 'TAHSIN', 'KITAB_KUNING', 'JUZ_AMMA', 'P_SW')
 ORDER BY m.`kode`;
 
 -- BLOK 1 — Edit yang dipertahankan (aman, tanpa hapus data)
-UPDATE `mapel_plus` SET `nama` = 'Qaidah Baghdadiyah', `nama_ar` = 'قاعدة بغدادية' WHERE `kode` = 'BAGDADY';
+UPDATE `mapel_plus` SET `nama` = 'Eja Baghdadi', `nama_ar` = 'قاعدة بغدادية' WHERE `kode` = 'BAGDADY';
 UPDATE `mapel_plus` SET `nama` = 'Al-Qur''an', `nama_ar` = 'القرآن' WHERE `kode` = 'QURAN';
 UPDATE `mapel_plus` SET `nama_ar` = 'اللغة العربية' WHERE `kode` = 'BHS_ARAB';
 
