@@ -6,6 +6,13 @@ on:
       - main
   workflow_dispatch:
 
+# Deploy clean-slate (wipe + upload) TIDAK BOLEH overlap: dua run bersamaan
+# akan saling hapus file (satu wipe sementara satunya upload → 550 + situs rusak).
+# Run baru antre sampai run berjalan selesai; jangan cancel run berjalan.
+concurrency:
+  group: sipp-hostinger-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy-frontend:
     name: Build & Deploy Frontend
