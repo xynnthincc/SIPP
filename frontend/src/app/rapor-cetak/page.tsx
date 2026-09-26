@@ -91,8 +91,8 @@ function RaporCetakView() {
 
             .lembar {
               /* Token ukuran & jarak label Arab / Indonesia (dipakai seragam) */
-              --fs-ar: 14px;
-              --fs-id: 12px;
+              --fs-ar: 15px;
+              --fs-id: 13px;
               --fs-judul-ar: 18px;
               --fs-judul-id: 16px;
               --gap-ar-id: 2px;
@@ -377,7 +377,7 @@ function RaporCetakView() {
             table.nilai thead tr.sub th .th-id { font-size: 12pt; }
             /* Kolom nomor */
             table.nilai td.no {
-              font-size: 12pt;
+              font-size: 13pt;
             }
             /* Kolom mapel: Arab kanan, Indonesia kiri, kolom terpisah */
             table.nilai td.mapel-ar {
@@ -394,32 +394,32 @@ function RaporCetakView() {
               font-weight: normal;
               font-style: italic;
             }
-            /* Label ringkasan (Total/Rata-rata/Peringkat): Arab 12pt di atas,
-               Indonesia 12pt di bawah */
+            /* Label ringkasan (Total/Rata-rata/Peringkat): Arab 13pt di atas,
+               Indonesia 13pt di bawah */
             table.nilai td.ring-label {
               font-weight: bold;
               text-align: center;
             }
             table.nilai td.ring-label .ar {
               display: block;
-              font-size: 12pt;
+              font-size: 13pt;
               direction: rtl;
               unicode-bidi: isolate;
             }
             table.nilai td.ring-label .id {
               display: block;
-              font-size: 12pt;
+              font-size: 13pt;
               direction: ltr;
               unicode-bidi: isolate;
             }
-            table.nilai td.ring-label.peringkat .ar { font-size: 14pt; }
+            table.nilai td.ring-label.peringkat .ar { font-size: 15pt; }
             table.nilai td.ring-val {
-              font-size: 14pt;
+              font-size: 15pt;
               font-weight: bold;
               text-align: center;
               direction: ltr;
             }
-            table.nilai td.ring-val.total { font-size: 12pt; }
+            table.nilai td.ring-val.total { font-size: 13pt; }
             /* Kolom predikat & deskripsi */
             table.nilai td.predikat {
               font-weight: bold;
@@ -427,13 +427,13 @@ function RaporCetakView() {
             }
             table.nilai td.predikat .ar {
               display: block;
-              font-size: 14pt;
+              font-size: 15pt;
               direction: rtl;
               unicode-bidi: isolate;
             }
             table.nilai td.predikat .id {
               display: block;
-              font-size: 12pt;
+              font-size: 13pt;
               direction: ltr;
               unicode-bidi: isolate;
             }
@@ -443,19 +443,19 @@ function RaporCetakView() {
             }
             table.nilai td.deskripsi .ar {
               display: block;
-              font-size: 14pt;
+              font-size: 15pt;
               direction: rtl;
               unicode-bidi: isolate;
             }
             table.nilai td.deskripsi .id {
               display: block;
-              font-size: 12pt;
+              font-size: 13pt;
               direction: ltr;
               unicode-bidi: isolate;
             }
             table.nilai td.deskripsi .isi-deskripsi {
               display: block;
-              font-size: 9pt;
+              font-size: 10pt;
               direction: ltr;
               unicode-bidi: isolate;
               line-height: 1.4;
@@ -484,14 +484,14 @@ function RaporCetakView() {
             }
             table.sub thead th .th-ar {
               display: block;
-              font-size: var(--fs-ar);
+              font-size: 14px;
               font-weight: bold;
               direction: rtl;
               unicode-bidi: isolate;
             }
             table.sub thead th .th-id {
               display: block;
-              font-size: var(--fs-id);
+              font-size: 12px;
               font-weight: bold;
               direction: ltr;
               unicode-bidi: isolate;
