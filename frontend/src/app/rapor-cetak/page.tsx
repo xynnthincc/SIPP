@@ -131,20 +131,20 @@ function RaporCetakView() {
               font-size: 13px;
             }
 
-            /* Sampul Identitas */
+            /* Sampul Identitas — 4 kolom: data | titik | label-id | label-ar */
             table.sampul-identitas {
               width: 100%;
               border-collapse: collapse;
               margin: 18px 0 20px;
             }
             table.sampul-identitas td {
-              padding: 7px 6px;
+              padding: 6px 6px;
               font-size: 13.5px;
               vertical-align: middle;
               border: none;
             }
             table.sampul-identitas td.isi {
-              width: 46%;
+              width: 38%;
               font-weight: bold;
             }
             table.sampul-identitas td.titik {
@@ -152,17 +152,16 @@ function RaporCetakView() {
               text-align: center;
               color: #444;
             }
+            table.sampul-identitas td.label-id {
+              width: 20%;
+              font-style: normal;
+              text-align: left;
+            }
             table.sampul-identitas td.label-ar {
-              width: 50%;
+              width: 38%;
               direction: rtl;
               text-align: right;
-            }
-            table.sampul-identitas td.label-ar .label-id-inline {
-              font-style: italic;
-              font-size: 12px;
-              direction: ltr;
-              unicode-bidi: embed;
-              margin-right: 8px;
+              font-weight: bold;
             }
 
             .sampul-garis {
@@ -177,28 +176,40 @@ function RaporCetakView() {
               direction: rtl;
               margin-bottom: 14px;
             }
-            .petunjuk-sub {
-              font-weight: bold;
-              font-size: 12.5px;
-              margin: 14px 0 8px;
-            }
+
             table.legenda {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 6px;
               font-size: 12.5px;
+              direction: rtl;
             }
             table.legenda td {
-              padding: 4px 10px;
+              padding: 3px 10px;
               border: none;
             }
             table.legenda td.rentang {
-              width: 30%;
+              width: 40%;
               direction: rtl;
               text-align: right;
             }
             table.legenda td.label {
-              width: 70%;
+              width: 60%;
+              direction: ltr;
+              text-align: right;
+            }
+            .petunjuk-sub {
+              font-weight: bold;
+              font-size: 12.5px;
+              margin: 12px 0 6px;
+              display: flex;
+              justify-content: space-between;
+              align-items: baseline;
+            }
+            .petunjuk-sub .ar-label {
+              font-weight: normal;
+              direction: rtl;
+              font-size: 12px;
             }
 
             /* Tabel Identitas Kop Halaman Nilai */
@@ -255,24 +266,33 @@ function RaporCetakView() {
             table.nilai td.mapel .ar {
               font-weight: bold;
               display: block;
+              text-align: right;
             }
             table.nilai td.mapel .id {
               font-size: 12px;
               color: #333;
               direction: ltr;
               display: block;
-              text-align: left;
+              text-align: right;
+              unicode-bidi: bidi-override;
               margin-top: 2px;
             }
             table.nilai .ringkasan-label {
               font-weight: bold;
               text-align: right;
             }
+            table.nilai .ringkasan-label .ar {
+              display: block;
+              text-align: right;
+            }
             table.nilai .ringkasan-label .id {
               font-weight: normal;
               font-size: 12.5px;
               direction: ltr;
-              display: inline-block;
+              display: block;
+              text-align: right;
+              unicode-bidi: bidi-override;
+              margin-top: 2px;
             }
             table.nilai .ringkasan-isi {
               text-align: center;
@@ -328,13 +348,16 @@ function RaporCetakView() {
             table.sub td.ket .ar {
               font-weight: bold;
               display: block;
+              text-align: right;
             }
             table.sub td.ket .id {
               font-size: 11px;
               color: #333;
               display: block;
               direction: ltr;
-              text-align: left;
+              text-align: right;
+              unicode-bidi: bidi-override;
+              margin-top: 1px;
             }
             table.sub td.ket-materi {
               direction: ltr;
@@ -437,62 +460,48 @@ function RaporCetakView() {
                   <tr>
                     <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Nama Sekolah</span>
-                      اسم المدرسة
-                    </td>
+                    <td className="label-id">Nama Sekolah</td>
+                    <td className="label-ar">اسم المدرسة</td>
                   </tr>
                   <tr>
                     <td className="isi">{data.siswa.nis || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Nomor Induk</span>
-                      رقم دفتر القيد
-                    </td>
+                    <td className="label-id">Nomor Induk</td>
+                    <td className="label-ar">رقم دفتر القيد</td>
                   </tr>
                   <tr>
                     <td className="isi">
-                      {data.sekolah.alamat || "-"}{" "}
-                      Kode Pos : {data.sekolah.kode_pos || "-"}{" "}
-                      Telp. {data.sekolah.telepon || "-"}
+                      {data.sekolah.alamat
+                        ? <>{data.sekolah.alamat}&nbsp; Kode Pos : {data.sekolah.kode_pos || "-"}&nbsp; Telp. {data.sekolah.telepon || "-"}</>
+                        : <>{data.sekolah.kode_pos ? `Kode Pos : ${data.sekolah.kode_pos}` : ""}{data.sekolah.telepon ? ` Telp. ${data.sekolah.telepon}` : ""}</>}
                     </td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Alamat Sekolah</span>
-                      عنوان المدرسة
-                    </td>
+                    <td className="label-id">Alamat Sekolah</td>
+                    <td className="label-ar">عنوان المدرسة</td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kelurahan || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Kelurahan</span>
-                      قرية
-                    </td>
+                    <td className="label-id">Kelurahan</td>
+                    <td className="label-ar">قرية</td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kecamatan || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Kecamatan</span>
-                      منطقة جنوب
-                    </td>
+                    <td className="label-id">Kecamatan</td>
+                    <td className="label-ar">منطقة جنوب</td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kota_kabupaten || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Kota/Kabupaten</span>
-                      مدينة
-                    </td>
+                    <td className="label-id">Kota/Kabupaten</td>
+                    <td className="label-ar">مدينة</td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.provinsi || "-"}</td>
                     <td className="titik">:</td>
-                    <td className="label-ar">
-                      <span className="label-id-inline">Provinsi</span>
-                      مقاطعة
-                    </td>
+                    <td className="label-id">Provinsi</td>
+                    <td className="label-ar">مقاطعة</td>
                   </tr>
                 </tbody>
               </table>
@@ -500,54 +509,54 @@ function RaporCetakView() {
               <div className="sampul-garis" />
 
               <div className="petunjuk-title">بيان عن الرموز الموجودة في هذه اللائحة</div>
-              <div style={{ fontWeight: "bold", marginBottom: "6px" }}>Petunjuk Penggunaan</div>
+              <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Petunjuk penggunaan</div>
 
               <div className="petunjuk-sub">
-                <span style={{ direction: "rtl", fontWeight: "normal" }}>معنى الأرقام في النتائج</span>{" "}
-                ١. Keterangan Angka pada Nilai
+                <span>Keterangan Angka pada Nilai</span>
+                <span className="ar-label">١. معنى الأرقام في النتائج</span>
               </div>
               <table className="legenda">
                 <tbody>
                   <tr>
                     <td className="label">Istimewa</td>
-                    <td className="rentang">{angkaArab("90")} &ndash; {angkaArab("100")}</td>
+                    <td className="rentang">٩ ـ ممتاز</td>
                   </tr>
                   <tr>
                     <td className="label">Sangat Baik</td>
-                    <td className="rentang">{angkaArab("80")} &ndash; {angkaArab("89")}</td>
+                    <td className="rentang">٨ ـ جيد جدا</td>
                   </tr>
                   <tr>
                     <td className="label">Baik</td>
-                    <td className="rentang">{angkaArab("70")} &ndash; {angkaArab("79")}</td>
+                    <td className="rentang">٧ ـ جيد</td>
                   </tr>
                   <tr>
                     <td className="label">Cukup</td>
-                    <td className="rentang">{angkaArab("60")} &ndash; {angkaArab("69")}</td>
+                    <td className="rentang">٦ ـ متوسط</td>
                   </tr>
                   <tr>
                     <td className="label">Kurang</td>
-                    <td className="rentang">&le; {angkaArab("59")}</td>
+                    <td className="rentang">٥ ـ رديء</td>
                   </tr>
                 </tbody>
               </table>
 
               <div className="petunjuk-sub">
-                <span style={{ direction: "rtl", fontWeight: "normal" }}>معنى الأحرف في النتائج</span>{" "}
-                ٢. Keterangan Huruf pada Nilai
+                <span>Keterangan Huruf pada Nilai</span>
+                <span className="ar-label">٢. معنى الأحرف في النتائج</span>
               </div>
               <table className="legenda">
                 <tbody>
                   <tr>
                     <td className="label">Baik (A)</td>
-                    <td className="rentang">جيد</td>
+                    <td className="rentang">أ ـ جيد</td>
                   </tr>
                   <tr>
                     <td className="label">Cukup (B)</td>
-                    <td className="rentang">متوسط</td>
+                    <td className="rentang">ب ـ متوسط</td>
                   </tr>
                   <tr>
                     <td className="label">Buruk (C)</td>
-                    <td className="rentang">رديء</td>
+                    <td className="rentang">ج ـ رديء</td>
                   </tr>
                 </tbody>
               </table>
@@ -639,8 +648,8 @@ function RaporCetakView() {
                     <tr key={idx}>
                       <td>{angkaArab(idx + 1)}</td>
                       <td className="mapel">
-                        <span className="id">{m.nama_id}</span>
                         <span className="ar">{m.nama_ar}</span>
+                        <span className="id">{m.nama_id}</span>
                       </td>
                       <td>{m.kkm !== null ? angkaArab(m.kkm) : "-"}</td>
                       <td>{m.nilai !== null ? angkaArab(m.nilai) : "-"}</td>
@@ -660,13 +669,15 @@ function RaporCetakView() {
                       <span className="isi-deskripsi">{predikat.deskripsi}</span>
                     </td>
                     <td colSpan={2} className="ringkasan-label">
-                      مجموع النتائج <span className="id">/ Total Nilai</span>
+                      <span className="ar">مجموع النتائج</span>
+                      <span className="id">Total Nilai</span>
                     </td>
                     <td className="ringkasan-isi">{angkaArab(data.total)}</td>
                   </tr>
                   <tr>
                     <td colSpan={2} className="ringkasan-label">
-                      التعادل <span className="id">/ Rata-Rata</span>
+                      <span className="ar">التعادل</span>
+                      <span className="id">Rata-Rata</span>
                     </td>
                     <td className="ringkasan-isi">
                       {angkaArab(data.rata2)} ({angkaArab(data.rata2_bulat)})
@@ -674,7 +685,8 @@ function RaporCetakView() {
                   </tr>
                   <tr>
                     <td colSpan={2} className="ringkasan-label">
-                      المرتبة <span className="id">/ Peringkat</span>
+                      <span className="ar">المرتبة</span>
+                      <span className="id">Peringkat</span>
                     </td>
                     <td className="ringkasan-isi">{angkaArab(data.peringkat)}</td>
                   </tr>
@@ -700,7 +712,7 @@ function RaporCetakView() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="nilai-isi">{angkaArab(data.pembiasaan)}</td>
+                    <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
                     <td className="ket">
                       <span className="ar">تعويد بالغدوة</span>
                       <span className="id">Pembiasaan Pagi</span>

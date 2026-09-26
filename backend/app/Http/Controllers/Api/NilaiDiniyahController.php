@@ -98,7 +98,7 @@ class NilaiDiniyahController extends Controller
             'nilai_praktik.*.nilai' => ['nullable', 'in:A,B,C,D'],
             'nilai_praktik.*.keterangan' => ['nullable', 'string', 'max:255'],
             'pembiasaan' => ['sometimes', 'array'],
-            'pembiasaan.nilai' => ['nullable', 'integer', 'between:0,100'],
+            'pembiasaan.nilai' => ['nullable', 'in:A,B,C,D'],
             'sikap' => ['sometimes', 'array'],
             'sikap.akhlaq' => ['nullable', 'in:A,B,C,D'],
             'sikap.kepribadian' => ['nullable', 'in:A,B,C,D'],

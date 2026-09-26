@@ -105,7 +105,7 @@ class RaporDiniyahTest extends TestCase
                 'nilai_praktik' => [
                     ['praktik_item_id' => $this->praktik->id, 'nilai' => 'A', 'keterangan' => 'Lancar'],
                 ],
-                'pembiasaan' => ['nilai' => 90],
+                'pembiasaan' => ['nilai' => 'A'],
                 'sikap' => ['akhlaq' => 'A', 'kepribadian' => 'B'],
                 'kehadiran' => ['sakit' => 1, 'izin' => 2, 'alpa' => 0],
             ])
@@ -125,7 +125,7 @@ class RaporDiniyahTest extends TestCase
             'semester_id' => $this->semester->id,
             'nilai' => 'A',
         ]);
-        $this->assertDatabaseHas('pembiasaans', ['siswa_id' => $this->siswa->id, 'semester_id' => $this->semester->id, 'nilai' => 90]);
+        $this->assertDatabaseHas('pembiasaans', ['siswa_id' => $this->siswa->id, 'semester_id' => $this->semester->id, 'nilai' => 'A']);
         $this->assertDatabaseHas('sikaps', ['siswa_id' => $this->siswa->id, 'akhlaq' => 'A', 'kepribadian' => 'B']);
         $this->assertDatabaseHas('kehadiran_rekaps', ['siswa_id' => $this->siswa->id, 'sakit' => 1, 'izin' => 2, 'alpa' => 0]);
         $this->assertDatabaseHas('log_edit_nilais', ['siswa_id' => $this->siswa->id, 'semester_id' => $this->semester->id, 'updated_by' => $this->wali->id]);

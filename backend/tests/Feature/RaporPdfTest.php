@@ -46,7 +46,7 @@ class RaporPdfTest extends TestCase
             ->getJson("/api/rapor/pdf?siswa_id={$this->siswa->id}&semester_id={$this->semesterId}")
             ->assertOk()
             ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
-            ->assertSee('Laporan Hasil Belajar')
+            ->assertSee('Rapor - Santri PDF')
             ->assertSee('Santri PDF');
     }
 

@@ -56,7 +56,7 @@ interface RekapDiniyah {
   semester: { id: number; nama: string; tahun: string; penilaian_dibuka: boolean };
   mapel: NilaiMapelRow[];
   praktik: NilaiPraktikRow[];
-  pembiasaan: { nilai: number | null } | null;
+  pembiasaan: { nilai: string | null } | null;
   sikap: { akhlaq: string | null; kepribadian: string | null } | null;
   kehadiran: { sakit: number | null; izin: number | null; alpa: number | null } | null;
   log_edit: { updated_by: number; updated_at: string; updater: { id: number; name: string } | null } | null;
@@ -133,7 +133,7 @@ export default function NilaiDiniyahInput() {
         pk[p.id] = { nilai: p.nilai ?? "", keterangan: p.keterangan ?? "" };
       });
       setPraktik(pk);
-      setPembiasaan(res.data.pembiasaan?.nilai !== null && res.data.pembiasaan?.nilai !== undefined ? String(res.data.pembiasaan.nilai) : "");
+      setPembiasaan(res.data.pembiasaan?.nilai ?? "");
       setSikap({ akhlaq: res.data.sikap?.akhlaq ?? "", kepribadian: res.data.sikap?.kepribadian ?? "" });
       setKehadiran({
         sakit: res.data.kehadiran?.sakit !== null && res.data.kehadiran?.sakit !== undefined ? String(res.data.kehadiran.sakit) : "",
@@ -185,7 +185,7 @@ export default function NilaiDiniyahInput() {
           })),
       };
       if (pembiasaanBoleh) {
-        body.pembiasaan = { nilai: pembiasaan !== "" ? Number(pembiasaan) : null };
+        body.pembiasaan = { nilai: pembiasaan !== "" ? pembiasaan : null };
         body.sikap = { akhlaq: sikap.akhlaq || null, kepribadian: sikap.kepribadian || null };
         body.kehadiran = {
           sakit: Number(kehadiran.sakit) || 0,
@@ -397,17 +397,14 @@ export default function NilaiDiniyahInput() {
               <h3 className="text-sm font-semibold text-slate-800 mb-4">Pembiasaan, Sikap & Kehadiran</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Nilai Pembiasaan Pagi</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={pembiasaan}
-                    onChange={(e) => setPembiasaan(e.target.value)}
-                    placeholder="0–100"
-                    className="w-full px-3 py-2.5 text-sm glass-input rounded-xl"
-                    disabled={!penilaianBuka}
-                  />
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Predikat Pembiasaan Pagi</label>
+                  <Select value={pembiasaan} onChange={(e) => setPembiasaan(e.target.value)} disabled={!penilaianBuka}>
+                    <option value="">-</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">Sikap — Akhlaq</label>

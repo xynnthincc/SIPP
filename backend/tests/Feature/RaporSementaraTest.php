@@ -149,7 +149,7 @@ class RaporSementaraTest extends TestCase
             ->getJson("/api/rapor/pdf?siswa_id={$this->siswa->id}&semester_id={$sementara->id}")
             ->assertOk()
             ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
-            ->assertSee('Laporan Hasil Belajar — SEMENTARA')
+            ->assertSee('Rapor Sementara - Siswa Sementara')
             ->assertSee('Ganjil (Sementara)');
     }
 }

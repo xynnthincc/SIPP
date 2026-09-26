@@ -2,7 +2,7 @@
 <html lang="id" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <title>Rapor - {{ $rapor['siswa']['nama'] ?? 'Siswa' }}</title>
+    <title>Rapor{{ ($rapor['semester']['jenis'] ?? 'Akhir') === 'Sementara' ? ' Sementara' : '' }} - {{ $rapor['siswa']['nama'] ?? 'Siswa' }}</title>
     <style>
         @page {
             size: A4 portrait;
@@ -192,7 +192,7 @@
         <td class="label-ar">نصف السنة</td>
         <td class="label-id">Semester</td>
         <td class="sep">:</td>
-        <td class="val">{{ $rapor['semester']['nama'] ?? '-' }}</td>
+        <td class="val">{{ $rapor['semester']['nama'] ?? '-' }}{{ ($rapor['semester']['jenis'] ?? 'Akhir') === 'Sementara' ? ' (Sementara)' : '' }}</td>
     </tr>
     <tr>
         <td class="label-ar">اسم الطالب/الطالبة</td>
@@ -332,7 +332,7 @@
             <span class="id">Pembiasaan Pos.</span>
         </td>
         <td class="center">
-            <span class="ar-center" style="font-size:12pt;">{{ $rapor['pembiasaan'] !== null ? \App\Support\ArabBilangan::angkaArab($rapor['pembiasaan']) : '' }}</span>
+            <span class="ar-center" style="font-size:12pt;">{{ \App\Support\ArabBilangan::hurufArab($rapor['pembiasaan'] ?? null) ?? '' }}</span>
         </td>
     </tr>
 </table>
