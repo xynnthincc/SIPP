@@ -16,6 +16,26 @@ class GuruMapelKelasController extends Controller
             ->get();
     }
 
+    /**
+     * Penugasan pengampuan milik user login (guru pesantren MAUPUN wali kelas
+     * yang juga mengajar — siapa pun yang punya profil guru). Dipakai halaman
+     * input nilai guru & untuk menampilkan menu "Guru Mapel" di dashboard wali kelas.
+     */
+    public function saya(Request $request)
+    {
+        $guru = $request->user()->guru;
+
+        if (! $guru) {
+            return response()->json([]);
+        }
+
+        return GuruMapelKelas::with('mapelPlus', 'kelasRombel.tahunAjaran', 'semester')
+            ->where('guru_id', $guru->id)
+            ->when($request->semester_id, fn ($q, $id) => $q->where('semester_id', $id))
+            ->orderBy('semester_id')
+            ->get();
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

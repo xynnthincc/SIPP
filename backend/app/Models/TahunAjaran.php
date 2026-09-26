@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class TahunAjaran extends Model
 {
     protected $fillable = ['nama', 'is_aktif'];
+
     protected $casts = ['is_aktif' => 'boolean'];
 
     public function semesters()

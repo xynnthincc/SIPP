@@ -13,6 +13,7 @@ use App\Models\Sekolah;
 use App\Models\Semester;
 use App\Models\Sikap;
 use App\Models\Siswa;
+use App\Models\SiswaKelas;
 use App\Support\ArabBilangan;
 use App\Support\NilaiDiniyah;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class RaporController extends Controller
             ? Semester::findOrFail($data['semester_id'])
             : Semester::where('is_aktif', true)->firstOrFail();
 
-        $this->pastikanBolehCetak($request, $siswa);
+        $this->pastikanBolehCetak($request, $siswa, $semester);
 
         return response()->json($this->komposisiCetak($siswa, $semester));
     }
@@ -59,7 +60,7 @@ class RaporController extends Controller
             ? Semester::findOrFail($data['semester_id'])
             : Semester::where('is_aktif', true)->firstOrFail();
 
-        $this->pastikanBolehCetak($request, $siswa);
+        $this->pastikanBolehCetak($request, $siswa, $semester);
 
         $html = view('pdf.rapor', ['rapor' => $this->komposisiCetak($siswa, $semester)])->render();
 
@@ -142,13 +143,13 @@ class RaporController extends Controller
         return response()->json($hasil);
     }
 
-    /** Guru pesantren tidak boleh mencetak; wali kelas terbatas kelasnya; siswa/ortu miliknya sendiri */
-    private function pastikanBolehCetak(Request $request, Siswa $siswa): void
+    /** Guru pesantren tidak boleh mencetak; wali kelas terbatas kelasnya (kelas historis semester tsb); siswa/ortu miliknya sendiri */
+    private function pastikanBolehCetak(Request $request, Siswa $siswa, Semester $semester): void
     {
         $user = $request->user();
 
         $boleh = $user->hasRole('admin', 'kepala_sekolah')
-            || ($user->hasRole('wali_kelas') && $siswa->kelasRombel?->wali_kelas_id === $user->id)
+            || ($user->hasRole('wali_kelas') && $siswa->kelasUntukSemester($semester)?->wali_kelas_id === $user->id)
             || ($user->hasRole('siswa') && $siswa->user_id === $user->id)
             || ($user->hasRole('orang_tua') && $siswa->anakWali()->where('users.id', $user->id)->exists());
 
@@ -157,7 +158,9 @@ class RaporController extends Controller
 
     private function komposisiCetak(Siswa $siswa, Semester $semester): array
     {
-        $kelas = $siswa->kelasRombel;
+        // Kelas mengikuti penempatan siswa pada TA semester tsb (bukan kelas saat ini),
+        // sehingga rapor semester lama tetap menampilkan kelas & wali kelas zamannya.
+        $kelas = $siswa->kelasUntukSemester($semester);
 
         $mapel = $this->dataMapel($siswa->id, $semester->id);
         $total = 0;
@@ -170,7 +173,7 @@ class RaporController extends Controller
         }
         unset($row);
         $rata2 = $jumlahMapelTerisi > 0 ? round($total / $jumlahMapelTerisi, 2) : 0;
-        $peringkat = $this->hitungPeringkat($siswa->kelas_rombel_id, $semester->id, $siswa->id);
+        $peringkat = $this->hitungPeringkat($siswa, $semester);
 
         $praktik = PraktikItem::orderBy('urutan')->get()
             ->map(fn (PraktikItem $item) => [
@@ -238,16 +241,29 @@ class RaporController extends Controller
             })->all();
     }
 
-    private function hitungPeringkat(int $kelasId, int $semesterId, int $siswaId): ?int
+    /**
+     * Peringkat dihitung di antara siswa yang satu kelas DENGAN siswa ini pada
+     * tahun ajaran semester tsb (penempatan historis), bukan kelas saat ini —
+     * agar peringkat rapor lama tidak berubah setelah siswa naik kelas.
+     */
+    private function hitungPeringkat(Siswa $siswa, Semester $semester): ?int
     {
-        $siswaDiKelas = Siswa::where('kelas_rombel_id', $kelasId)->pluck('id');
+        $kelas = $siswa->kelasUntukSemester($semester);
+        if ($kelas === null) {
+            return null;
+        }
+
+        $siswaDiKelas = SiswaKelas::where('kelas_rombel_id', $kelas->id)->pluck('siswa_id');
+        if ($siswaDiKelas->isEmpty()) {
+            $siswaDiKelas = Siswa::where('kelas_rombel_id', $kelas->id)->pluck('id');
+        }
         if ($siswaDiKelas->isEmpty()) {
             return null;
         }
 
         $nilaiPef = [];
         foreach ($siswaDiKelas as $id) {
-            $daftar = NilaiDiniyah::nilaiPerMapel($id, $semesterId)->filter(fn ($v) => $v !== null)->values();
+            $daftar = NilaiDiniyah::nilaiPerMapel((int) $id, $semester->id)->filter(fn ($v) => $v !== null)->values();
 
             if ($daftar->isEmpty()) {
                 continue;
@@ -259,7 +275,7 @@ class RaporController extends Controller
         $diurut = collect($nilaiPef)->sortDesc();
         $peringkat = 1;
         foreach ($diurut as $id => $avg) {
-            if ((int) $id === $siswaId) {
+            if ((int) $id === $siswa->id) {
                 return $peringkat;
             }
             $peringkat++;

@@ -10,11 +10,12 @@ class JadwalController extends Controller
 {
     public function index(Request $request)
     {
-        // Guru pesantren hanya lihat jadwal miliknya sendiri
+        // Semua pemilik profil guru (guru pesantren & wali kelas yang mengajar)
+        // hanya melihat jadwal pengampuannya sendiri
         $user = $request->user();
 
         return Jadwal::with('guruMapelKelas.guru.user', 'guruMapelKelas.mapelPlus', 'guruMapelKelas.kelasRombel')
-            ->when($user->hasRole('guru_pesantren'), function ($q) use ($user) {
+            ->when($user->guru, function ($q) use ($user) {
                 $q->whereHas('guruMapelKelas.guru', fn ($qq) => $qq->where('user_id', $user->id));
             })
             ->when($request->kelas_rombel_id, function ($q, $id) {

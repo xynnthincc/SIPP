@@ -18,6 +18,7 @@ use App\Models\PredikatRange;
 use App\Models\Semester;
 use App\Models\Sikap;
 use App\Models\Siswa;
+use App\Models\SiswaKelas;
 use App\Models\User;
 use App\Support\NilaiDiniyah;
 use Illuminate\Http\Request;
@@ -216,8 +217,9 @@ class NilaiDiniyahController extends Controller
         $kelas = KelasRombel::findOrFail($data['kelas_rombel_id']);
         $this->pastikanBolehNilaiMassal($user, (int) $data['mapel_plus_id'], $kelas, $semester);
 
-        // Semua siswa harus terdaftar di kelas tersebut
-        $siswaKelas = Siswa::where('kelas_rombel_id', $kelas->id)->pluck('id');
+        // Semua siswa harus terdaftar di kelas tersebut (riwayat penempatan;
+        // mendukung pengisian nilai untuk kelas tahun ajaran lama)
+        $siswaKelas = $this->anggotaKelas($kelas);
         foreach (collect($data['nilai'])->pluck('siswa_id') as $siswaId) {
             abort_unless($siswaKelas->contains($siswaId), 422, 'Terdapat siswa yang tidak terdaftar di kelas ini.');
         }
@@ -282,22 +284,23 @@ class NilaiDiniyahController extends Controller
 
     /* ── Helpers ──────────────────────────────────────────── */
 
-    /** Scope input massal: guru harus mengampu mapel di kelas tsb; wali kelas kelasnya; admin bebas. */
+    /** Scope input massal: pemilik profil guru harus mengampu mapel di kelas tsb; wali kelas kelas binaannya; admin bebas. */
     private function pastikanBolehNilaiMassal(User $user, int $mapelId, KelasRombel $kelas, Semester $semester): void
     {
         if ($user->hasRole('admin')) {
             return;
         }
 
-        if ($user->hasRole('guru_pesantren')) {
-            $boleh = GuruMapelKelas::where('guru_id', $user->guru?->id)
+        // Wali kelas yang juga mengajar: sah lewat penugasan pengampu
+        if ($user->guru) {
+            $boleh = GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('mapel_plus_id', $mapelId)
                 ->where('kelas_rombel_id', $kelas->id)
                 ->where('semester_id', $semester->id)
                 ->exists();
-            abort_unless($boleh, 403, 'Anda tidak mengampu mata pelajaran ini di kelas tersebut.');
-
-            return;
+            if ($boleh) {
+                return;
+            }
         }
 
         if ($user->hasRole('wali_kelas')) {
@@ -334,7 +337,8 @@ class NilaiDiniyahController extends Controller
         }
 
         $semester = Semester::with('tahunAjaran')->findOrFail($data['semester_id']);
-        $siswas = Siswa::where('kelas_rombel_id', $kelas->id)->orderBy('nama')->get();
+        // Anggota kelas = penempatan historis (kelas TA lama tetap punya anggotanya)
+        $siswas = Siswa::whereIn('id', $this->anggotaKelas($kelas))->orderBy('nama')->get();
         $mapels = MapelPlus::orderBy('urutan')->orderBy('kode')->get();
 
         $nilaiLangsung = NilaiMapel::where('semester_id', $semester->id)
@@ -486,6 +490,17 @@ class NilaiDiniyahController extends Controller
         return $user->hasRole('wali_kelas') && $siswa->kelasRombel?->wali_kelas_id === $user->id;
     }
 
+    /** Anggota kelas menurut riwayat penempatan (fallback kelas saat ini utk data lama). */
+    private function anggotaKelas(KelasRombel $kelas): Collection
+    {
+        $ids = SiswaKelas::where('kelas_rombel_id', $kelas->id)->pluck('siswa_id');
+        if ($ids->isEmpty()) {
+            return Siswa::where('kelas_rombel_id', $kelas->id)->pluck('id');
+        }
+
+        return $ids;
+    }
+
     private function mapelBolehD(Request $request, Siswa $siswa, Semester $semester): Collection
     {
         $user = $request->user();
@@ -494,7 +509,7 @@ class NilaiDiniyahController extends Controller
             return MapelPlus::pluck('id');
         }
 
-        if ($user->hasRole('guru_pesantren') && $user->guru && $siswa->kelas_rombel_id) {
+        if ($user->guru && $siswa->kelas_rombel_id) {
             return GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('kelas_rombel_id', $siswa->kelas_rombel_id)
                 ->where('semester_id', $semester->id)
@@ -510,7 +525,7 @@ class NilaiDiniyahController extends Controller
             return PraktikItem::pluck('id');
         }
 
-        if ($user->hasRole('guru_pesantren') && $user->guru) {
+        if ($user->guru) {
             return $user->guru->praktikItems()->pluck('praktik_items.id');
         }
 

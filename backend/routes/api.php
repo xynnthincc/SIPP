@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/jadwal', [JadwalController::class, 'index']);
 
     Route::get('/kelas-rombel', [KelasRombelController::class, 'index']);
+    Route::get('/pengampuan-saya', [GuruMapelKelasController::class, 'saya']);
 
     // Notifikasi & perangkat (semua role)
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -74,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // didaftarkan terakhir akan MENIMPA yang pertama, sehingga index versi admin-only
         // akan menutup akses role lain (bug 403 untuk wali kelas).
         Route::apiResource('tahun-ajaran', TahunAjaranController::class)->only(['store', 'update', 'destroy']);
+        Route::post('/tahun-ajaran/{tahunAjaran}/promosi', [TahunAjaranController::class, 'promosi']);
         Route::apiResource('semester', SemesterController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('kelas-rombel', KelasRombelController::class)->except(['show', 'index']);
         Route::apiResource('guru', GuruController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -105,8 +107,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/izin/{izin}/status', [IzinController::class, 'updateStatus']);
     });
 
-    // ── Guru Pesantren: input jadwal-nya, presensi, assessment, nilai, progres, catatan ──
-    Route::middleware('role:guru_pesantren,admin')->group(function () {
+    // ── Guru Pesantren & Wali Kelas yang mengajar: jadwal, presensi, assessment, nilai, progres, catatan ──
+    // (wali kelas boleh masuk selama punya profil guru + penugasan pengampu; scope per item dicek di controller)
+    Route::middleware('role:guru_pesantren,wali_kelas,admin')->group(function () {
         Route::apiResource('jadwal', JadwalController::class)->only(['store', 'update', 'destroy']);
         Route::post('/presensi/massal', [PresensiController::class, 'storeMassal']);
         Route::post('/nilai/massal', [NilaiController::class, 'storeMassal']);

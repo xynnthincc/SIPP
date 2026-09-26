@@ -53,12 +53,14 @@ class NilaiController extends Controller
         $semester = Semester::findOrFail($data['semester_id']);
         abort_unless($semester->penilaian_dibuka, 422, 'Periode penilaian semester ini sudah ditutup.');
 
-        // Guru hanya boleh mencatat nilai pada mapel & kelas yang diampunya
-        // di semester tersebut; admin bebas.
+        // Pemilik profil guru (guru pesantren & wali kelas yang mengajar) hanya boleh
+        // mencatat nilai pada mapel & kelas yang diampunya di semester tersebut;
+        // admin bebas.
         $user = $request->user();
-        if ($user->hasRole('guru_pesantren')) {
+        if (! $user->hasRole('admin')) {
+            abort_unless($user->guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
             $jenis = JenisAssessment::findOrFail($data['jenis_assessment_id']);
-            $kelasDiampu = GuruMapelKelas::where('guru_id', $user->guru?->id)
+            $kelasDiampu = GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('mapel_plus_id', $jenis->mapel_plus_id)
                 ->where('semester_id', $semester->id)
                 ->pluck('kelas_rombel_id');

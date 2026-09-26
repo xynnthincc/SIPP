@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
-  PageHeader, Card, Button, Skeleton, ConfirmModal, IconButton, Alert, EmptyState,
+  PageHeader, Card, Button, Select, Skeleton, ConfirmModal, IconButton, Alert, EmptyState,
 } from "@/components/ui";
 
 interface Semester {
@@ -53,6 +53,10 @@ export default function TahunAjaranPage() {
   const [hapusSemester, setHapusSemester] = useState<{ ta: TahunAjaran; semester: Semester } | null>(null);
   const [hapusLoading, setHapusLoading] = useState(false);
   const [hapusError, setHapusError] = useState<string | null>(null);
+  const [promosiTA, setPromosiTA] = useState<TahunAjaran | null>(null);
+  const [promosiTujuan, setPromosiTujuan] = useState("");
+  const [promosiLoading, setPromosiLoading] = useState(false);
+  const [promosiHasil, setPromosiHasil] = useState<string | null>(null);
 
   const load = useCallback(() => {
     api.get<TahunAjaran[]>("/tahun-ajaran").then((res) => {
@@ -115,6 +119,27 @@ export default function TahunAjaranPage() {
     }
   }
 
+  async function handlePromosi() {
+    if (!promosiTA || !promosiTujuan) return;
+    setPromosiLoading(true);
+    try {
+      const res = await api.post<{ naik: number; lulus: number; tahun_ajaran_tujuan: string }>(
+        `/tahun-ajaran/${promosiTA.id}/promosi`,
+        { tahun_ajaran_tujuan_id: Number(promosiTujuan) }
+      );
+      setPromosiHasil(
+        `${res.data.naik} siswa naik kelas & ${res.data.lulus} siswa tingkat 9 (lulus) di TA ${res.data.tahun_ajaran_tujuan}. Riwayat kelas & nilai semester TA lama tetap tersimpan.`
+      );
+      setPromosiTA(null);
+      await load();
+    } catch (err: unknown) {
+      const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
+      setHapusError(pesan?.message ?? "Gagal mempromosikan siswa.");
+    } finally {
+      setPromosiLoading(false);
+    }
+  }
+
   return (
     <div className="animate-fade-in">
       <PageHeader
@@ -126,6 +151,11 @@ export default function TahunAjaranPage() {
       {hapusError && (
         <div className="mb-6">
           <Alert variant="danger" onClose={() => setHapusError(null)}>{hapusError}</Alert>
+        </div>
+      )}
+      {promosiHasil && (
+        <div className="mb-6">
+          <Alert variant="success" onClose={() => setPromosiHasil(null)}>{promosiHasil}</Alert>
         </div>
       )}
 
@@ -151,6 +181,12 @@ export default function TahunAjaranPage() {
                   />
                 </div>
                 <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setPromosiTA(ta); setPromosiTujuan(""); setHapusError(null); }}
+                  >
+                    Naik Kelas
+                  </Button>
                   <IconButton icon="edit" variant="edit" label="Edit tahun ajaran" onClick={() => router.push(`/admin/tahun-ajaran/form?id=${ta.id}`)} />
                   <IconButton icon="trash" variant="delete" label="Hapus tahun ajaran" onClick={() => { setHapusTA(ta); setHapusError(null); }} />
                 </div>
@@ -231,6 +267,37 @@ export default function TahunAjaranPage() {
         title="Hapus Semester"
         message={`Yakin ingin menghapus semester ${hapusSemester?.semester.nama}${hapusSemester?.semester.jenis === "Sementara" ? " (Sementara)" : ""} dari tahun ajaran ${hapusSemester?.ta.nama}?`}
       />
+
+      {/* Modal promosi kenaikan kelas antar tahun ajaran */}
+      {promosiTA !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-1">Naik Kelas — {promosiTA.nama}</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              Pindahkan seluruh siswa aktif ke kelas tingkat di atasnya (nama kelas sama) pada
+              tahun ajaran tujuan. Siswa tingkat 9 tidak dipindahkan (anggap lulus). Kelas tujuan
+              dibuat otomatis bila belum ada; nilai & rapor semester TA {promosiTA.nama} tetap tersimpan.
+            </p>
+            <Select
+              label="Tahun Ajaran Tujuan"
+              value={promosiTujuan}
+              onChange={(e) => setPromosiTujuan(e.target.value)}
+              placeholder="Pilih tahun ajaran tujuan"
+              required
+            >
+              {data.filter((t) => t.id !== promosiTA.id).map((t) => (
+                <option key={t.id} value={t.id}>{t.nama}</option>
+              ))}
+            </Select>
+            <div className="flex justify-end gap-3 mt-5">
+              <Button type="button" variant="outline" onClick={() => setPromosiTA(null)}>Batal</Button>
+              <Button onClick={handlePromosi} loading={promosiLoading} disabled={!promosiTujuan}>
+                Promosikan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

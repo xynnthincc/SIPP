@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProgresHafalan extends Model
 {
     protected $fillable = ['siswa_id', 'mapel_plus_id', 'tanggal_setoran', 'materi', 'status', 'catatan', 'dicatat_oleh'];
+
     protected $casts = ['tanggal_setoran' => 'date'];
 
     public function siswa()

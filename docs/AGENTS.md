@@ -79,6 +79,19 @@ npm run build                      # typecheck TS dijalankan Next saat build
 ## Role & akses data (wajib)
 Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_sekolah`, `siswa`, `orang_tua` — dipakai di kolom `role` user dan di redirect dashboard (`ROLE_HOME` di `frontend/src/lib/types.ts`).
 
+### Wali kelas yang juga guru mapel
+- Konsep kunci: **profil guru** (`gurus` row, `User->guru`) menentukan siapa yang boleh mengakses fitur guru — BUKAN cuma role `guru_pesantren`. Wali kelas yang mengajar punya profil guru + penugasan pengampu.
+- `GET /api/pengampuan-saya` (semua role): penugasan `guru_mapel_kelas` milik user login; kosong bila tanpa profil guru. Dipakai halaman `/guru/nilai` (bukan turunan `/jadwal` — guru multi-mapel tanpa slot jadwal tetap tampil) dan sidebar wali kelas (menu "Guru Mapel" muncul kondisional di `frontend/src/app/wali-kelas/layout.tsx`).
+- Route `role:guru_pesantren,wali_kelas,admin`: jadwal CRUD, `presensi/massal`, `nilai/massal`, `progres-hafalan` store, `catatan-guru` store. Scope per item tetap di controller (kepemilikan jadwal/pengampuan/profil guru).
+- `NilaiController@storeMassal` & `NilaiDiniyahController@pastikanBolehNilaiMassal`: non-admin wajib profil guru; sah via penugasan pengampu ATAU (wali kelas) kelas binaan.
+- `JadwalController@index` di-scope lewat profil guru (`$user->guru`), role-agnostic.
+
+## Tahun ajaran sebagai patokan sejarah (siswa naik kelas)
+- Tabel `siswa_kelas` = riwayat penempatan (siswa × kelas; kelas terikat TA). `siswas.kelas_rombel_id` tetap ada sebagai kelas SAAT INI (cache); setiap perubahan kelas via `SiswaController` / import / promosi otomatis mencatat baris riwayat.
+- Rapor (`/rapor/cetak`, `/rapor/pdf`): kelas, wali kelas, dan **peringkat** dihitung dari penempatan historis pada TA semester tsb (`Siswa::kelasUntukSemester()`), bukan kelas saat ini — nilai rapor per semester TIDAK PERNAH hilang/berubah saat siswa naik kelas. Scope cetak wali kelas juga memakai kelas historis.
+- Promosi: `POST /api/tahun-ajaran/{ta}/promosi` `{tahun_ajaran_tujuan_id}` (admin) — semua siswa aktif TA sumber naik ke kelas nama sama tingkat+1 di TA tujuan (dibuat otomatis bila belum ada); tingkat 9 dianggap lulus (tidak dipindah); idempoten. Tombol "Naik Kelas" di halaman admin Tahun Ajaran.
+- Anggota kelas utk input massal & export Excel memakai riwayat penempatan (`anggotaKelas()`) — kelas TA lama tetap bisa diisi/diexport nilai. Hapus kelas diblokir bila masih ada riwayat penempatan.
+
 - Semua route API di `backend/routes/api.php`, dikelompokkan dengan guard `->middleware('role:a,b')` (alias didaftarkan di `bootstrap/app.php` → `EnsureUserHasRole`).
 - Setiap endpoint yang menampilkan data siswa **wajib discope kepemilikan**, bukan cuma role: guru → hanya siswa diampu; wali_kelas → siswa binaan (`wali_kelas_id` kelasnya); siswa → dirinya sendiri (`user_id`); orang_tua → anak terdaftar (relasi `anakWali` via pivot `siswa_wali`). Gunakan kembali trait `backend/app/Http/Controllers/Concerns/ScopesSiswaAccess.php` atau pola serupa. Jangan longgarkan demi kemudahan development.
 

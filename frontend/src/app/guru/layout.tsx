@@ -20,9 +20,10 @@ const navGroups = [
   },
 ];
 
+// Wali kelas yang juga mengajar (punya penugasan pengampu) memakai halaman yang sama
 export default function GuruLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DashboardShell allowedRoles={["guru_pesantren"]} navItems={navItems} navGroups={navGroups}>
+    <DashboardShell allowedRoles={["guru_pesantren", "wali_kelas"]} navItems={navItems} navGroups={navGroups}>
       {children}
     </DashboardShell>
   );

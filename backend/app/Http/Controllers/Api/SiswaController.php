@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Concerns\ScopesSiswaAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Siswa;
+use App\Models\SiswaKelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -83,7 +84,10 @@ class SiswaController extends Controller
             'is_aktif' => ['boolean'],
         ]);
 
-        return Siswa::create($data);
+        $siswa = Siswa::create($data);
+        $this->catatPenempatan($siswa);
+
+        return $siswa;
     }
 
     public function update(Request $request, Siswa $siswa)
@@ -118,6 +122,7 @@ class SiswaController extends Controller
         ]);
 
         $siswa->update($data);
+        $this->catatPenempatan($siswa);
 
         return $siswa;
     }
@@ -127,6 +132,17 @@ class SiswaController extends Controller
         $siswa->delete();
 
         return response()->noContent();
+    }
+
+    /** Catat penempatan kelas ke riwayat (per tahun ajaran) bila belum tercatat. */
+    private function catatPenempatan(Siswa $siswa): void
+    {
+        if ($siswa->kelas_rombel_id !== null) {
+            SiswaKelas::firstOrCreate([
+                'siswa_id' => $siswa->id,
+                'kelas_rombel_id' => $siswa->kelas_rombel_id,
+            ]);
+        }
     }
 
     /** Hubungkan siswa dengan akun orang tua/wali */

@@ -31,6 +31,30 @@ class Siswa extends Model
         return $this->belongsTo(KelasRombel::class);
     }
 
+    public function kelasHistories()
+    {
+        return $this->hasMany(SiswaKelas::class);
+    }
+
+    /**
+     * Kelas siswa pada semester tertentu: ambil penempatan historis yang kelasnya
+     * berada di tahun ajaran semester tsb (terbaru bila pernah pindah), fallback
+     * ke kelas saat ini untuk data lama yang belum tercatat di riwayat.
+     */
+    public function kelasUntukSemester(Semester $semester): ?KelasRombel
+    {
+        $kelasId = $this->kelasHistories()
+            ->whereHas('kelasRombel', fn ($q) => $q->where('tahun_ajaran_id', $semester->tahun_ajaran_id))
+            ->latest('id')
+            ->value('kelas_rombel_id');
+
+        if ($kelasId !== null) {
+            return KelasRombel::with('waliKelas')->find($kelasId);
+        }
+
+        return $this->kelasRombel;
+    }
+
     public function wali()
     {
         return $this->belongsToMany(User::class, 'siswa_wali', 'siswa_id', 'user_id')

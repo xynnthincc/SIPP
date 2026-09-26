@@ -69,15 +69,17 @@ export default function NilaiGuruPage() {
   useEffect(() => {
     Promise.all([
       api.get<SemesterLite[]>("/semester"),
-      api.get<JadwalItem[]>("/jadwal"),
-    ]).then(([sem, jd]) => {
+      // Penugasan pengampuan langsung (bukan turunan jadwal): guru bisa mengampu
+      // banyak mapel & kelas — tanpa harus punya slot jadwal per mapel
+      api.get<Pengampuan[]>("/pengampuan-saya"),
+    ]).then(([sem, peng]) => {
       setSemesters(sem.data);
       const aktif = sem.data.find((s) => s.is_aktif) ?? sem.data[0];
       if (aktif) setSemesterId(String(aktif.id));
-      setJadwals(jd.data);
+      setJadwals(peng.data.map((p) => ({ id: p.id, guru_mapel_kelas: p })));
       setLoadingJadwal(false);
     }).catch(() => {
-      setError("Gagal memuat data semester/jadwal.");
+      setError("Gagal memuat data semester/penugasan.");
       setLoadingJadwal(false);
     });
   }, []);

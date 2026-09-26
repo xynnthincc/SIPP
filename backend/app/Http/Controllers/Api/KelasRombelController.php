@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\KelasRombel;
+use App\Models\SiswaKelas;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -57,8 +58,9 @@ class KelasRombelController extends Controller
     public function destroy(KelasRombel $kelasRombel)
     {
         $jumlahSiswa = $kelasRombel->siswas()->count();
-        if ($jumlahSiswa > 0) {
-            abort(422, "Kelas ini masih memiliki {$jumlahSiswa} siswa. Pindahkan siswa ke kelas lain terlebih dahulu.");
+        $jumlahRiwayat = SiswaKelas::where('kelas_rombel_id', $kelasRombel->id)->count();
+        if ($jumlahSiswa > 0 || $jumlahRiwayat > 0) {
+            abort(422, "Kelas ini masih memiliki {$jumlahRiwayat} siswa (termasuk riwayat penempatan). Pindahkan siswa ke kelas lain terlebih dahulu.");
         }
 
         if ($kelasRombel->guruMapelKelas()->exists()) {

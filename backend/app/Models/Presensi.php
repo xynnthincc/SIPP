@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Presensi extends Model
 {
     protected $fillable = ['siswa_id', 'jadwal_id', 'tanggal', 'status', 'keterangan', 'dicatat_oleh'];
+
     protected $casts = ['tanggal' => 'date'];
 
     public function siswa()

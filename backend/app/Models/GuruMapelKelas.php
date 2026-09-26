@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class GuruMapelKelas extends Model
 {
     protected $table = 'guru_mapel_kelas';
+
     protected $fillable = ['guru_id', 'mapel_plus_id', 'kelas_rombel_id', 'semester_id'];
 
     public function guru()

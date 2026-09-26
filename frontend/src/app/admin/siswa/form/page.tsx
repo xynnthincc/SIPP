@@ -35,6 +35,7 @@ interface SiswaDetail {
 interface KelasOption {
   id: number;
   nama: string;
+  tahun_ajaran?: { nama: string } | null;
 }
 
 const emptyForm = {
@@ -212,7 +213,9 @@ function SiswaForm() {
             >
               <option value="">Belum ada kelas</option>
               {kelasList.map((k) => (
-                <option key={k.id} value={k.id}>{k.nama}</option>
+                <option key={k.id} value={k.id}>
+                  {k.tahun_ajaran?.nama ? `${k.nama} — ${k.tahun_ajaran.nama}` : k.nama}
+                </option>
               ))}
             </Select>
             <p className="sm:col-span-2 lg:col-span-3 text-xs font-semibold uppercase tracking-wider text-slate-400 pt-2 border-t border-slate-100">Data Kependudukan</p>

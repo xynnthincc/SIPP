@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\KelasRombel;
 use App\Models\Siswa;
+use App\Models\SiswaKelas;
 use App\Models\TahunAjaran;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -254,6 +255,17 @@ class ImportSiswa extends Command
         foreach (array_chunk($barisInsert, 100) as $chunk) {
             Siswa::insert($chunk);
         }
+
+        // Sinkronkan riwayat penempatan (siswa_kelas) untuk semua kelas saat ini
+        $now = now();
+        Siswa::whereNotNull('kelas_rombel_id')->chunkById(200, function ($siswas) {
+            foreach ($siswas as $siswa) {
+                SiswaKelas::firstOrCreate([
+                    'siswa_id' => $siswa->id,
+                    'kelas_rombel_id' => $siswa->kelas_rombel_id,
+                ]);
+            }
+        });
 
         $this->info("Selesai: {$jumlahInsert} insert, ".($jumlahUpdateNis + $jumlahUpdateNama).' update.');
 
