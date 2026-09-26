@@ -91,8 +91,8 @@ function RaporCetakView() {
 
             .lembar {
               /* Token ukuran & jarak label Arab / Indonesia (dipakai seragam) */
-              --fs-ar: 15px;
-              --fs-id: 13px;
+              --fs-ar: 16px;
+              --fs-id: 14px;
               --fs-judul-ar: 18px;
               --fs-judul-id: 16px;
               --gap-ar-id: 2px;
@@ -174,7 +174,7 @@ function RaporCetakView() {
             }
             table.sampul-identitas td {
               padding: 6px 6px;
-              font-size: 13.5px;
+              font-size: 14.5px;
               vertical-align: middle;
               border: none;
             }
@@ -205,7 +205,7 @@ function RaporCetakView() {
               font-size: var(--fs-ar);
               direction: rtl;
               text-align: right;
-              font-weight: normal;
+              font-weight: bold;
             }
 
             .sampul-garis {
@@ -370,14 +370,14 @@ function RaporCetakView() {
               direction: ltr;
               unicode-bidi: isolate;
             }
-            table.nilai thead th.no .th-ar { font-size: 12pt; }
+            table.nilai thead th.no .th-ar { font-size: 14pt; }
             table.nilai thead th.no .th-id { font-size: 8pt; }
-            table.nilai thead th.kriteria .th-ar { font-size: 18pt; }
-            table.nilai thead tr.sub th .th-ar,
+            table.nilai thead th.kriteria .th-ar { font-size: 14pt; }
+            table.nilai thead tr.sub th .th-ar { font-size: 14pt; }
             table.nilai thead tr.sub th .th-id { font-size: 12pt; }
             /* Kolom nomor */
             table.nilai td.no {
-              font-size: 13pt;
+              font-size: 14pt;
             }
             /* Kolom mapel: Arab kanan, Indonesia kiri, kolom terpisah */
             table.nilai td.mapel-ar {
@@ -484,14 +484,14 @@ function RaporCetakView() {
             }
             table.sub thead th .th-ar {
               display: block;
-              font-size: 14px;
+              font-size: 14pt;
               font-weight: bold;
               direction: rtl;
               unicode-bidi: isolate;
             }
             table.sub thead th .th-id {
               display: block;
-              font-size: 12px;
+              font-size: 12pt;
               font-weight: bold;
               direction: ltr;
               unicode-bidi: isolate;

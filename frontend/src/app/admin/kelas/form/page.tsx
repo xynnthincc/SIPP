@@ -137,7 +137,7 @@ function KelasForm() {
           >
             <option value="7">Qitsmu Awwal</option>
             <option value="8">Qitsmu Tsani</option>
-            <option value="9">Qitsmu Tsalats</option>
+            <option value="9">Qitsmu Tsalis</option>
           </Select>
           <Input
             label="Rombel"

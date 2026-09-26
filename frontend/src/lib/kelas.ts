@@ -1,5 +1,5 @@
 // Terminologi pesantren (mengikuti alur e-rapor lama):
-// - "Kelas" = jenjang diniyah: Qitsmu Awwal, Qitsmu Tsani, Qitsmu Tsalats (+ rombel, mis. "Qitsmu Awwal A")
+// - "Kelas" = jenjang diniyah: Qitsmu Awwal, Qitsmu Tsani, Qitsmu Tsalis (+ rombel, mis. "Qitsmu Awwal A")
 // - "Tingkat" = jenjang formal: 7, 8, 9
 // Data mentah tetap menyimpan tingkat 7/8/9 dan nama rombel "7A" dsb.
 
@@ -7,7 +7,7 @@
 export const KELAS_LABEL: Record<number, string> = {
   7: "Qitsmu Awwal",
   8: "Qitsmu Tsani",
-  9: "Qitsmu Tsalats",
+  9: "Qitsmu Tsalis",
 };
 
 /** Tingkat formal ditampilkan apa adanya: 7 / 8 / 9. */
