@@ -1,29 +1,15 @@
+"use client";
+
 import { DashboardShell } from "@/components/DashboardShell";
+import { useAuth } from "@/lib/auth-context";
+import { useRoleNav } from "@/lib/nav";
 
-const navItems: { href: string; label: string }[] = [];
-
-const navGroups = [
-  {
-    label: "Jadwal & Aktivitas",
-    items: [
-      { href: "/guru", label: "Jadwal Saya" },
-      { href: "/guru/presensi", label: "Input Presensi" },
-    ],
-  },
-  {
-    label: "Penilaian",
-    items: [
-      { href: "/guru/nilai", label: "Input Nilai" },
-      { href: "/guru/nilai-diniyah", label: "Input Nilai Diniyah" },
-      { href: "/guru/progres-hafalan", label: "Progres Hafalan" },
-    ],
-  },
-];
-
-// Wali kelas yang juga mengajar (punya penugasan pengampu) memakai halaman yang sama
 export default function GuruLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const nav = useRoleNav(user?.role);
+
   return (
-    <DashboardShell allowedRoles={["guru_pesantren", "wali_kelas"]} navItems={navItems} navGroups={navGroups}>
+    <DashboardShell allowedRoles={nav.allowedRoles} navItems={nav.navItems} navGroups={nav.navGroups}>
       {children}
     </DashboardShell>
   );

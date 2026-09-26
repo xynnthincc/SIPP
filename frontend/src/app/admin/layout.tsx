@@ -25,6 +25,7 @@ const navGroups = [
   {
     label: "Konfigurasi & Evaluasi",
     items: [
+      { href: "/admin/rapor", label: "Cetak Rapor" },
       { href: "/admin/praktik", label: "Praktik & Hafalan" },
       { href: "/admin/predikat", label: "Rentang Predikat" },
       { href: "/admin/sekolah", label: "Profil Sekolah" },
