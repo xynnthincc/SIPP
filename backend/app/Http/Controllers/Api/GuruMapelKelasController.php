@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\GuruMapelKelas;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class GuruMapelKelasController extends Controller
@@ -45,7 +46,21 @@ class GuruMapelKelasController extends Controller
             'semester_id' => ['required', 'exists:semesters,id'],
         ]);
 
-        return GuruMapelKelas::create($data);
+        if ($this->sudahAda($data)) {
+            abort(422, 'Penugasan duplikat: guru ini sudah mengampu mapel tersebut di kelas dan semester yang sama.');
+        }
+
+        try {
+            return GuruMapelKelas::create($data);
+        } catch (QueryException $e) {
+            // Pengaman kondisi balapan: constraint unik DB menolak duplikat —
+            // tetap balas 422 yang ramah, bukan server error.
+            if ($this->sudahAda($data)) {
+                abort(422, 'Penugasan duplikat: guru ini sudah mengampu mapel tersebut di kelas dan semester yang sama.');
+            }
+
+            throw $e;
+        }
     }
 
     public function update(Request $request, GuruMapelKelas $guruMapelKelas)
@@ -57,7 +72,19 @@ class GuruMapelKelasController extends Controller
             'semester_id' => ['required', 'exists:semesters,id'],
         ]);
 
-        $guruMapelKelas->update($data);
+        if ($this->sudahAda($data, $guruMapelKelas->id)) {
+            abort(422, 'Penugasan duplikat: guru ini sudah mengampu mapel tersebut di kelas dan semester yang sama.');
+        }
+
+        try {
+            $guruMapelKelas->update($data);
+        } catch (QueryException $e) {
+            if ($this->sudahAda($data, $guruMapelKelas->id)) {
+                abort(422, 'Penugasan duplikat: guru ini sudah mengampu mapel tersebut di kelas dan semester yang sama.');
+            }
+
+            throw $e;
+        }
 
         return $guruMapelKelas;
     }
@@ -67,5 +94,19 @@ class GuruMapelKelasController extends Controller
         $guruMapelKelas->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Cek apakah kombinasi guru + mapel + kelas + semester sudah terdaftar
+     * (constraint unik `guru_mapel_kelas_unique` di DB).
+     */
+    private function sudahAda(array $data, ?int $kecualiId = null): bool
+    {
+        return GuruMapelKelas::where('guru_id', $data['guru_id'])
+            ->where('mapel_plus_id', $data['mapel_plus_id'])
+            ->where('kelas_rombel_id', $data['kelas_rombel_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->when($kecualiId !== null, fn ($q) => $q->where('id', '!=', $kecualiId))
+            ->exists();
     }
 }

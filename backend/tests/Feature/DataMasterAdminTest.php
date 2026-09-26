@@ -216,4 +216,34 @@ class DataMasterAdminTest extends TestCase
             ->deleteJson("/api/semester/{$this->semester->id}")
             ->assertStatus(204);
     }
+
+    public function test_penugasan_duplikat_ditolak_dengan_422_bukan_server_error(): void
+    {
+        $user = User::create([
+            'name' => 'Guru Tes',
+            'email' => 'guru-duplikat@sipp.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_GURU_PESANTREN,
+        ]);
+        $guru = Guru::create(['user_id' => $user->id, 'nama' => 'Guru Tes']);
+
+        $payload = [
+            'guru_id' => $guru->id,
+            'mapel_plus_id' => $this->mapel->id,
+            'kelas_rombel_id' => $this->kelas->id,
+            'semester_id' => $this->semester->id,
+        ];
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/guru-mapel-kelas', $payload)
+            ->assertStatus(201);
+
+        // Tambah lagi kombinasi yang sama persis: harus 422 ramah, bukan 500.
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/guru-mapel-kelas', $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Penugasan duplikat: guru ini sudah mengampu mapel tersebut di kelas dan semester yang sama.');
+
+        $this->assertEquals(1, GuruMapelKelas::where('guru_id', $guru->id)->count());
+    }
 }
