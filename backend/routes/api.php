@@ -27,7 +27,7 @@ use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ── Publik ──────────────────────────────────────────────
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 // ── Wajib login ─────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

@@ -30,7 +30,7 @@ function RaporCetakView() {
     if (!siswaId) return;
     api
       .get<RaporCetak>("/rapor/cetak", {
-        params: { siswa_id: siswaId, semester_id: semesterId ?? undefined },
+        params: { siswa_id: siswaId, semester_id: semesterId || undefined },
       })
       .then((res) => {
         setData(res.data);

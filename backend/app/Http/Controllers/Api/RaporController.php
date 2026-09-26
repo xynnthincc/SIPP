@@ -151,7 +151,7 @@ class RaporController extends Controller
         $boleh = $user->hasRole('admin', 'kepala_sekolah')
             || ($user->hasRole('wali_kelas') && $siswa->kelasUntukSemester($semester)?->wali_kelas_id === $user->id)
             || ($user->hasRole('siswa') && $siswa->user_id === $user->id)
-            || ($user->hasRole('orang_tua') && $siswa->anakWali()->where('users.id', $user->id)->exists());
+            || ($user->hasRole('orang_tua') && $siswa->wali()->where('users.id', $user->id)->exists());
 
         abort_unless($boleh, 403, 'Anda tidak berhak mencetak rapor ini.');
     }
@@ -203,7 +203,7 @@ class RaporController extends Controller
                 'id' => $semester->id,
                 'nama' => $semester->nama,
                 'jenis' => $semester->jenis,
-                'tahun' => $semester->tahunAjaran->nama,
+                'tahun' => $semester->tahunAjaran?->nama ?? '',
                 'tempat_tanggal_rapot' => $semester->tempat_tanggal_rapot,
             ],
             'mapel' => $mapel,
