@@ -59,7 +59,7 @@ function RaporCetakView() {
           __html: `
             @page {
               size: A4 portrait;
-              margin: 1.5cm 1.3cm;
+              margin: 2cm 1.5cm;
             }
             * { box-sizing: border-box; }
             body.raport {
@@ -81,14 +81,33 @@ function RaporCetakView() {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
+              /* Tabel nilai utama + keterangan total/rata-rata/peringkat
+                 harus tetap satu lembar */
+              table.nilai {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
             }
 
             .lembar {
+              /* Token ukuran & jarak label Arab / Indonesia (dipakai seragam) */
+              --fs-ar: 14px;
+              --fs-id: 12px;
+              --fs-judul-ar: 18px;
+              --fs-judul-id: 16px;
+              --gap-ar-id: 2px;
+              --jarak-kolom: 12px;
               width: 100%;
-              max-width: 800px;
+              max-width: 210mm;
               margin: 0 auto;
-              padding: 16px;
+              padding: 10px 4px;
               padding-top: 10px;
+              /* Isi penuh satu lembar A4: tinggi minimum = tinggi kertas
+                 dikurangi margin atas-bawah @page (2cm + 2cm) */
+              min-height: 252mm;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-start;
               font-family: "Times New Roman", Times, serif;
               font-size: 15px;
               color: #000;
@@ -100,6 +119,15 @@ function RaporCetakView() {
               break-before: page;
             }
 
+            /* Tabel isi menyerap sisa tinggi lembar agar baris-barisnya
+               merenggang dan halaman terisi penuh sampai bawah */
+            table.sampul-identitas,
+            table.legenda,
+            table.nilai,
+            table.sub {
+              flex-grow: 1;
+            }
+
             table.nilai tr, table.sub tr {
               page-break-inside: avoid;
               break-inside: avoid;
@@ -109,29 +137,36 @@ function RaporCetakView() {
             .kop-judul {
               text-align: center;
               margin-bottom: 16px;
+              line-height: 1.35;
             }
             .kop-judul .arab-besar {
-              font-size: 18px;
+              font-size: var(--fs-judul-ar);
               font-weight: bold;
               direction: rtl;
+              unicode-bidi: isolate;
               margin-bottom: 2px;
             }
             .kop-judul .indo-kecil {
-              font-size: 11px;
+              font-size: var(--fs-judul-id);
+              font-weight: bold;
               direction: rtl;
-              color: #333;
+              unicode-bidi: isolate;
               margin-bottom: 10px;
             }
             .kop-judul .judul-utama {
-              font-size: 16px;
+              font-size: var(--fs-judul-id);
               font-weight: bold;
               letter-spacing: .5px;
             }
             .kop-judul .sub-utama {
-              font-size: 13px;
+              font-size: 14px;
+              font-weight: bold;
+              letter-spacing: .5px;
             }
 
-            /* Sampul Identitas — 4 kolom: data | titik | label-id | label-ar */
+            /* Sampul Identitas — 4 kolom: data | titik | label-id | label-ar
+               Kolom label memakai width:1% + nowrap agar menempel pada isinya,
+               sehingga jarak label Indonesia <-> Arab selalu tetap (--jarak-kolom) */
             table.sampul-identitas {
               width: 100%;
               border-collapse: collapse;
@@ -145,103 +180,148 @@ function RaporCetakView() {
             }
             table.sampul-identitas td.isi {
               width: 38%;
-              font-weight: bold;
+              font-weight: normal;
+              text-align: right;
             }
             table.sampul-identitas td.titik {
-              width: 4%;
+              width: 1%;
+              white-space: nowrap;
               text-align: center;
               color: #444;
             }
             table.sampul-identitas td.label-id {
-              width: 20%;
-              font-style: normal;
-              text-align: left;
-            }
-            table.sampul-identitas td.label-ar {
-              width: 38%;
-              direction: rtl;
-              text-align: right;
-              font-weight: bold;
-            }
-
-            .sampul-garis {
-              border-top: 1px solid #000;
-              margin: 18px 0;
-            }
-
-            .petunjuk-title {
-              text-align: center;
-              font-weight: bold;
-              font-size: 13px;
-              direction: rtl;
-              margin-bottom: 14px;
-            }
-
-            table.legenda {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 6px;
-              font-size: 12.5px;
-              direction: rtl;
-            }
-            table.legenda td {
-              padding: 3px 10px;
-              border: none;
-            }
-            table.legenda td.rentang {
-              width: 40%;
-              direction: rtl;
-              text-align: right;
-            }
-            table.legenda td.label {
-              width: 60%;
+              width: 1%;
+              white-space: nowrap;
+              padding-right: 0;
+              font-size: var(--fs-id);
+              font-weight: normal;
               direction: ltr;
               text-align: right;
             }
-            .petunjuk-sub {
-              font-weight: bold;
-              font-size: 12.5px;
-              margin: 12px 0 6px;
-              display: flex;
-              justify-content: space-between;
-              align-items: baseline;
-            }
-            .petunjuk-sub .ar-label {
-              font-weight: normal;
+            table.sampul-identitas td.label-ar {
+              width: 1%;
+              white-space: nowrap;
+              padding-left: var(--jarak-kolom);
+              font-size: var(--fs-ar);
               direction: rtl;
-              font-size: 12px;
+              text-align: right;
+              font-weight: normal;
             }
 
-            /* Tabel Identitas Kop Halaman Nilai */
+            .sampul-garis {
+              border-top: 1px dashed #000;
+              margin: 18px 0;
+            }
+
+            /* Petunjuk Penggunaan — mengikuti tata letak Laporan: isi report
+               rata kanan (RTL), pasangan label Arab & Indonesia berdampingan
+               dan menempel dengan jarak tetap --jarak-kolom */
+            .petunjuk-title {
+              text-align: center;
+              font-weight: bold;
+              font-size: var(--fs-judul-ar);
+              direction: rtl;
+              unicode-bidi: isolate;
+              margin-bottom: 4px;
+            }
+            .petunjuk-title-id {
+              text-align: center;
+              font-weight: bold;
+              font-size: var(--fs-judul-id);
+              direction: ltr;
+              margin-bottom: 18px;
+            }
+
+            table.legenda {
+              width: auto;
+              border-collapse: collapse;
+              margin: 0 0 6px auto;
+            }
+            table.legenda td {
+              padding: 3px calc(var(--jarak-kolom) / 2);
+              border: none;
+              white-space: nowrap;
+              text-align: right;
+            }
+            table.legenda td.rentang {
+              font-size: var(--fs-ar);
+              font-weight: bold;
+              direction: rtl;
+              unicode-bidi: isolate;
+            }
+            table.legenda td.label {
+              font-size: var(--fs-id);
+              font-weight: normal;
+              direction: ltr;
+              unicode-bidi: isolate;
+            }
+            .petunjuk-sub {
+              display: flex;
+              flex-direction: row;
+              justify-content: flex-end;
+              align-items: baseline;
+              gap: var(--jarak-kolom);
+              margin: 12px 0 6px;
+            }
+            .petunjuk-sub .id-label {
+              font-size: var(--fs-id);
+              font-weight: normal;
+              direction: ltr;
+              text-align: right;
+              unicode-bidi: isolate;
+            }
+            .petunjuk-sub .ar-label {
+              font-size: var(--fs-ar);
+              font-weight: bold;
+              direction: rtl;
+              text-align: right;
+              unicode-bidi: isolate;
+            }
+
+            /* Tabel Identitas Kop Halaman Nilai — mengikuti referensi .docx:
+               4 kolom LTR tanpa garis, baris selang-seling label Arab
+               (bold 14pt + ":") dan label Indonesia */
             table.identitas {
               width: 100%;
               border-collapse: collapse;
-              margin-bottom: 12px;
+              margin-bottom: 6px;
+              direction: rtl;
             }
             table.identitas td {
               border: none;
-              padding: 8px 10px;
+              padding: 1px 4px;
               vertical-align: top;
-              font-size: 15px;
+              font-size: var(--fs-ar);
+              font-weight: bold;
             }
             table.identitas td.label-ar {
+              white-space: nowrap;
               direction: rtl;
               text-align: right;
-              width: 16%;
-              white-space: nowrap;
+              font-size: var(--fs-ar);
               font-weight: bold;
             }
             table.identitas td.label-id {
-              width: 10%;
-              font-style: italic;
               white-space: nowrap;
+              direction: ltr;
+              text-align: left;
+              font-size: var(--fs-id);
+              font-weight: normal;
+              font-style: italic;
             }
             table.identitas td.isi {
-              width: 24%;
+              direction: ltr;
+              text-align: left;
+              font-size: var(--fs-ar);
               font-weight: bold;
             }
 
-            /* Tabel Nilai Utama (Direction: RTL) */
+            /* Tabel Nilai Utama (Direction: RTL)
+              Pasangan label Arab & Indonesia inline dengan jarak tetap,
+               mengikuti cetak.php */
+            /* Tabel Nilai Utama — mengikuti referensi .docx (7 kolom):
+               [No | Mapel-AR | Mapel-ID | KKM | Angka | Huruf | Kriteria].
+               Semua isi bold; angka memakai angka Arab. */
             table.nilai {
               width: 100%;
               border-collapse: collapse;
@@ -250,132 +330,194 @@ function RaporCetakView() {
             }
             table.nilai th, table.nilai td {
               border: 1px solid #000;
-              padding: 9px 10px;
-              font-size: 14px;
+              padding: 5px 6px;
+              font-size: var(--fs-ar);
+              font-weight: normal;
               text-align: center;
               vertical-align: middle;
-              line-height: 1.4;
+              line-height: 1.3;
+            }
+            table.nilai th {
+              font-weight: bold;
             }
             table.nilai th {
               background: #fff;
             }
-            table.nilai td.mapel {
-              text-align: right;
-              white-space: nowrap;
-            }
-            table.nilai td.mapel .ar {
-              font-weight: bold;
+            /* Header: Arab di atas, Indonesia di bawah, semua bold & center */
+            table.nilai thead th .th-ar {
               display: block;
-              text-align: right;
+              font-size: 14pt;
+              font-weight: bold;
+              direction: rtl;
+              unicode-bidi: isolate;
             }
-            table.nilai td.mapel .id {
-              font-size: 12px;
-              color: #333;
+            table.nilai thead th .th-id {
+              display: block;
+              font-size: 12pt;
+              font-weight: bold;
               direction: ltr;
-              display: block;
-              text-align: right;
-              unicode-bidi: bidi-override;
-              margin-top: 2px;
+              unicode-bidi: isolate;
             }
-            table.nilai .ringkasan-label {
+            table.nilai thead th.no .th-ar { font-size: 12pt; }
+            table.nilai thead th.no .th-id { font-size: 8pt; }
+            table.nilai thead th.kriteria .th-ar { font-size: 18pt; }
+            table.nilai thead tr.sub th .th-ar,
+            table.nilai thead tr.sub th .th-id { font-size: 12pt; }
+            /* Kolom nomor */
+            table.nilai td.no {
+              font-size: 12pt;
+            }
+            /* Kolom mapel: Arab kanan, Indonesia kiri, kolom terpisah */
+            table.nilai td.mapel-ar {
+              text-align: right;
+              direction: rtl;
+              unicode-bidi: isolate;
               font-weight: bold;
-              text-align: right;
             }
-            table.nilai .ringkasan-label .ar {
-              display: block;
-              text-align: right;
-            }
-            table.nilai .ringkasan-label .id {
+            table.nilai td.mapel-id {
+              text-align: left;
+              direction: ltr;
+              unicode-bidi: isolate;
+              font-size: var(--fs-id);
               font-weight: normal;
-              font-size: 12.5px;
-              direction: ltr;
-              display: block;
-              text-align: right;
-              unicode-bidi: bidi-override;
-              margin-top: 2px;
+              font-style: italic;
             }
-            table.nilai .ringkasan-isi {
+            /* Label ringkasan (Total/Rata-rata/Peringkat): Arab 12pt di atas,
+               Indonesia 12pt di bawah */
+            table.nilai td.ring-label {
+              font-weight: bold;
+              text-align: center;
+            }
+            table.nilai td.ring-label .ar {
+              display: block;
+              font-size: 12pt;
+              direction: rtl;
+              unicode-bidi: isolate;
+            }
+            table.nilai td.ring-label .id {
+              display: block;
+              font-size: 12pt;
+              direction: ltr;
+              unicode-bidi: isolate;
+            }
+            table.nilai td.ring-label.peringkat .ar { font-size: 14pt; }
+            table.nilai td.ring-val {
+              font-size: 14pt;
+              font-weight: bold;
               text-align: center;
               direction: ltr;
             }
-            table.nilai .deskripsi-box {
-              text-align: right;
-              vertical-align: top;
-              font-size: 13px;
-              padding-top: 12px;
-              padding-bottom: 12px;
-            }
-            table.nilai .deskripsi-box .judul-ar {
+            table.nilai td.ring-val.total { font-size: 12pt; }
+            /* Kolom predikat & deskripsi */
+            table.nilai td.predikat {
               font-weight: bold;
-              display: block;
+              text-align: center;
             }
-            table.nilai .deskripsi-box .judul-id {
-              font-style: italic;
-              font-size: 12px;
-              direction: ltr;
+            table.nilai td.predikat .ar {
               display: block;
-              text-align: left;
+              font-size: 14pt;
+              direction: rtl;
+              unicode-bidi: isolate;
             }
-            table.nilai .deskripsi-box .isi-deskripsi {
-              direction: ltr;
-              text-align: left;
-              font-size: 12.5px;
-              margin-top: 6px;
+            table.nilai td.predikat .id {
               display: block;
-              line-height: 1.5;
+              font-size: 12pt;
+              direction: ltr;
+              unicode-bidi: isolate;
+            }
+            table.nilai td.deskripsi {
+              font-weight: bold;
+              text-align: center;
+            }
+            table.nilai td.deskripsi .ar {
+              display: block;
+              font-size: 14pt;
+              direction: rtl;
+              unicode-bidi: isolate;
+            }
+            table.nilai td.deskripsi .id {
+              display: block;
+              font-size: 12pt;
+              direction: ltr;
+              unicode-bidi: isolate;
+            }
+            table.nilai td.deskripsi .isi-deskripsi {
+              display: block;
+              font-size: 9pt;
+              direction: ltr;
+              unicode-bidi: isolate;
+              line-height: 1.4;
             }
 
-            /* Tabel Halaman 2 (Sub) */
+            /* Tabel Halaman 2 (Sub) — mengikuti referensi .docx: tanpa garis,
+               kolom Indonesia & Arab terpisah, teks Indonesia bold-italic */
             table.sub {
               width: 100%;
               border-collapse: collapse;
               margin-bottom: 12px;
-              direction: rtl;
+              direction: ltr;
             }
             table.sub th, table.sub td {
               border: 1px solid #000;
-              padding: 7px 9px;
-              font-size: 13px;
+              padding: 5px 8px;
+              font-size: var(--fs-ar);
+              font-weight: normal;
               text-align: center;
               vertical-align: middle;
+              line-height: 1.3;
             }
             table.sub th {
               background: #fff;
-            }
-            table.sub td.ket {
-              text-align: right;
-            }
-            table.sub td.ket .ar {
               font-weight: bold;
+            }
+            table.sub thead th .th-ar {
               display: block;
-              text-align: right;
+              font-size: var(--fs-ar);
+              font-weight: bold;
+              direction: rtl;
+              unicode-bidi: isolate;
             }
-            table.sub td.ket .id {
-              font-size: 11px;
-              color: #333;
+            table.sub thead th .th-id {
               display: block;
+              font-size: var(--fs-id);
+              font-weight: normal;
               direction: ltr;
-              text-align: right;
-              unicode-bidi: bidi-override;
-              margin-top: 1px;
-            }
-            table.sub td.ket-materi {
-              direction: ltr;
-              text-align: left;
-              font-size: 11px;
-            }
-            table.sub td.nomor-urut {
-              width: 8%;
+              unicode-bidi: isolate;
             }
             table.sub td.nilai-isi {
+              font-weight: bold;
               direction: ltr;
+              unicode-bidi: isolate;
+            }
+            table.sub td.id {
+              font-size: var(--fs-id);
+              font-weight: normal;
+              font-style: italic;
+              direction: ltr;
+              unicode-bidi: isolate;
+              text-align: center;
+            }
+            table.sub td.ar {
+              font-weight: bold;
+              direction: rtl;
+              unicode-bidi: isolate;
+              text-align: center;
+            }
+            table.sub td.ket-materi {
+              font-size: var(--fs-id);
+              font-weight: normal;
+              font-style: italic;
+              direction: ltr;
+              unicode-bidi: isolate;
+              text-align: center;
             }
 
-            /* Area TTD */
+            /* Area TTD — mengikuti referensi .docx */
             .ttd-area {
               margin-top: 24px;
               width: 100%;
-              font-size: 12px;
+              font-size: 11pt;
+              font-weight: normal;
             }
             .ttd-area .tanggal {
               text-align: right;
@@ -393,6 +535,11 @@ function RaporCetakView() {
             .ttd-cols .col .ar {
               direction: rtl;
               font-weight: bold;
+              font-size: 14pt;
+            }
+            .ttd-cols .col .id {
+              font-weight: bold;
+              font-size: 11pt;
             }
             .ttd-cols .space {
               height: 55px;
@@ -509,10 +656,10 @@ function RaporCetakView() {
               <div className="sampul-garis" />
 
               <div className="petunjuk-title">بيان عن الرموز الموجودة في هذه اللائحة</div>
-              <div style={{ fontWeight: "bold", marginBottom: "10px" }}>Petunjuk penggunaan</div>
+              <div className="petunjuk-title-id">Petunjuk penggunaan</div>
 
               <div className="petunjuk-sub">
-                <span>Keterangan Angka pada Nilai</span>
+                <span className="id-label">Keterangan Angka pada Nilai</span>
                 <span className="ar-label">١. معنى الأرقام في النتائج</span>
               </div>
               <table className="legenda">
@@ -541,7 +688,7 @@ function RaporCetakView() {
               </table>
 
               <div className="petunjuk-sub">
-                <span>Keterangan Huruf pada Nilai</span>
+                <span className="id-label">Keterangan Huruf pada Nilai</span>
                 <span className="ar-label">٢. معنى الأحرف في النتائج</span>
               </div>
               <table className="legenda">
@@ -565,45 +712,52 @@ function RaporCetakView() {
             {/* ==================== HALAMAN 1 (Nilai) ==================== */}
             <div className="lembar break-page">
               <table className="identitas">
+                <colgroup>
+                  <col style={{ width: "19%" }} />
+                  <col style={{ width: "42%" }} />
+                  <col style={{ width: "17.5%" }} />
+                  <col style={{ width: "21.5%" }} />
+                </colgroup>
                 <tbody>
                   <tr>
-                    <td className="label-ar">اسم المدرسة</td>
-                    <td className="label-id">Nama Sekolah</td>
-                    <td className="isi">
-                      {data.sekolah.nama_sekolah || "-"}
-                      {data.sekolah.npsn ? (
-                        <>
-                          <br />
-                          <span style={{ fontWeight: "normal", fontSize: "10px" }}>
-                            NPSN: {data.sekolah.npsn}
-                          </span>
-                        </>
-                      ) : null}
-                    </td>
-                    <td className="label-ar">قسم</td>
-                    <td className="label-id">Kelas</td>
+                    <td className="label-ar">اسم المدرسة&nbsp;&nbsp;:</td>
+                    <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
+                    <td className="label-ar">قسم&nbsp;&nbsp;:</td>
                     <td className="isi">
                       {data.kelas ? `${labelKelas(data.kelas.nama)} (${labelTingkat(data.kelas.tingkat)})` : "-"}
                     </td>
                   </tr>
                   <tr>
-                    <td className="label-ar">عنوان المدرسة</td>
-                    <td className="label-id">Alamat Sekolah</td>
+                    <td className="label-id">Nama Sekolah</td>
+                    <td />
+                    <td className="label-id">Kelas</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td className="label-ar">عنوان المدرسة&nbsp;&nbsp;:</td>
                     <td className="isi">{data.sekolah.alamat || "-"}</td>
-                    <td className="label-ar">نصف السنة</td>
-                    <td className="label-id">Semester</td>
+                    <td className="label-ar">نصف السنة&nbsp;&nbsp;:</td>
                     <td className="isi">
                       {data.semester.nama}
                       {isSementara ? " (Sementara)" : ""}
                     </td>
                   </tr>
                   <tr>
-                    <td className="label-ar">اسم الطالب/الطالبة</td>
-                    <td className="label-id">Nama Siswa</td>
-                    <td className="isi">{data.siswa.nama}</td>
-                    <td className="label-ar">سنة الدراسة</td>
-                    <td className="label-id">Tahun Pelajaran</td>
+                    <td className="label-id">Alamat Sekolah</td>
+                    <td />
+                    <td className="label-id">Semester</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td className="label-ar">اسم الطالب/الطالبة&nbsp;&nbsp;:</td>
+                    <td className="isi" rowSpan={2}>{data.siswa.nama}</td>
+                    <td className="label-ar">سنة الدراسة&nbsp;&nbsp;:</td>
                     <td className="isi">{data.semester.tahun}</td>
+                  </tr>
+                  <tr>
+                    <td className="label-id">Nama Siswa</td>
+                    <td className="label-id">Tahun Pelajaran</td>
+                    <td />
                   </tr>
                 </tbody>
               </table>
@@ -611,46 +765,44 @@ function RaporCetakView() {
               <table className="nilai">
                 <thead>
                   <tr>
-                    <th rowSpan={2} style={{ width: "6%" }}>
-                      رقم<br />
-                      <span style={{ fontWeight: "normal" }}>No</span>
+                    <th rowSpan={2} className="no" style={{ width: "6.5%" }}>
+                      <span className="th-ar">رقم</span>
+                      <span className="th-id">Nomor</span>
                     </th>
-                    <th rowSpan={2} style={{ width: "28%" }}>
-                      قنوان الدروس<br />
-                      <span style={{ fontWeight: "normal" }}>Mata Pelajaran</span>
+                    <th colSpan={2} style={{ width: "28.6%" }}>
+                      <span className="th-ar">قنوان الدروس</span>
+                      <span className="th-id">Mata Pelajaran</span>
                     </th>
-                    <th rowSpan={2} style={{ width: "12%" }}>
-                      النهاية الصغرى<br />
-                      <span style={{ fontWeight: "normal" }}>KKM</span>
+                    <th rowSpan={2} style={{ width: "9.1%" }}>
+                      <span className="th-ar">النهاية الصغرى</span>
+                      <span className="th-id">KKM</span>
                     </th>
-                    <th colSpan={2} style={{ width: "28%" }}>
-                      المهارة<br />
-                      <span style={{ fontWeight: "normal" }}>Nilai</span>
+                    <th colSpan={2} style={{ width: "40.2%" }}>
+                      <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
                     </th>
-                    <th rowSpan={2} style={{ width: "26%" }}>
-                      معايير القيمة<br />
-                      <span style={{ fontWeight: "normal" }}>Kriteria Penilaian</span>
+                    <th rowSpan={2} className="kriteria" style={{ width: "15.6%" }}>
+                      <span className="th-ar">معايير القيمة</span>
+                      <span className="th-id">Kriteria Penilaian</span>
                     </th>
                   </tr>
-                  <tr>
-                    <th style={{ width: "14%" }}>
-                      شخصية<br />
-                      <span style={{ fontWeight: "normal" }}>Angka</span>
+                  <tr className="sub">
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">حروف</span>
+                      <span className="th-id">Huruf</span>
                     </th>
-                    <th style={{ width: "14%" }}>
-                      حروف<br />
-                      <span style={{ fontWeight: "normal" }}>Huruf</span>
+                    <th style={{ width: "9.1%" }}>
+                      <span className="th-ar">شخصية</span>
+                      <span className="th-id">Angka</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.mapel.map((m, idx) => (
                     <tr key={idx}>
-                      <td>{angkaArab(idx + 1)}</td>
-                      <td className="mapel">
-                        <span className="ar">{m.nama_ar}</span>
-                        <span className="id">{m.nama_id}</span>
-                      </td>
+                      <td className="no">{angkaArab(idx + 1)}</td>
+                      <td className="mapel-ar" style={{ width: "14.3%" }}>{m.nama_ar}</td>
+                      <td className="mapel-id" style={{ width: "14.3%" }}>{m.nama_id}</td>
                       <td>{m.kkm !== null ? angkaArab(m.kkm) : "-"}</td>
                       <td>{m.nilai !== null ? angkaArab(m.nilai) : "-"}</td>
                       <td>{m.nilai !== null ? (m.terbilang || terbilangArab(m.nilai)) : "-"}</td>
@@ -658,37 +810,43 @@ function RaporCetakView() {
                     </tr>
                   ))}
                   <tr>
-                    <td colSpan={3} rowSpan={3} className="deskripsi-box">
-                      <span className="judul-ar">
-                        المسند القيمة: {predikat.predikat_ar} / {predikat.predikat_id}
-                      </span>
-                      <span className="judul-ar" style={{ marginTop: "6px" }}>
-                        وصف تقدم التعلم
-                      </span>
-                      <span className="judul-id">Deskripsi Kemajuan Belajar:</span>
-                      <span className="isi-deskripsi">{predikat.deskripsi}</span>
-                    </td>
-                    <td colSpan={2} className="ringkasan-label">
+                    <td className="no">{angkaArab(data.mapel.length + 1)}</td>
+                    <td colSpan={2} className="ring-label">
                       <span className="ar">مجموع النتائج</span>
                       <span className="id">Total Nilai</span>
                     </td>
-                    <td className="ringkasan-isi">{angkaArab(data.total)}</td>
+                    <td colSpan={2} className="ring-val total">{angkaArab(data.total)}</td>
+                    <td className="deskripsi">
+                      <span className="ar">وصف تقدم التعلم</span>
+                      <span className="id">Deskripsi Kemajuan Belajar</span>
+                    </td>
+                    <td className="predikat">
+                      <span className="ar">المسند القيمة</span>
+                      <span className="id">Predikat</span>
+                    </td>
                   </tr>
                   <tr>
-                    <td colSpan={2} className="ringkasan-label">
+                    <td className="no">{angkaArab(data.mapel.length + 2)}</td>
+                    <td colSpan={2} className="ring-label">
                       <span className="ar">التعادل</span>
                       <span className="id">Rata-Rata</span>
                     </td>
-                    <td className="ringkasan-isi">
+                    <td colSpan={2} className="ring-val">
                       {angkaArab(data.rata2)} ({angkaArab(data.rata2_bulat)})
                     </td>
+                    <td className="deskripsi" rowSpan={2}>
+                      <span className="isi-deskripsi">{predikat.deskripsi}</span>
+                    </td>
+                    <td className="predikat">{predikat.predikat_ar}</td>
                   </tr>
                   <tr>
-                    <td colSpan={2} className="ringkasan-label">
+                    <td className="no">{angkaArab(data.mapel.length + 3)}</td>
+                    <td colSpan={2} className="ring-label peringkat">
                       <span className="ar">المرتبة</span>
                       <span className="id">Peringkat</span>
                     </td>
-                    <td className="ringkasan-isi">{angkaArab(data.peringkat)}</td>
+                    <td colSpan={2} className="ring-val">{angkaArab(data.peringkat)}</td>
+                    <td className="predikat">{predikat.predikat_id}</td>
                   </tr>
                 </tbody>
               </table>
@@ -700,23 +858,27 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "20%" }}>
-                      المهارة<br />
-                      <span style={{ fontWeight: "normal" }}>Nilai</span>
+                    <th style={{ width: "11%" }}>
+                      <span className="th-ar">المهارة</span>
                     </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">وظيفة التنمية الذاتية</span>
+                    </th>
+                  </tr>
+                  <tr>
                     <th>
-                      وظيفة التنمية الذاتية<br />
-                      <span style={{ fontWeight: "normal" }}>Kegiatan Pengembangan Diri</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-id">Kegiatan Pengembangan Diri</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
-                    <td className="ket">
-                      <span className="ar">تعويد بالغدوة</span>
-                      <span className="id">Pembiasaan Pagi</span>
-                    </td>
+                    <td className="id" style={{ width: "46.5%" }}>Pembiasaan Pagi</td>
+                    <td className="ar" style={{ width: "42.5%" }}>تعويد بالغدوة</td>
                   </tr>
                 </tbody>
               </table>
@@ -725,17 +887,25 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "12%" }}>
-                      المهارة<br />
-                      <span style={{ fontWeight: "normal" }}>Nilai</span>
+                    <th style={{ width: "11.5%" }}>
+                      <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "38%" }}>
-                      المعلومة<br />
-                      <span style={{ fontWeight: "normal" }}>Keterangan</span>
+                    <th style={{ width: "34.5%" }}>
+                      <span className="th-ar">ألمعلومة</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">الممارسة والمحفوظات وقرائة الكتب</span>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <span className="th-id">Nilai</span>
                     </th>
                     <th>
-                      الممارسة والمحفوظات وقرائة الكتب<br />
-                      <span style={{ fontWeight: "normal" }}>Praktik, Hafalan dan Pembacaan Kitab</span>
+                      <span className="th-id">Keterangan</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-id">Praktik, Hafalan dan Pembacaan Kitab</span>
                     </th>
                   </tr>
                 </thead>
@@ -743,11 +913,9 @@ function RaporCetakView() {
                   {data.praktik.map((p, idx) => (
                     <tr key={idx}>
                       <td className="nilai-isi">{hurufArab(p.nilai)}</td>
-                      <td className="ket-materi">{p.keterangan || "-"}</td>
-                      <td className="ket">
-                        {p.nama_ar ? <span className="ar">{p.nama_ar}</span> : null}
-                        <span className="id">{p.nama_id}</span>
-                      </td>
+                      <td className="ket-materi" style={{ width: "34.5%" }}>{p.keterangan || "-"}</td>
+                      <td className="id" style={{ width: "27.5%" }}>{p.nama_id}</td>
+                      <td className="ar" style={{ width: "26.5%" }}>{p.nama_ar || ""}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -757,30 +925,32 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "20%" }}>
-                      المهارة<br />
-                      <span style={{ fontWeight: "normal" }}>Nilai</span>
+                    <th style={{ width: "11%" }}>
+                      <span className="th-ar">المهارة</span>
                     </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">المعاملة اليومية</span>
+                    </th>
+                  </tr>
+                  <tr>
                     <th>
-                      المعاملة اليومية<br />
-                      <span style={{ fontWeight: "normal" }}>Sikap Sehari-hari</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-id">Sikap Sehari-hari</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.akhlaq)}</td>
-                    <td className="ket">
-                      <span className="ar">اخلاق</span>
-                      <span className="id">Akhlaq</span>
-                    </td>
+                    <td className="id" style={{ width: "46.5%" }}>Akhlaq</td>
+                    <td className="ar" style={{ width: "42.5%" }}>اخلاق</td>
                   </tr>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.kepribadian)}</td>
-                    <td className="ket">
-                      <span className="ar">شخصية</span>
-                      <span className="id">Kepribadian</span>
-                    </td>
+                    <td className="id">Kepribadian</td>
+                    <td className="ar">شخصية</td>
                   </tr>
                 </tbody>
               </table>
@@ -789,44 +959,46 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "8%" }}>
-                      رقم<br />
-                      <span style={{ fontWeight: "normal" }}>No</span>
+                    <th style={{ width: "41.5%" }}>
+                      <span className="th-ar">معلومات</span>
                     </th>
-                    <th style={{ width: "20%" }}>
-                      ايام<br />
-                      <span style={{ fontWeight: "normal" }}>Hari</span>
+                    <th style={{ width: "15.5%" }}>
+                      <span className="th-ar">ايام</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">الغياب</span>
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>
+                      <span className="th-id">Keterangan</span>
                     </th>
                     <th>
-                      الغياب<br />
-                      <span style={{ fontWeight: "normal" }}>Ketidakhadiran</span>
+                      <span className="th-id">Hari</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-id">Ketidakhadiran</span>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="nomor-urut">١</td>
+                    <td />
                     <td className="nilai-isi">{angkaArab(data.kehadiran?.sakit ?? 0)}</td>
-                    <td className="ket">
-                      <span className="ar">المرض</span>
-                      <span className="id">Sakit</span>
-                    </td>
+                    <td className="id" style={{ width: "22%" }}>Sakit</td>
+                    <td className="ar" style={{ width: "21%" }}>المرض</td>
                   </tr>
                   <tr>
-                    <td className="nomor-urut">٢</td>
+                    <td />
                     <td className="nilai-isi">{angkaArab(data.kehadiran?.izin ?? 0)}</td>
-                    <td className="ket">
-                      <span className="ar">الرخصة</span>
-                      <span className="id">Izin</span>
-                    </td>
+                    <td className="id">Izin</td>
+                    <td className="ar">الرخصة</td>
                   </tr>
                   <tr>
-                    <td className="nomor-urut">٣</td>
+                    <td />
                     <td className="nilai-isi">{angkaArab(data.kehadiran?.alpa ?? 0)}</td>
-                    <td className="ket">
-                      <span className="ar">لاهمال</span>
-                      <span className="id">Alpa</span>
-                    </td>
+                    <td className="id">Alpa</td>
+                    <td className="ar">لاهمال</td>
                   </tr>
                 </tbody>
               </table>
@@ -845,14 +1017,14 @@ function RaporCetakView() {
                   <div className="col">
                     <span className="ar">ولي الطالب</span>
                     <br />
-                    <span style={{ fontStyle: "italic" }}>Wali Murid</span>
+                    <span className="id">Wali Murid</span>
                     <div className="space" />
                     ( .............................. )
                   </div>
                   <div className="col">
                     <span className="ar">ولي القسم</span>
                     <br />
-                    <span style={{ fontStyle: "italic" }}>Wali Kelas</span>
+                    <span className="id">Wali Kelas</span>
                     <div className="space" />
                     ( {data.wali_kelas || ".............................."} )
                   </div>

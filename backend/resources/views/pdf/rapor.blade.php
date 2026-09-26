@@ -360,7 +360,7 @@
                     <span class="ar" style="float:right;">{{ $item['nama_ar'] ?? '' }}</span>
                     <span class="id">{{ $item['nama_id'] }}</span>
                 </td>
-                <td class="sm">{{ $item['keterangan'] ?? '' }}</td>
+                <td class="sm center">{{ $item['keterangan'] ?? '' }}</td>
                 <td class="center">
                     @if ($item['nilai'] !== null)
                         <span class="ar-center" style="font-size:12pt;">{{ \App\Support\ArabBilangan::angkaArab($item['nilai']) }}</span>
