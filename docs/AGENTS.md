@@ -52,7 +52,7 @@ php artisan serve                            # API di http://localhost:8000/api
 vendor/bin/phpunit                           # test
 vendor/bin/pint                              # formatting (laravel/pint)
 ```
-Seeder membuat akun `admin@sipp.sch.id` / `password`, tahun ajaran 2026/2027 (aktif) + semester Ganjil (`penilaian_dibuka`), dan 5 mapel plus: Tahfidz, Tahsin, Kitab Kuning, Bahasa Arab, Akhlak.
+Seeder membuat akun `admin@sipp.sch.id` / `password`, tahun ajaran 2026/2027 (aktif) + semester Ganjil (`penilaian_dibuka`), dan 11 mapel plus kurikulum revisi client: Al-Qur'an, Qaidah Baghdadiyah, Fiqih, Tauhid, Akhlaq, Nahwu, Shorof, Tajwid, Tarikh, Bahasa Arab, Hadits (urutan rapor = urutan tsb; `JenisAssessmentSeeder` idempoten memberi tiap mapel UH/Tugas/UTS/UAS).
 Import siswa dari ekspor e-rapor (Daftar Peserta Didik per Kelas `.xlsx`): `php artisan siswa:import <file> [--dry-run]` — upsert 3 lapis (NIPD → nama+JK → NISN sebagai NIS), siswa DB tanpa match tidak disentuh, kelas di-cocokkan ke `kelas_rombels` TA aktif ("8-B" → "8B").
 
 ## Notifikasi, Izin Digital, Upload, Rapor PDF (module aplikasi mobile)

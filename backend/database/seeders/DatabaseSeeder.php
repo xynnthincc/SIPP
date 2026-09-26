@@ -37,13 +37,19 @@ class DatabaseSeeder extends Seeder
             ['is_aktif' => true, 'penilaian_dibuka' => true]
         );
 
-        // Mata pelajaran kepesantrenan sesuai latar belakang proposal
+        // Mata pelajaran kepesantrenan sesuai kurikulum pesantren (revisi client)
         $mapels = [
-            ['kode' => 'TAHFIDZ', 'nama' => 'Tahfidz', 'punya_progres_hafalan' => true],
-            ['kode' => 'TAHSIN', 'nama' => 'Tahsin', 'punya_progres_hafalan' => true],
-            ['kode' => 'KITAB_KUNING', 'nama' => 'Kitab Kuning', 'punya_progres_hafalan' => false],
+            ['kode' => 'QURAN', 'nama' => 'Al-Qur\'an', 'punya_progres_hafalan' => true],
+            ['kode' => 'BAGDADY', 'nama' => 'Qaidah Baghdadiyah', 'punya_progres_hafalan' => false],
+            ['kode' => 'FIQIH', 'nama' => 'Fiqih', 'punya_progres_hafalan' => false],
+            ['kode' => 'TAUHID', 'nama' => 'Tauhid', 'punya_progres_hafalan' => false],
+            ['kode' => 'AKHLAK', 'nama' => 'Akhlaq', 'punya_progres_hafalan' => false],
+            ['kode' => 'NAHWU', 'nama' => 'Nahwu', 'punya_progres_hafalan' => false],
+            ['kode' => 'SHOROF', 'nama' => 'Shorof', 'punya_progres_hafalan' => false],
+            ['kode' => 'TAJWID', 'nama' => 'Tajwid', 'punya_progres_hafalan' => false],
+            ['kode' => 'TARIKH', 'nama' => 'Tarikh', 'punya_progres_hafalan' => false],
             ['kode' => 'BHS_ARAB', 'nama' => 'Bahasa Arab', 'punya_progres_hafalan' => false],
-            ['kode' => 'AKHLAK', 'nama' => 'Akhlak', 'punya_progres_hafalan' => false],
+            ['kode' => 'HADITS', 'nama' => 'Hadits', 'punya_progres_hafalan' => false],
         ];
 
         foreach ($mapels as $mapel) {
