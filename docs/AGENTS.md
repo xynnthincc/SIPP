@@ -34,7 +34,7 @@ Rapor adalah **cetakan real-time dari data nilai**, TANPA status/validasi/penerb
 
 ## Input nilai guru (asesmen OPSIONAL)
 Dua jalur input nilai guru mapel, keduanya berujung ke rapor yang sama:
-- **Nilai akhir langsung** (default yang disarankan): `POST /api/nilai-diniyah/massal` `{mapel_plus_id, kelas_rombel_id, semester_id, nilai:[{siswa_id, nilai}]}` → menulis `nilai_mapels` (nilai langsung). Halaman `/guru/nilai` mode "Nilai Akhir Langsung" (prefill via `GET /nilai-diniyah/massal`).
+- **Nilai akhir langsung** (satu-satunya mode): `POST /api/nilai-diniyah/massal` `{mapel_plus_id, kelas_rombel_id, semester_id, nilai:[{siswa_id, nilai}]}` → menulis `nilai_mapels` (nilai langsung). Halaman `/guru/nilai` berbasis **kelas**: pilih kelas → matriks siswa × semua mapel yang diampu di kelas itu (prefill via `GET /nilai-diniyah/massal` per mapel, simpan paralel per mapel). Mode asesmen dihapus dari UI (endpoint `POST /api/nilai/massal` tetap ada tapi tak dipakai).
 - **Per asesmen** (opsional): `POST /api/nilai/massal` per jenis assessment; nilai akhir mapel = rata-rata tertimbang bobot asesmen sumatif.
 - **Prioritas nilai efektif** (dipakai rapor cetak, progres, export, rekap): `langsung ?? agregat sumatif` (`App\Support\NilaiDiniyah::nilaiPerMapel`). Nilai langsung menimpa perhitungan asesmen; dikosongkan (null) → kembali ke perhitungan asesmen.
 - **Korelasi wali kelas**: nilai yang diinput guru mapel langsung terlihat di rekap wali (`GET /nilai-diniyah/rekap`) kolom "Nilai" + "Nilai Akhir" (label "dari asesmen" bila turunan perhitungan).

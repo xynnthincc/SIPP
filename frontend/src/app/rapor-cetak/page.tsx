@@ -140,7 +140,7 @@ function RaporCetakView() {
             table.sampul-identitas td {
               padding: 7px 6px;
               font-size: 13.5px;
-              vertical-align: top;
+              vertical-align: middle;
               border: none;
             }
             table.sampul-identitas td.isi {
@@ -156,6 +156,13 @@ function RaporCetakView() {
               width: 50%;
               direction: rtl;
               text-align: right;
+            }
+            table.sampul-identitas td.label-ar .label-id-inline {
+              font-style: italic;
+              font-size: 12px;
+              direction: ltr;
+              unicode-bidi: embed;
+              margin-right: 8px;
             }
 
             .sampul-garis {
@@ -247,12 +254,15 @@ function RaporCetakView() {
             }
             table.nilai td.mapel .ar {
               font-weight: bold;
+              display: block;
             }
             table.nilai td.mapel .id {
               font-size: 12px;
               color: #333;
               direction: ltr;
-              margin-right: 6px;
+              display: block;
+              text-align: left;
+              margin-top: 2px;
             }
             table.nilai .ringkasan-label {
               font-weight: bold;
@@ -428,82 +438,60 @@ function RaporCetakView() {
                     <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
+                      <span className="label-id-inline">Nama Sekolah</span>
                       اسم المدرسة
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Nama Sekolah
-                      </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">{data.siswa.nis || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
+                      <span className="label-id-inline">Nomor Induk</span>
                       رقم دفتر القيد
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Nomor Induk
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.sekolah.alamat || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-ar">
-                      عنوان المدرسة
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Alamat Sekolah
-                      </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">
-                      {data.sekolah.kode_pos || "-"} &nbsp;&nbsp; Telp. {data.sekolah.telepon || "-"}
+                      {data.sekolah.alamat || "-"}{" "}
+                      Kode Pos : {data.sekolah.kode_pos || "-"}{" "}
+                      Telp. {data.sekolah.telepon || "-"}
                     </td>
                     <td className="titik">:</td>
                     <td className="label-ar">
-                      الرمز البريدي والتليفون
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Kode Pos &amp; Telp
-                      </span>
+                      <span className="label-id-inline">Alamat Sekolah</span>
+                      عنوان المدرسة
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kelurahan || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
+                      <span className="label-id-inline">Kelurahan</span>
                       قرية
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Kelurahan
-                      </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kecamatan || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
-                      منطقة
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Kecamatan
-                      </span>
+                      <span className="label-id-inline">Kecamatan</span>
+                      منطقة جنوب
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.kota_kabupaten || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
+                      <span className="label-id-inline">Kota/Kabupaten</span>
                       مدينة
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Kota/Kabupaten
-                      </span>
                     </td>
                   </tr>
                   <tr>
                     <td className="isi">{data.sekolah.provinsi || "-"}</td>
                     <td className="titik">:</td>
                     <td className="label-ar">
+                      <span className="label-id-inline">Provinsi</span>
                       مقاطعة
-                      <span style={{ fontStyle: "italic", fontSize: "11px", direction: "ltr", display: "block", textAlign: "left" }}>
-                        Provinsi
-                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -515,8 +503,8 @@ function RaporCetakView() {
               <div style={{ fontWeight: "bold", marginBottom: "6px" }}>Petunjuk Penggunaan</div>
 
               <div className="petunjuk-sub">
-                ١. Keterangan Angka pada Nilai{" "}
-                <span style={{ direction: "rtl", fontWeight: "normal" }}>/ معنى الأرقام في النتائج</span>
+                <span style={{ direction: "rtl", fontWeight: "normal" }}>معنى الأرقام في النتائج</span>{" "}
+                ١. Keterangan Angka pada Nilai
               </div>
               <table className="legenda">
                 <tbody>
@@ -544,8 +532,8 @@ function RaporCetakView() {
               </table>
 
               <div className="petunjuk-sub">
-                ٢. Keterangan Huruf pada Nilai{" "}
-                <span style={{ direction: "rtl", fontWeight: "normal" }}>/ معنى الأحرف في النتائج</span>
+                <span style={{ direction: "rtl", fontWeight: "normal" }}>معنى الأحرف في النتائج</span>{" "}
+                ٢. Keterangan Huruf pada Nilai
               </div>
               <table className="legenda">
                 <tbody>
