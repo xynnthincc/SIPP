@@ -9,6 +9,7 @@ use App\Models\NilaiMapel;
 use App\Models\NilaiPraktik;
 use App\Models\Pembiasaan;
 use App\Models\PraktikItem;
+use App\Models\Presensi;
 use App\Models\Sekolah;
 use App\Models\Semester;
 use App\Models\Sikap;
@@ -120,7 +121,8 @@ class RaporController extends Controller
             $sikap = Sikap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)
                 ->where(fn ($q) => $q->whereNotNull('akhlaq')->orWhereNotNull('kepribadian'))
                 ->exists();
-            $kehadiran = KehadiranRekap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->exists();
+            $kehadiran = KehadiranRekap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->exists()
+                || Presensi::where('siswa_id', $siswa->id)->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $semester->id))->exists();
 
             return [
                 'siswa' => [
@@ -186,7 +188,7 @@ class RaporController extends Controller
 
         $pembiasaan = Pembiasaan::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->value('nilai');
         $sikap = Sikap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->first();
-        $kehadiran = KehadiranRekap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->first();
+        $kehadiran = $this->kehadiranSemester($siswa->id, $semester->id);
 
         $waliNama = $kelas?->waliKelas?->name;
 
@@ -215,8 +217,35 @@ class RaporController extends Controller
             'praktik' => $praktik,
             'pembiasaan' => $pembiasaan,
             'sikap' => $sikap ? ['akhlaq' => $sikap->akhlaq, 'kepribadian' => $sikap->kepribadian] : null,
-            'kehadiran' => $kehadiran ? ['sakit' => $kehadiran->sakit, 'izin' => $kehadiran->izin, 'alpa' => $kehadiran->alpa] : null,
+            'kehadiran' => $kehadiran,
         ];
+    }
+
+    /**
+     * Kehadiran rapor: dihitung dari presensi harian guru (jumlah HARI berbeda
+     * per status pada semester tsb — satu hari dihitung sekali walau ada
+     * beberapa sesi mengajar). Bila belum ada presensi sama sekali, fallback
+     * ke rekap manual wali kelas.
+     */
+    private function kehadiranSemester(int $siswaId, int $semesterId): ?array
+    {
+        $perStatus = Presensi::where('siswa_id', $siswaId)
+            ->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $semesterId))
+            ->selectRaw('status, COUNT(DISTINCT tanggal) as hari')
+            ->groupBy('status')
+            ->pluck('hari', 'status');
+
+        if ($perStatus->isNotEmpty()) {
+            return [
+                'sakit' => (int) ($perStatus['Sakit'] ?? 0),
+                'izin' => (int) ($perStatus['Izin'] ?? 0),
+                'alpa' => (int) ($perStatus['Alpa'] ?? 0),
+            ];
+        }
+
+        $rekap = KehadiranRekap::where('siswa_id', $siswaId)->where('semester_id', $semesterId)->first();
+
+        return $rekap ? ['sakit' => $rekap->sakit, 'izin' => $rekap->izin, 'alpa' => $rekap->alpa] : null;
     }
 
     private function dataMapel(int $siswaId, int $semesterId): array

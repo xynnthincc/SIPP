@@ -217,6 +217,41 @@ class DataMasterAdminTest extends TestCase
             ->assertStatus(204);
     }
 
+    public function test_pengampu_bisa_diupdate_dan_dihapus_beneran(): void
+    {
+        // Regresi: route param {guru_mapel_kela} vs $guruMapelKelas pernah bikin
+        // update/delete 204/200 palsu tanpa mengubah apa pun.
+        $user = User::create([
+            'name' => 'Guru Tes',
+            'email' => 'guru-pengampu@sipp.test',
+            'password' => Hash::make('password'),
+            'role' => User::ROLE_GURU_PESANTREN,
+        ]);
+        $guru = Guru::create(['user_id' => $user->id, 'nama' => 'Guru Tes']);
+        $mapel2 = MapelPlus::create(['kode' => 'TES2', 'nama' => 'Mapel Dua']);
+        $pengampu = GuruMapelKelas::create([
+            'guru_id' => $guru->id,
+            'mapel_plus_id' => $this->mapel->id,
+            'kelas_rombel_id' => $this->kelas->id,
+            'semester_id' => $this->semester->id,
+        ]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->putJson("/api/guru-mapel-kelas/{$pengampu->id}", [
+                'guru_id' => $guru->id,
+                'mapel_plus_id' => $mapel2->id,
+                'kelas_rombel_id' => $this->kelas->id,
+                'semester_id' => $this->semester->id,
+            ])
+            ->assertStatus(200);
+        $this->assertDatabaseHas('guru_mapel_kelas', ['id' => $pengampu->id, 'mapel_plus_id' => $mapel2->id]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/guru-mapel-kelas/{$pengampu->id}")
+            ->assertStatus(204);
+        $this->assertDatabaseMissing('guru_mapel_kelas', ['id' => $pengampu->id]);
+    }
+
     public function test_penugasan_duplikat_ditolak_dengan_422_bukan_server_error(): void
     {
         $user = User::create([

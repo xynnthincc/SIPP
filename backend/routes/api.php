@@ -80,7 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('kelas-rombel', KelasRombelController::class)->except(['show', 'index']);
         Route::apiResource('guru', GuruController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('mapel-plus', MapelPlusController::class)->parameters(['mapel-plus' => 'mapelPlus'])->only(['store', 'update', 'destroy']);
-        Route::apiResource('guru-mapel-kelas', GuruMapelKelasController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::apiResource('guru-mapel-kelas', GuruMapelKelasController::class)->parameters(['guru-mapel-kelas' => 'guruMapelKelas'])->only(['index', 'store', 'update', 'destroy']);
         Route::apiResource('jenis-assessment', JenisAssessmentController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('predikat-range', PredikatRangeController::class)->only(['store', 'update', 'destroy']);
         Route::post('/siswas/{siswa}/wali', [SiswaController::class, 'tambahWali']);

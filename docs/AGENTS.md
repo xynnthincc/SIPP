@@ -82,6 +82,7 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 ### Wali kelas yang juga guru mapel
 - Konsep kunci: **profil guru** (`gurus` row, `User->guru`) menentukan siapa yang boleh mengakses fitur guru — BUKAN cuma role `guru_pesantren`. Wali kelas yang mengajar punya profil guru + penugasan pengampu.
 - `GET /api/pengampuan-saya` (semua role): penugasan `guru_mapel_kelas` milik user login; kosong bila tanpa profil guru. Dipakai halaman `/guru/nilai` (bukan turunan `/jadwal` — guru multi-mapel tanpa slot jadwal tetap tampil) dan sidebar wali kelas (menu "Guru Mapel" muncul kondisional di `frontend/src/app/wali-kelas/layout.tsx`).
+- PENTING: route resource `guru-mapel-kelas` wajib `->parameters(['guru-mapel-kelas' => 'guruMapelKelas'])` — singular "kelas"→"kela" membuat param default `{guru_mapel_kela}` tak match `$guruMapelKelas`, binding diam-diam inject model kosong → update/delete 200/204 palsu tanpa mengubah apa pun (pola sama sudah dipakai `mapel-plus`, `praktik-item`).
 - Route `role:guru_pesantren,wali_kelas,admin`: jadwal CRUD, `presensi/massal`, `nilai/massal`, `progres-hafalan` store, `catatan-guru` store. Scope per item tetap di controller (kepemilikan jadwal/pengampuan/profil guru).
 - `NilaiController@storeMassal` & `NilaiDiniyahController@pastikanBolehNilaiMassal`: non-admin wajib profil guru; sah via penugasan pengampu ATAU (wali kelas) kelas binaan.
 - `JadwalController@index` di-scope lewat profil guru (`$user->guru`), role-agnostic.
@@ -96,6 +97,9 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 - Setiap endpoint yang menampilkan data siswa **wajib discope kepemilikan**, bukan cuma role: guru → hanya siswa diampu; wali_kelas → siswa binaan (`wali_kelas_id` kelasnya); siswa → dirinya sendiri (`user_id`); orang_tua → anak terdaftar (relasi `anakWali` via pivot `siswa_wali`). Gunakan kembali trait `backend/app/Http/Controllers/Concerns/ScopesSiswaAccess.php` atau pola serupa. Jangan longgarkan demi kemudahan development.
 
 ## Alur rapor — lihat bagian "Alur rapor" di atas (real-time, tanpa validasi)
+
+### Kehadiran rapor = presensi guru (fallback rekap wali)
+- `GET /api/rapor/cetak` bagian `kehadiran` dihitung dari tabel `presensis` (input harian guru mapel via `/presensi/massal`): jumlah HARI berbeda per status (Sakit/Izin/Alpa) pada semester tsb — satu hari dihitung sekali walau ada banyak sesi. Bila belum ada presensi sama sekali, fallback ke `kehadiran_rekaps` (input manual wali kelas). Indikator `kehadiran_terisi` di `/rapor/progres` juga menghitung keduanya.
 
 ## Quirk struktur & penamaan
 - Nama tabel non-default (cek migration/model sebelum menulis tabel baru): `siswas`, `gurus`, `kelas_rombels`, `mapel_plus`, `rapors`, `presensis`, `nilais`, `progres_hafalans`, `catatan_gurus`, pivot `siswa_wali`.
