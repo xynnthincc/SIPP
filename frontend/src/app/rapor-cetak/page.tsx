@@ -585,6 +585,10 @@ function RaporCetakView() {
           </Button>
         </div>
       </div>
+      <div className="no-print mx-4 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+        Gunakan kertas <strong>Folio/F4 (21 × 32 cm)</strong> di dialog print. Bila hasil masih A4: refresh halaman ini
+        (Ctrl+F5) lalu pastikan ukuran kertas di dialog print adalah Folio/F4, bukan A4.
+      </div>
 
       <div className="cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8 print:p-0 print:border-none print:shadow-none print:my-0">
         {loading && siswaId ? (
