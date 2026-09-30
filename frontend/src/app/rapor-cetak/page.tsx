@@ -886,22 +886,14 @@ function RaporCetakView() {
                   <tr>
                     <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
                     </th>
                     <th style={{ width: "31.1%" }}>
                       <span className="th-ar">البيان</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">وظيفة التنمية الذاتية</span>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th>
                       <span className="th-id">Keterangan</span>
                     </th>
                     <th colSpan={2}>
+                      <span className="th-ar">وظيفة التنمية الذاتية</span>
                       <span className="th-id">Kegiatan Pengembangan Diri</span>
                     </th>
                   </tr>
@@ -922,22 +914,14 @@ function RaporCetakView() {
                   <tr>
                     <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
                     </th>
                     <th style={{ width: "31.1%" }}>
                       <span className="th-ar">ألمعلومة</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">الممارسة والمحفوظات وقرائة الكتب</span>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th>
                       <span className="th-id">Keterangan</span>
                     </th>
                     <th colSpan={2}>
+                      <span className="th-ar">الممارسة والمحفوظات وقرائة الكتب</span>
                       <span className="th-id">Praktik, Hafalan dan Pembacaan Kitab</span>
                     </th>
                   </tr>
@@ -960,22 +944,14 @@ function RaporCetakView() {
                   <tr>
                     <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
                     </th>
                     <th style={{ width: "31.1%" }}>
                       <span className="th-ar">البيان</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">المعاملة اليومية</span>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th>
                       <span className="th-id">Keterangan</span>
                     </th>
                     <th colSpan={2}>
+                      <span className="th-ar">المعاملة اليومية</span>
                       <span className="th-id">Sikap Sehari-hari</span>
                     </th>
                   </tr>
@@ -1002,22 +978,14 @@ function RaporCetakView() {
                   <tr>
                     <th style={{ width: "31.1%" }}>
                       <span className="th-ar">معلومات</span>
+                      <span className="th-id">Keterangan</span>
                     </th>
                     <th style={{ width: "15.6%" }}>
                       <span className="th-ar">ايام</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">الغياب</span>
-                    </th>
-                  </tr>
-                  <tr>
-                    <th>
-                      <span className="th-id">Keterangan</span>
-                    </th>
-                    <th>
                       <span className="th-id">Hari</span>
                     </th>
                     <th colSpan={2}>
+                      <span className="th-ar">الغياب</span>
                       <span className="th-id">Ketidakhadiran</span>
                     </th>
                   </tr>
