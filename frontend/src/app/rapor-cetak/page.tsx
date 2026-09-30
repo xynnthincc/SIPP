@@ -58,7 +58,7 @@ function RaporCetakView() {
         dangerouslySetInnerHTML={{
           __html: `
             @page {
-              size: A4 portrait;
+              size: 210mm 320mm;
               margin: 2cm 1.5cm;
             }
             * { box-sizing: border-box; }
@@ -102,9 +102,9 @@ function RaporCetakView() {
               margin: 0 auto;
               padding: 10px 4px;
               padding-top: 10px;
-              /* Isi penuh satu lembar A4: tinggi minimum = tinggi kertas
-                 dikurangi margin atas-bawah @page (2cm + 2cm) */
-              min-height: 252mm;
+              /* Isi penuh satu lembar folio/F4 (21cm x 32cm): tinggi minimum =
+                 tinggi kertas dikurangi margin atas-bawah @page (2cm + 2cm) */
+              min-height: 275mm;
               display: flex;
               flex-direction: column;
               justify-content: flex-start;

@@ -5,7 +5,7 @@
     <title>Rapor{{ ($rapor['semester']['jenis'] ?? 'Akhir') === 'Sementara' ? ' Sementara' : '' }} - {{ $rapor['siswa']['nama'] ?? 'Siswa' }}</title>
     <style>
         @page {
-            size: A4 portrait;
+            size: 210mm 320mm;
             margin: 14mm 12mm 14mm 12mm;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
