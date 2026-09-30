@@ -15,6 +15,19 @@ export function hurufArab(x: string | null | undefined): string {
   return map[key] || x;
 }
 
+/** Keterangan teks untuk predikat huruf (A/B/C/D) — mengikuti legenda rapor. */
+export function ketHuruf(x: string | null | undefined): string {
+  if (x === null || x === undefined || !x.trim()) return "-";
+  const map: Record<string, string> = {
+    A: "Istimewa",
+    B: "Sangat Baik",
+    C: "Baik",
+    D: "Kurang",
+  };
+  const key = x.trim().toUpperCase();
+  return map[key] || "-";
+}
+
 export const TERBILANG_ARAB: Record<number, string> = {
   1: "واحد",
   2: "اثنين",

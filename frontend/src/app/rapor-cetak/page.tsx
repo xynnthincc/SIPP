@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas, labelTingkat } from "@/lib/kelas";
 import { RaporCetak } from "@/lib/types";
-import { angkaArab, hurufArab, ketNilai, predikatByRank, terbilangArab } from "@/lib/arab";
+import { angkaArab, hurufArab, ketHuruf, ketNilai, predikatByRank, terbilangArab } from "@/lib/arab";
 import { Button, Alert, Skeleton } from "@/components/ui";
 
 export default function RaporCetakPage() {
@@ -884,8 +884,11 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "11%" }}>
+                    <th style={{ width: "9%" }}>
                       <span className="th-ar">المهارة</span>
+                    </th>
+                    <th style={{ width: "22%" }}>
+                      <span className="th-ar">البيان</span>
                     </th>
                     <th colSpan={2}>
                       <span className="th-ar">وظيفة التنمية الذاتية</span>
@@ -895,6 +898,9 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Nilai</span>
                     </th>
+                    <th>
+                      <span className="th-id">Keterangan</span>
+                    </th>
                     <th colSpan={2}>
                       <span className="th-id">Kegiatan Pengembangan Diri</span>
                     </th>
@@ -903,8 +909,9 @@ function RaporCetakView() {
                 <tbody>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
-                    <td className="id" style={{ width: "46.5%" }}>Pembiasaan Pagi</td>
-                    <td className="ar" style={{ width: "42.5%" }}>تعويد بالغدوة</td>
+                    <td className="ket-materi">{ketHuruf(data.pembiasaan)}</td>
+                    <td className="id" style={{ width: "34.5%" }}>Pembiasaan Pagi</td>
+                    <td className="ar" style={{ width: "34.5%" }}>تعويد بالغدوة</td>
                   </tr>
                 </tbody>
               </table>
@@ -951,8 +958,11 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "11%" }}>
+                    <th style={{ width: "9%" }}>
                       <span className="th-ar">المهارة</span>
+                    </th>
+                    <th style={{ width: "22%" }}>
+                      <span className="th-ar">البيان</span>
                     </th>
                     <th colSpan={2}>
                       <span className="th-ar">المعاملة اليومية</span>
@@ -962,6 +972,9 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Nilai</span>
                     </th>
+                    <th>
+                      <span className="th-id">Keterangan</span>
+                    </th>
                     <th colSpan={2}>
                       <span className="th-id">Sikap Sehari-hari</span>
                     </th>
@@ -970,11 +983,13 @@ function RaporCetakView() {
                 <tbody>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.akhlaq)}</td>
-                    <td className="id" style={{ width: "46.5%" }}>Akhlaq</td>
-                    <td className="ar" style={{ width: "42.5%" }}>اخلاق</td>
+                    <td className="ket-materi">{ketHuruf(data.sikap?.akhlaq)}</td>
+                    <td className="id" style={{ width: "34.5%" }}>Akhlaq</td>
+                    <td className="ar" style={{ width: "34.5%" }}>اخلاق</td>
                   </tr>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.kepribadian)}</td>
+                    <td className="ket-materi">{ketHuruf(data.sikap?.kepribadian)}</td>
                     <td className="id">Kepribadian</td>
                     <td className="ar">شخصية</td>
                   </tr>
