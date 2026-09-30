@@ -32,9 +32,13 @@ export function Th({
   children: ReactNode;
   className?: string;
 }) {
+  const isCentered = (className ?? "").includes("text-center");
+  const isRight = (className ?? "").includes("text-right");
+  const defaultAlign = isCentered || isRight ? "" : "text-left ";
+
   return (
     <th
-      className={`text-left px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${className}`}
+      className={`${defaultAlign}px-3.5 py-3 sm:px-4 sm:py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${className}`}
     >
       {children}
     </th>

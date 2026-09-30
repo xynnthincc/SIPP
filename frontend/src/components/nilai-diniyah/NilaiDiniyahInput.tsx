@@ -187,7 +187,7 @@ export default function NilaiDiniyahInput() {
             return {
               praktik_item_id: p.id,
               nilai: numVal,
-              keterangan: praktik[p.id]?.keterangan || null,
+              keterangan: praktik[p.id]?.keterangan ? praktik[p.id].keterangan.trim() : null,
             };
           }),
       };
@@ -277,10 +277,10 @@ export default function NilaiDiniyahInput() {
             <Table>
               <TableHead>
                 <Th>Mapel</Th>
-                <Th className="text-center">KKM</Th>
-                <Th className="text-center">Nilai</Th>
-                <Th className="text-center">Nilai Akhir</Th>
-                <Th className="text-center">Predikat</Th>
+                <Th className="text-center w-24 sm:w-28">KKM</Th>
+                <Th className="text-center w-24 sm:w-28">Nilai</Th>
+                <Th className="text-center w-28 sm:w-32">Nilai Akhir</Th>
+                <Th className="text-center w-32 sm:w-36">Predikat</Th>
               </TableHead>
               <TableBody>
                 {rekap.mapel.map((m) => {
@@ -301,49 +301,57 @@ export default function NilaiDiniyahInput() {
                           )}
                         </div>
                       </Td>
-                      <Td className="text-center">
-                        {m.bisa_edit ? (
-                          <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={row?.kkm ?? ""}
-                            onChange={(e) => setNilaiMapel({ ...nilaiMapel, [m.id]: { kkm: e.target.value, nilai: row?.nilai ?? "" } })}
-                            className="w-16 px-2 py-1 text-sm text-center glass-input rounded-lg"
-                            disabled={!penilaianBuka}
-                          />
-                        ) : (
-                          <span className="text-sm text-slate-400">{m.nilai_mapel?.kkm ?? m.kkm_default}</span>
-                        )}
+                      <Td className="text-center w-24 sm:w-28">
+                        <div className="flex justify-center">
+                          {m.bisa_edit ? (
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={row?.kkm ?? ""}
+                              onChange={(e) => setNilaiMapel({ ...nilaiMapel, [m.id]: { kkm: e.target.value, nilai: row?.nilai ?? "" } })}
+                              className="w-16 px-2 py-1.5 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                              disabled={!penilaianBuka}
+                            />
+                          ) : (
+                            <span className="text-sm text-slate-500 font-semibold">{m.nilai_mapel?.kkm ?? m.kkm_default}</span>
+                          )}
+                        </div>
                       </Td>
-                      <Td className="text-center">
-                        {m.bisa_edit ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={row?.nilai ?? ""}
-                            onChange={(e) => setNilaiMapel({ ...nilaiMapel, [m.id]: { kkm: row?.kkm ?? "", nilai: e.target.value } })}
-                            className="w-16 px-2 py-1 text-sm text-center glass-input rounded-lg"
-                            placeholder="-"
-                            disabled={!penilaianBuka}
-                          />
-                        ) : (
-                          <span className="text-sm text-slate-400">-</span>
-                        )}
+                      <Td className="text-center w-24 sm:w-28">
+                        <div className="flex justify-center">
+                          {m.bisa_edit ? (
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={row?.nilai ?? ""}
+                              onChange={(e) => setNilaiMapel({ ...nilaiMapel, [m.id]: { kkm: row?.kkm ?? "", nilai: e.target.value } })}
+                              className="w-16 px-2 py-1.5 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                              placeholder="-"
+                              disabled={!penilaianBuka}
+                            />
+                          ) : (
+                            <span className="text-sm text-slate-400 font-semibold">-</span>
+                          )}
+                        </div>
                       </Td>
-                      <Td className="text-center font-semibold text-slate-800">
-                        {m.nilai_akhir ?? "-"}
-                        {m.nilai_akhir !== null && m.nilai_mapel?.nilai == null && (
-                          <span className="block text-[10px] font-normal text-slate-400">dari asesmen</span>
-                        )}
+                      <Td className="text-center w-28 sm:w-32">
+                        <div className="flex flex-col items-center justify-center font-semibold text-slate-800">
+                          <span>{m.nilai_akhir ?? "-"}</span>
+                          {m.nilai_akhir !== null && m.nilai_mapel?.nilai == null && (
+                            <span className="block text-[10px] font-normal text-slate-400">dari asesmen</span>
+                          )}
+                        </div>
                       </Td>
-                      <Td className="text-center">
-                        {m.predikat ? (
-                          <Badge variant={PREDIKAT_VARIANT[m.predikat] ?? "default"}>{m.predikat}</Badge>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                      <Td className="text-center w-32 sm:w-36">
+                        <div className="flex justify-center">
+                          {m.predikat ? (
+                            <Badge variant={PREDIKAT_VARIANT[m.predikat] ?? "default"}>{m.predikat}</Badge>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </div>
                       </Td>
                     </TableRow>
                   );
@@ -357,14 +365,14 @@ export default function NilaiDiniyahInput() {
               <div>
                 <h3 className="text-sm font-semibold text-slate-800">Praktik & Hafalan</h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Input berupa nilai angka (0-100) beserta keterangan singkat.
+                  Input berupa nilai angka (0-100) dan keterangan penilaian.
                 </p>
               </div>
             </div>
             <Table>
               <TableHead>
-                <Th>Item Praktik & Hafalan</Th>
-                <Th className="text-center">Nilai</Th>
+                <Th className="w-1/3 min-w-[200px]">Item Praktik & Hafalan</Th>
+                <Th className="text-center w-28 sm:w-32">Nilai</Th>
                 <Th>Keterangan</Th>
               </TableHead>
               <TableBody>
@@ -386,42 +394,54 @@ export default function NilaiDiniyahInput() {
                           )}
                         </div>
                       </Td>
-                      <Td className="text-center">
-                        {p.bisa_edit ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={row?.nilai ?? ""}
-                            onChange={(e) => setPraktik({
-                              ...praktik,
-                              [p.id]: { nilai: e.target.value, keterangan: row?.keterangan ?? "" },
-                            })}
-                            className="w-20 px-2.5 py-1 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
-                            placeholder="-"
-                            disabled={!penilaianBuka}
-                          />
-                        ) : (
-                          <span className="text-sm font-semibold text-slate-700">
-                            {p.nilai !== null && p.nilai !== undefined ? p.nilai : "-"}
-                          </span>
-                        )}
+                      <Td className="text-center w-28 sm:w-32">
+                        <div className="flex justify-center">
+                          {p.bisa_edit ? (
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={row?.nilai ?? ""}
+                              onChange={(e) => {
+                                setPraktik({
+                                  ...praktik,
+                                  [p.id]: {
+                                    nilai: e.target.value,
+                                    keterangan: row?.keterangan ?? "",
+                                  },
+                                });
+                              }}
+                              className="w-20 px-2.5 py-1.5 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                              placeholder="0-100"
+                              disabled={!penilaianBuka}
+                            />
+                          ) : (
+                            <span className="text-sm font-semibold text-slate-700">
+                              {p.nilai !== null && p.nilai !== undefined ? p.nilai : "-"}
+                            </span>
+                          )}
+                        </div>
                       </Td>
                       <Td>
                         {p.bisa_edit ? (
                           <input
                             type="text"
                             value={row?.keterangan ?? ""}
-                            onChange={(e) => setPraktik({
-                              ...praktik,
-                              [p.id]: { nilai: row?.nilai ?? "", keterangan: e.target.value },
-                            })}
-                            placeholder="Keterangan (opsional)"
-                            className="w-full px-3 py-1 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                            onChange={(e) => {
+                              setPraktik({
+                                ...praktik,
+                                [p.id]: {
+                                  nilai: row?.nilai ?? "",
+                                  keterangan: e.target.value,
+                                },
+                              });
+                            }}
+                            placeholder="Keterangan (misal: Istimewa, Sangat Baik, Lancar)"
+                            className="w-full px-3 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
                             disabled={!penilaianBuka}
                           />
                         ) : (
-                          <span className="text-sm text-slate-400">{p.keterangan ?? "-"}</span>
+                          <span className="text-sm text-slate-600">{p.keterangan || "-"}</span>
                         )}
                       </Td>
                     </TableRow>
@@ -430,7 +450,7 @@ export default function NilaiDiniyahInput() {
               </TableBody>
             </Table>
             <p className="text-xs text-slate-400 mt-2.5">
-              Rentang nilai: Istimewa (≥90), Sangat Baik (80–89), Baik (70–79), Cukup (60–69), Kurang (&lt;60).
+              Panduan predikat nilai: Istimewa (≥90), Sangat Baik (80–89), Baik (70–79), Cukup (60–69), Kurang (&lt;60).
             </p>
           </Card>
 

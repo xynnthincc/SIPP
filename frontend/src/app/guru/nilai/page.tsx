@@ -313,10 +313,14 @@ export default function NilaiGuruPage() {
                     Siswa · {siswaList.length}
                   </th>
                   {mapelList.map((m) => (
-                    <th key={m.id} className="px-3 py-3 text-center min-w-28">
-                      <div className="font-semibold text-slate-700 truncate max-w-36" title={m.nama}>{m.nama}</div>
-                      <div className="text-[11px] font-normal text-slate-400 mt-0.5">
-                        {terisiCount(m.id)}/{siswaList.length} terisi
+                    <th key={m.id} className="px-3 py-3 text-center min-w-32">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <span className="font-semibold text-slate-700 max-w-40 truncate" title={m.nama}>
+                          {m.nama}
+                        </span>
+                        <span className="text-[11px] font-normal text-slate-400 mt-0.5 whitespace-nowrap">
+                          {terisiCount(m.id)}/{siswaList.length} terisi
+                        </span>
                       </div>
                     </th>
                   ))}
@@ -331,16 +335,18 @@ export default function NilaiGuruPage() {
                     </td>
                     {mapelList.map((m) => (
                       <td key={m.id} className="px-3 py-2 text-center">
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={matriks[m.id]?.[s.id] ?? ""}
-                          onChange={(e) => ubahNilai(m.id, s.id, e.target.value)}
-                          className="w-20 px-2 py-1.5 text-sm text-center glass-input rounded-lg"
-                          placeholder="—"
-                          aria-label={`Nilai ${m.nama} untuk ${s.nama}`}
-                        />
+                        <div className="flex justify-center">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={matriks[m.id]?.[s.id] ?? ""}
+                            onChange={(e) => ubahNilai(m.id, s.id, e.target.value)}
+                            className="w-20 px-2 py-1.5 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                            placeholder="—"
+                            aria-label={`Nilai ${m.nama} untuk ${s.nama}`}
+                          />
+                        </div>
                       </td>
                     ))}
                   </tr>
