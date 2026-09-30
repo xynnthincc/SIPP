@@ -884,14 +884,17 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "9%" }}>
+                    <th style={{ width: "11.5%" }}>
                       <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "22%" }}>
-                      <span className="th-ar">البيان</span>
+                    <th style={{ width: "34.5%" }}>
+                      <span className="th-ar">ألمعلومة</span>
                     </th>
-                    <th colSpan={2}>
+                    <th style={{ width: "27.5%" }}>
                       <span className="th-ar">وظيفة التنمية الذاتية</span>
+                    </th>
+                    <th style={{ width: "26.5%" }}>
+                      <span className="th-ar">　</span>
                     </th>
                   </tr>
                   <tr>
@@ -901,8 +904,11 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Keterangan</span>
                     </th>
-                    <th colSpan={2}>
+                    <th>
                       <span className="th-id">Kegiatan Pengembangan Diri</span>
+                    </th>
+                    <th>
+                      <span className="th-id">　</span>
                     </th>
                   </tr>
                 </thead>
@@ -910,8 +916,8 @@ function RaporCetakView() {
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
                     <td className="ket-materi">{ketHuruf(data.pembiasaan)}</td>
-                    <td className="id" style={{ width: "34.5%" }}>Pembiasaan Pagi</td>
-                    <td className="ar" style={{ width: "34.5%" }}>تعويد بالغدوة</td>
+                    <td className="id">Pembiasaan Pagi</td>
+                    <td className="ar">تعويد بالغدوة</td>
                   </tr>
                 </tbody>
               </table>
@@ -958,14 +964,17 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "9%" }}>
+                    <th style={{ width: "11.5%" }}>
                       <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "22%" }}>
+                    <th style={{ width: "34.5%" }}>
                       <span className="th-ar">البيان</span>
                     </th>
-                    <th colSpan={2}>
+                    <th style={{ width: "27.5%" }}>
                       <span className="th-ar">المعاملة اليومية</span>
+                    </th>
+                    <th style={{ width: "26.5%" }}>
+                      <span className="th-ar">　</span>
                     </th>
                   </tr>
                   <tr>
@@ -975,8 +984,11 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Keterangan</span>
                     </th>
-                    <th colSpan={2}>
+                    <th>
                       <span className="th-id">Sikap Sehari-hari</span>
+                    </th>
+                    <th>
+                      <span className="th-id">　</span>
                     </th>
                   </tr>
                 </thead>
@@ -984,8 +996,8 @@ function RaporCetakView() {
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.akhlaq)}</td>
                     <td className="ket-materi">{ketHuruf(data.sikap?.akhlaq)}</td>
-                    <td className="id" style={{ width: "34.5%" }}>Akhlaq</td>
-                    <td className="ar" style={{ width: "34.5%" }}>اخلاق</td>
+                    <td className="id">Akhlaq</td>
+                    <td className="ar">اخلاق</td>
                   </tr>
                   <tr>
                     <td className="nilai-isi">{hurufArab(data.sikap?.kepribadian)}</td>
