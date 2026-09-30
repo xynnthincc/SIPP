@@ -95,7 +95,7 @@ class NilaiDiniyahController extends Controller
             'nilai_mapel.*.nilai' => ['nullable', 'integer', 'between:0,100'],
             'nilai_praktik' => ['sometimes', 'array'],
             'nilai_praktik.*.praktik_item_id' => ['required', 'exists:praktik_items,id'],
-            'nilai_praktik.*.nilai' => ['nullable', 'in:A,B,C,D'],
+            'nilai_praktik.*.nilai' => ['nullable', 'in:A,B,C'],
             'nilai_praktik.*.keterangan' => ['nullable', 'string', 'max:255'],
             'pembiasaan' => ['sometimes', 'array'],
             'pembiasaan.nilai' => ['nullable', 'in:A,B,C'],

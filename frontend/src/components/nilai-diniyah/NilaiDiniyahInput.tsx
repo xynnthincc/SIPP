@@ -341,7 +341,6 @@ export default function NilaiDiniyahInput() {
               <TableHead>
                 <Th>Item</Th>
                 <Th className="text-center">Nilai</Th>
-                <Th>Keterangan</Th>
               </TableHead>
               <TableBody>
                 {rekap.praktik.map((p) => {
@@ -364,24 +363,9 @@ export default function NilaiDiniyahInput() {
                             <option value="A">A</option>
                             <option value="B">B</option>
                             <option value="C">C</option>
-                            <option value="D">D</option>
                           </Select>
                         ) : (
                           <span className="text-sm text-slate-400">{p.nilai ?? "-"}</span>
-                        )}
-                      </Td>
-                      <Td>
-                        {p.bisa_edit ? (
-                          <input
-                            type="text"
-                            value={row?.keterangan ?? ""}
-                            onChange={(e) => setPraktik({ ...praktik, [p.id]: { nilai: row?.nilai ?? "", keterangan: e.target.value } })}
-                            placeholder="Keterangan singkat (opsional)"
-                            className="w-full px-3 py-1.5 text-sm glass-input rounded-lg"
-                            disabled={!penilaianBuka}
-                          />
-                        ) : (
-                          <span className="text-sm text-slate-400">{p.keterangan ?? "-"}</span>
                         )}
                       </Td>
                     </TableRow>
@@ -389,7 +373,7 @@ export default function NilaiDiniyahInput() {
                 })}
               </TableBody>
             </Table>
-            <p className="text-xs text-slate-400 mt-2">Nilai praktik/hafalan menggunakan lambang A/B/C/D sesuai konvensi aplikasi lama.</p>
+            <p className="text-xs text-slate-400 mt-2">Nilai praktik/hafalan menggunakan lambang A/B/C. Keterangan otomatis tampil di rapor.</p>
           </Card>
 
           {pembiasaanBoleh && (

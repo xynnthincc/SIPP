@@ -884,10 +884,10 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "11.5%" }}>
+                    <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "34.5%" }}>
+                    <th style={{ width: "31.1%" }}>
                       <span className="th-ar">البيان</span>
                     </th>
                     <th colSpan={2}>
@@ -920,10 +920,10 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "11.5%" }}>
+                    <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "34.5%" }}>
+                    <th style={{ width: "31.1%" }}>
                       <span className="th-ar">ألمعلومة</span>
                     </th>
                     <th colSpan={2}>
@@ -947,8 +947,8 @@ function RaporCetakView() {
                     <tr key={idx}>
                       <td className="nilai-isi">{hurufArab(p.nilai)}</td>
                       <td className="ket-materi">{ketHuruf(p.nilai)}</td>
-                      <td className="id" style={{ width: "27.5%" }}>{p.nama_id}</td>
-                      <td className="ar" style={{ width: "26.5%" }}>{p.nama_ar || ""}</td>
+                      <td className="id" style={{ width: "26.65%" }}>{p.nama_id}</td>
+                      <td className="ar" style={{ width: "26.65%" }}>{p.nama_ar || ""}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -958,10 +958,10 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "11.5%" }}>
+                    <th style={{ width: "15.6%" }}>
                       <span className="th-ar">المهارة</span>
                     </th>
-                    <th style={{ width: "34.5%" }}>
+                    <th style={{ width: "31.1%" }}>
                       <span className="th-ar">البيان</span>
                     </th>
                     <th colSpan={2}>
@@ -1000,10 +1000,10 @@ function RaporCetakView() {
               <table className="sub">
                 <thead>
                   <tr>
-                    <th style={{ width: "41.5%" }}>
+                    <th style={{ width: "31.1%" }}>
                       <span className="th-ar">معلومات</span>
                     </th>
-                    <th style={{ width: "15.5%" }}>
+                    <th style={{ width: "15.6%" }}>
                       <span className="th-ar">ايام</span>
                     </th>
                     <th colSpan={2}>
@@ -1025,19 +1025,19 @@ function RaporCetakView() {
                 <tbody>
                   <tr>
                     <td />
-                    <td className="nilai-isi">{angkaArab(data.kehadiran?.sakit ?? 0)}</td>
-                    <td className="id" style={{ width: "22%" }}>Sakit</td>
-                    <td className="ar" style={{ width: "21%" }}>المرض</td>
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.sakit) : ""}</td>
+                    <td className="id" style={{ width: "26.65%" }}>Sakit</td>
+                    <td className="ar" style={{ width: "26.65%" }}>المرض</td>
                   </tr>
                   <tr>
                     <td />
-                    <td className="nilai-isi">{angkaArab(data.kehadiran?.izin ?? 0)}</td>
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.izin) : ""}</td>
                     <td className="id">Izin</td>
                     <td className="ar">الرخصة</td>
                   </tr>
                   <tr>
                     <td />
-                    <td className="nilai-isi">{angkaArab(data.kehadiran?.alpa ?? 0)}</td>
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.alpa) : ""}</td>
                     <td className="id">Alpa</td>
                     <td className="ar">لاهمال</td>
                   </tr>
