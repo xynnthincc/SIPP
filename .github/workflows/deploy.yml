@@ -52,6 +52,9 @@ jobs:
           local-dir: frontend/out/
           dangerous-clean-slate: true
           security: loose
+          # FTP Hostinger sering lambat merespons (LIST/wipe ratusan file);
+          # default 30 detik terlalu kecil → "Timeout (control socket)".
+          timeout: 120000
 
   deploy-backend:
     name: Sync Backend Code
