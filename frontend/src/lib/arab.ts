@@ -137,15 +137,27 @@ export function terbilangArab(n: number | null | undefined): string {
   return TERBILANG_ARAB[r] || "-";
 }
 
-export function ketNilai(n: number | null | undefined): string {
-  if (n === null || n === undefined) return "-";
-  const r = Math.round(n);
+export function ketNilaiId(n: number | string | null | undefined): string {
+  if (n === null || n === undefined || n === "") return "-";
+  const num = typeof n === "string" ? parseFloat(n) : n;
+  if (isNaN(num)) return "-";
+  if (num >= 90) return "Istimewa";
+  if (num >= 80) return "Sangat Baik";
+  if (num >= 70) return "Baik";
+  if (num >= 60) return "Cukup";
+  return "Kurang";
+}
+
+export function ketNilai(n: number | string | null | undefined): string {
+  if (n === null || n === undefined || n === "") return "-";
+  const num = typeof n === "string" ? parseFloat(n) : n;
+  if (isNaN(num)) return "-";
+  const r = Math.round(num);
   if (r >= 90) return "ممتاز";
   if (r >= 80) return "جيّد جدّا";
   if (r >= 70) return "جيد";
   if (r >= 60) return "متوسط";
-  if (r >= 50) return "رديء";
-  return "-";
+  return "رديء";
 }
 
 export function predikatByRank(peringkat: number | null | undefined): {

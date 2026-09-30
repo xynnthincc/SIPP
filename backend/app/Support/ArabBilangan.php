@@ -147,9 +147,36 @@ class ArabBilangan
         return $tabel[$n] ?? '-';
     }
 
-    /** Kriteria nilai (Ket Nilai) berdasarkan rentang skor. */
+    /** Kriteria nilai (Ket Nilai) Bahasa Indonesia berdasarkan rentang petunjuk penggunaan. */
+    public static function ketNilaiId($n): string
+    {
+        if ($n === null || $n === '') {
+            return '-';
+        }
+        $n = (int) round((float) $n);
+
+        if ($n >= 90) {
+            return 'Istimewa';
+        }
+        if ($n >= 80) {
+            return 'Sangat Baik';
+        }
+        if ($n >= 70) {
+            return 'Baik';
+        }
+        if ($n >= 60) {
+            return 'Cukup';
+        }
+
+        return 'Kurang';
+    }
+
+    /** Kriteria nilai (Ket Nilai) Bahasa Arab berdasarkan rentang skor. */
     public static function ketNilai($n): string
     {
+        if ($n === null || $n === '') {
+            return '-';
+        }
         $n = (int) round((float) $n);
 
         if ($n >= 90) {
@@ -164,11 +191,8 @@ class ArabBilangan
         if ($n >= 60) {
             return 'متوسط';
         }
-        if ($n >= 50) {
-            return 'رديء';
-        }
 
-        return '-';
+        return 'رديء';
     }
 
     /** Predikat & deskripsi kemajuan belajar berdasarkan peringkat (rank di kelas). */

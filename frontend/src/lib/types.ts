@@ -135,7 +135,7 @@ export interface PraktikRekap {
   nama_id: string;
   nama_ar: string | null;
   urutan: number;
-  nilai: string | null;
+  nilai: number | string | null;
   keterangan: string | null;
   bisa_edit: boolean;
 }
@@ -166,7 +166,7 @@ export interface RaporCetak {
   rata2_bulat: number;
   peringkat: number | null;
   predikat: { predikat_ar: string; predikat_id: string; deskripsi: string } | null;
-  praktik: { kode: string; nama_id: string; nama_ar: string | null; nilai: string | null; keterangan: string | null }[];
+  praktik: { kode: string; nama_id: string; nama_ar: string | null; nilai: number | string | null; keterangan: string | null }[];
   pembiasaan: string | null;
   sikap: { akhlaq: string | null; kepribadian: string | null } | null;
   kehadiran: { sakit: number; izin: number; alpa: number } | null;

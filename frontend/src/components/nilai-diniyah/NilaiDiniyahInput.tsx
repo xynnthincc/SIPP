@@ -46,7 +46,7 @@ interface NilaiPraktikRow {
   kode: string;
   nama_id: string;
   nama_ar: string | null;
-  nilai: string | null;
+  nilai: number | string | null;
   keterangan: string | null;
   bisa_edit: boolean;
 }
@@ -130,7 +130,10 @@ export default function NilaiDiniyahInput() {
       setNilaiMapel(nm);
       const pk: Record<number, { nilai: string; keterangan: string }> = {};
       res.data.praktik.forEach((p) => {
-        pk[p.id] = { nilai: p.nilai ?? "", keterangan: p.keterangan ?? "" };
+        pk[p.id] = {
+          nilai: p.nilai !== null && p.nilai !== undefined ? String(p.nilai) : "",
+          keterangan: p.keterangan ?? "",
+        };
       });
       setPraktik(pk);
       setPembiasaan(res.data.pembiasaan?.nilai ?? "");
@@ -178,11 +181,15 @@ export default function NilaiDiniyahInput() {
           }),
         nilai_praktik: rekap.praktik
           .filter((p) => p.bisa_edit && (praktik[p.id]?.nilai !== "" || praktik[p.id]?.keterangan !== ""))
-          .map((p) => ({
-            praktik_item_id: p.id,
-            nilai: praktik[p.id]?.nilai || null,
-            keterangan: praktik[p.id]?.keterangan || null,
-          })),
+          .map((p) => {
+            const rawVal = praktik[p.id]?.nilai;
+            const numVal = rawVal !== "" && rawVal !== undefined && rawVal !== null ? Number(rawVal) : null;
+            return {
+              praktik_item_id: p.id,
+              nilai: numVal,
+              keterangan: praktik[p.id]?.keterangan || null,
+            };
+          }),
       };
       if (pembiasaanBoleh) {
         body.pembiasaan = { nilai: pembiasaan !== "" ? pembiasaan : null };
@@ -281,8 +288,18 @@ export default function NilaiDiniyahInput() {
                   return (
                     <TableRow key={m.id}>
                       <Td>
-                        <div className="font-medium text-slate-800">{m.nama}</div>
-                        {m.nama_ar && <div className="text-sm text-slate-500 font-medium" dir="rtl">{m.nama_ar}</div>}
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-800">{m.nama}</span>
+                          {m.nama_ar && (
+                            <span
+                              className="text-xs text-slate-500 font-medium font-arabic mt-0.5 text-left inline-block"
+                              dir="rtl"
+                              style={{ textAlign: "left" }}
+                            >
+                              {m.nama_ar}
+                            </span>
+                          )}
+                        </div>
                       </Td>
                       <Td className="text-center">
                         {m.bisa_edit ? (
@@ -336,11 +353,19 @@ export default function NilaiDiniyahInput() {
           </Card>
 
           <Card>
-            <h3 className="text-sm font-semibold text-slate-800 mb-4">Praktik & Hafalan</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800">Praktik & Hafalan</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Input berupa nilai angka (0-100) beserta keterangan singkat.
+                </p>
+              </div>
+            </div>
             <Table>
               <TableHead>
-                <Th>Item</Th>
+                <Th>Item Praktik & Hafalan</Th>
                 <Th className="text-center">Nilai</Th>
+                <Th>Keterangan</Th>
               </TableHead>
               <TableBody>
                 {rekap.praktik.map((p) => {
@@ -348,24 +373,55 @@ export default function NilaiDiniyahInput() {
                   return (
                     <TableRow key={p.id}>
                       <Td>
-                        <div className="font-medium text-slate-800">{p.nama_id}</div>
-                        {p.nama_ar && <div className="text-sm text-slate-500 font-medium" dir="rtl">{p.nama_ar}</div>}
+                        <div className="flex flex-col">
+                          <span className="font-medium text-slate-800">{p.nama_id}</span>
+                          {p.nama_ar && (
+                            <span
+                              className="text-xs text-slate-500 font-medium font-arabic mt-0.5 text-left inline-block"
+                              dir="rtl"
+                              style={{ textAlign: "left" }}
+                            >
+                              {p.nama_ar}
+                            </span>
+                          )}
+                        </div>
                       </Td>
                       <Td className="text-center">
                         {p.bisa_edit ? (
-                          <Select
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
                             value={row?.nilai ?? ""}
-                            onChange={(e) => setPraktik({ ...praktik, [p.id]: { nilai: e.target.value, keterangan: row?.keterangan ?? "" } })}
-                            className="w-24"
+                            onChange={(e) => setPraktik({
+                              ...praktik,
+                              [p.id]: { nilai: e.target.value, keterangan: row?.keterangan ?? "" },
+                            })}
+                            className="w-20 px-2.5 py-1 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                            placeholder="-"
                             disabled={!penilaianBuka}
-                          >
-                            <option value="">-</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                          </Select>
+                          />
                         ) : (
-                          <span className="text-sm text-slate-400">{p.nilai ?? "-"}</span>
+                          <span className="text-sm font-semibold text-slate-700">
+                            {p.nilai !== null && p.nilai !== undefined ? p.nilai : "-"}
+                          </span>
+                        )}
+                      </Td>
+                      <Td>
+                        {p.bisa_edit ? (
+                          <input
+                            type="text"
+                            value={row?.keterangan ?? ""}
+                            onChange={(e) => setPraktik({
+                              ...praktik,
+                              [p.id]: { nilai: row?.nilai ?? "", keterangan: e.target.value },
+                            })}
+                            placeholder="Keterangan (opsional)"
+                            className="w-full px-3 py-1 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+                            disabled={!penilaianBuka}
+                          />
+                        ) : (
+                          <span className="text-sm text-slate-400">{p.keterangan ?? "-"}</span>
                         )}
                       </Td>
                     </TableRow>
@@ -373,7 +429,9 @@ export default function NilaiDiniyahInput() {
                 })}
               </TableBody>
             </Table>
-            <p className="text-xs text-slate-400 mt-2">Nilai praktik/hafalan menggunakan lambang A/B/C. Keterangan otomatis tampil di rapor.</p>
+            <p className="text-xs text-slate-400 mt-2.5">
+              Rentang nilai: Istimewa (≥90), Sangat Baik (80–89), Baik (70–79), Cukup (60–69), Kurang (&lt;60).
+            </p>
           </Card>
 
           {pembiasaanBoleh && (

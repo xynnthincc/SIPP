@@ -350,13 +350,13 @@
             <span class="ar-title">المماراسة والمحفوظات وقراءة الكتب</span><br>
             <span class="id-title">Praktik, Hafalan dan Pembacaan Kitab</span>
         </td>
-        <td class="section-header" style="width:38%;">
-            <span class="ar-title">المعلومات</span><br>
-            <span class="id-title">Keterangan</span>
-        </td>
         <td class="section-header" style="width:20%;">
             <span class="ar-title">المهارة</span><br>
             <span class="id-title">Nilai</span>
+        </td>
+        <td class="section-header" style="width:38%;">
+            <span class="ar-title">المعلومات</span><br>
+            <span class="id-title">Keterangan</span>
         </td>
     </tr>
     @if (! empty($rapor['praktik']))
@@ -366,12 +366,12 @@
                     <span class="ar" style="float:right;">{{ $item['nama_ar'] ?? '' }}</span>
                     <span class="id">{{ $item['nama_id'] }}</span>
                 </td>
-                <td class="sm center">{{ $item['keterangan'] ?? '' }}</td>
                 <td class="center">
                     @if ($item['nilai'] !== null)
-                        <span class="ar-center" style="font-size:12pt;">{{ \App\Support\ArabBilangan::angkaArab($item['nilai']) }}</span>
+                        <span class="ar-center" style="font-size:12pt;">{{ \App\Support\ArabBilangan::hurufArab($item['nilai']) }}</span>
                     @endif
                 </td>
+                <td class="sm center">{{ !empty($item['keterangan']) ? $item['keterangan'] : ($item['nilai'] !== null ? \App\Support\ArabBilangan::ketNilaiId($item['nilai']) : '') }}</td>
             </tr>
         @endforeach
     @else

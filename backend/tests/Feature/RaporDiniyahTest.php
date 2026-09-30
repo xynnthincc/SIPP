@@ -103,7 +103,7 @@ class RaporDiniyahTest extends TestCase
                     ['mapel_plus_id' => $this->mapel->id, 'kkm' => 75, 'nilai' => 85],
                 ],
                 'nilai_praktik' => [
-                    ['praktik_item_id' => $this->praktik->id, 'nilai' => 'A', 'keterangan' => 'Lancar'],
+                    ['praktik_item_id' => $this->praktik->id, 'nilai' => 90, 'keterangan' => 'Lancar'],
                 ],
                 'pembiasaan' => ['nilai' => 'A'],
                 'sikap' => ['akhlaq' => 'A', 'kepribadian' => 'B'],
@@ -123,7 +123,7 @@ class RaporDiniyahTest extends TestCase
             'siswa_id' => $this->siswa->id,
             'praktik_item_id' => $this->praktik->id,
             'semester_id' => $this->semester->id,
-            'nilai' => 'A',
+            'nilai' => 90,
         ]);
         $this->assertDatabaseHas('pembiasaans', ['siswa_id' => $this->siswa->id, 'semester_id' => $this->semester->id, 'nilai' => 'A']);
         $this->assertDatabaseHas('sikaps', ['siswa_id' => $this->siswa->id, 'akhlaq' => 'A', 'kepribadian' => 'B']);
@@ -141,13 +141,13 @@ class RaporDiniyahTest extends TestCase
                     ['mapel_plus_id' => $this->mapel->id, 'kkm' => 75, 'nilai' => 75],
                 ],
                 'nilai_praktik' => [
-                    ['praktik_item_id' => $this->praktik->id, 'nilai' => 'B'],
+                    ['praktik_item_id' => $this->praktik->id, 'nilai' => 80],
                 ],
             ])
             ->assertStatus(200);
 
         $this->assertDatabaseHas('nilai_mapels', ['siswa_id' => $this->siswa->id, 'nilai' => 75]);
-        $this->assertDatabaseHas('nilai_praktiks', ['siswa_id' => $this->siswa->id, 'nilai' => 'B']);
+        $this->assertDatabaseHas('nilai_praktiks', ['siswa_id' => $this->siswa->id, 'nilai' => 80]);
     }
 
     public function test_guru_tidak_bisa_mengisi_pembiasaan_sikap_dan_kehadiran(): void

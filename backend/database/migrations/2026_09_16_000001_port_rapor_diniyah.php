@@ -54,7 +54,7 @@ return new class extends Migration
             $table->foreignId('siswa_id')->constrained('siswas')->cascadeOnDelete();
             $table->foreignId('praktik_item_id')->constrained('praktik_items')->cascadeOnDelete();
             $table->foreignId('semester_id')->constrained('semesters')->cascadeOnDelete();
-            $table->enum('nilai', ['A', 'B', 'C', 'D'])->nullable();
+            $table->unsignedTinyInteger('nilai')->nullable();
             $table->string('keterangan')->nullable();
             $table->timestamps();
             $table->unique(['siswa_id', 'praktik_item_id', 'semester_id'], 'nilai_praktik_unique_per_semester');

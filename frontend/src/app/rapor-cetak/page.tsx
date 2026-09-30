@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas, labelTingkat } from "@/lib/kelas";
 import { RaporCetak } from "@/lib/types";
-import { angkaArab, hurufArab, ketHuruf, ketNilai, predikatByRank, terbilangArab } from "@/lib/arab";
+import { angkaArab, hurufArab, ketHuruf, ketNilai, ketNilaiId, predikatByRank, terbilangArab } from "@/lib/arab";
 import { Button, Alert, Skeleton } from "@/components/ui";
 
 export default function RaporCetakPage() {
@@ -929,8 +929,8 @@ function RaporCetakView() {
                 <tbody>
                   {data.praktik.map((p, idx) => (
                     <tr key={idx}>
-                      <td className="nilai-isi">{hurufArab(p.nilai)}</td>
-                      <td className="ket-materi">{ketHuruf(p.nilai)}</td>
+                      <td className="nilai-isi">{p.nilai !== null && p.nilai !== "" ? angkaArab(p.nilai) : "-"}</td>
+                      <td className="ket-materi">{p.keterangan || (p.nilai !== null && p.nilai !== "" ? ketNilaiId(p.nilai) : "-")}</td>
                       <td className="id" style={{ width: "26.65%" }}>{p.nama_id}</td>
                       <td className="ar" style={{ width: "26.65%" }}>{p.nama_ar || ""}</td>
                     </tr>
