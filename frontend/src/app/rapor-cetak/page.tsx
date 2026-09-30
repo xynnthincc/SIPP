@@ -888,13 +888,10 @@ function RaporCetakView() {
                       <span className="th-ar">المهارة</span>
                     </th>
                     <th style={{ width: "34.5%" }}>
-                      <span className="th-ar">ألمعلومة</span>
+                      <span className="th-ar">البيان</span>
                     </th>
-                    <th style={{ width: "27.5%" }}>
+                    <th colSpan={2}>
                       <span className="th-ar">وظيفة التنمية الذاتية</span>
-                    </th>
-                    <th style={{ width: "26.5%" }}>
-                      <span className="th-ar">　</span>
                     </th>
                   </tr>
                   <tr>
@@ -904,11 +901,8 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Keterangan</span>
                     </th>
-                    <th>
+                    <th colSpan={2}>
                       <span className="th-id">Kegiatan Pengembangan Diri</span>
-                    </th>
-                    <th>
-                      <span className="th-id">　</span>
                     </th>
                   </tr>
                 </thead>
@@ -952,7 +946,7 @@ function RaporCetakView() {
                   {data.praktik.map((p, idx) => (
                     <tr key={idx}>
                       <td className="nilai-isi">{hurufArab(p.nilai)}</td>
-                      <td className="ket-materi" style={{ width: "34.5%" }}>{p.keterangan || "-"}</td>
+                      <td className="ket-materi">{ketHuruf(p.nilai)}</td>
                       <td className="id" style={{ width: "27.5%" }}>{p.nama_id}</td>
                       <td className="ar" style={{ width: "26.5%" }}>{p.nama_ar || ""}</td>
                     </tr>
@@ -970,11 +964,8 @@ function RaporCetakView() {
                     <th style={{ width: "34.5%" }}>
                       <span className="th-ar">البيان</span>
                     </th>
-                    <th style={{ width: "27.5%" }}>
+                    <th colSpan={2}>
                       <span className="th-ar">المعاملة اليومية</span>
-                    </th>
-                    <th style={{ width: "26.5%" }}>
-                      <span className="th-ar">　</span>
                     </th>
                   </tr>
                   <tr>
@@ -984,11 +975,8 @@ function RaporCetakView() {
                     <th>
                       <span className="th-id">Keterangan</span>
                     </th>
-                    <th>
+                    <th colSpan={2}>
                       <span className="th-id">Sikap Sehari-hari</span>
-                    </th>
-                    <th>
-                      <span className="th-id">　</span>
                     </th>
                   </tr>
                 </thead>

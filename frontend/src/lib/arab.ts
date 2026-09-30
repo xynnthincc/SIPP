@@ -15,13 +15,13 @@ export function hurufArab(x: string | null | undefined): string {
   return map[key] || x;
 }
 
-/** Keterangan teks untuk predikat huruf (A/B/C/D) — mengikuti legenda rapor. */
+/** Keterangan teks untuk predikat huruf (A/B/C) — mengikuti legenda "Keterangan Huruf" rapor. */
 export function ketHuruf(x: string | null | undefined): string {
   if (x === null || x === undefined || !x.trim()) return "-";
   const map: Record<string, string> = {
-    A: "Istimewa",
-    B: "Sangat Baik",
-    C: "Baik",
+    A: "Baik",
+    B: "Cukup",
+    C: "Buruk",
     D: "Kurang",
   };
   const key = x.trim().toUpperCase();

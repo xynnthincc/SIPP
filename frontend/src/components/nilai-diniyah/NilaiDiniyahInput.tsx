@@ -403,7 +403,6 @@ export default function NilaiDiniyahInput() {
                     <option value="A">A</option>
                     <option value="B">B</option>
                     <option value="C">C</option>
-                    <option value="D">D</option>
                   </Select>
                 </div>
                 <div>
@@ -413,7 +412,6 @@ export default function NilaiDiniyahInput() {
                     <option value="A">A</option>
                     <option value="B">B</option>
                     <option value="C">C</option>
-                    <option value="D">D</option>
                   </Select>
                 </div>
                 <div>
@@ -423,7 +421,6 @@ export default function NilaiDiniyahInput() {
                     <option value="A">A</option>
                     <option value="B">B</option>
                     <option value="C">C</option>
-                    <option value="D">D</option>
                   </Select>
                 </div>
                 <div>
