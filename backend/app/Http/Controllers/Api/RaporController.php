@@ -122,7 +122,7 @@ class RaporController extends Controller
                 ->where(fn ($q) => $q->whereNotNull('akhlaq')->orWhereNotNull('kepribadian'))
                 ->exists();
             $kehadiran = KehadiranRekap::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->exists()
-                || Presensi::where('siswa_id', $siswa->id)->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $semester->id))->exists();
+                || Presensi::where('siswa_id', $siswa->id)->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $semester->induk()->id))->exists();
 
             return [
                 'siswa' => [
@@ -223,14 +223,19 @@ class RaporController extends Controller
 
     /**
      * Kehadiran rapor: dihitung dari presensi harian guru (jumlah HARI berbeda
-     * per status pada semester tsb — satu hari dihitung sekali walau ada
-     * beberapa sesi mengajar). Bila belum ada presensi sama sekali, fallback
-     * ke rekap manual wali kelas.
+     * per status — satu hari dihitung sekali walau ada beberapa sesi mengajar).
+     * Wadah Sementara ikut pool presensi induknya, sehingga rapor Sementara
+     * menampilkan kondisi sampai tengah semester dan rapor Akhir menampilkan
+     * total full semester. Bila belum ada presensi sama sekali, fallback ke
+     * rekap manual wali kelas (wadah itu sendiri).
      */
     private function kehadiranSemester(int $siswaId, int $semesterId): ?array
     {
+        $semester = Semester::find($semesterId);
+        $indukId = $semester ? $semester->induk()->id : $semesterId;
+
         $perStatus = Presensi::where('siswa_id', $siswaId)
-            ->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $semesterId))
+            ->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $indukId))
             ->selectRaw('status, COUNT(DISTINCT tanggal) as hari')
             ->groupBy('status')
             ->pluck('hari', 'status');

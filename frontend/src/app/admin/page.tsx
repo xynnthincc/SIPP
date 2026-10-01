@@ -187,6 +187,65 @@ function formatHari(nilai: string): string {
     : d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
 }
 
+/** Diagram garis % kehadiran per tanggal (pengganti diagram batang). */
+function GarisKehadiran({ data }: { data: { tanggal: string; persen: number }[] }) {
+  const W = 600;
+  const H = 230;
+  const padL = 40;
+  const padR = 14;
+  const padT = 20;
+  const padB = 32;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const titik = data.map((d, i) => ({
+    x: padL + (data.length > 1 ? (i * innerW) / (data.length - 1) : innerW / 2),
+    y: padT + innerH * (1 - Math.min(100, Math.max(0, d.persen)) / 100),
+    ...d,
+  }));
+
+  const garis = titik.map((t, i) => `${i === 0 ? "M" : "L"}${t.x.toFixed(1)},${t.y.toFixed(1)}`).join(" ");
+  const area =
+    titik.length > 0
+      ? `${garis} L${titik[titik.length - 1].x.toFixed(1)},${(padT + innerH).toFixed(1)} L${titik[0].x.toFixed(1)},${(padT + innerH).toFixed(1)} Z`
+      : "";
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Grafik garis kehadiran">
+      <defs>
+        <linearGradient id="garisKehadiranArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#059669" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      {[0, 25, 50, 75, 100].map((v) => {
+        const y = padT + innerH * (1 - v / 100);
+        return (
+          <g key={v}>
+            <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="#e2e8f0" strokeWidth={v === 0 ? 1.5 : 1} />
+            <text x={padL - 8} y={y + 4} textAnchor="end" fontSize="11" fill="#94a3b8">{v}%</text>
+          </g>
+        );
+      })}
+      {area && <path d={area} fill="url(#garisKehadiranArea)" />}
+      {garis && (
+        <path d={garis} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {titik.map((t) => (
+        <g key={t.tanggal}>
+          <circle cx={t.x} cy={t.y} r="4.5" fill="#fff" stroke="#059669" strokeWidth="2.5" />
+          <text x={t.x} y={t.y - 10} textAnchor="middle" fontSize="12" fontWeight="600" fill="#334155">
+            {t.persen}%
+          </text>
+          <text x={t.x} y={H - 10} textAnchor="middle" fontSize="11" fill="#94a3b8">
+            {formatHari(t.tanggal).length > 12 ? formatHari(t.tanggal).slice(0, 12) : formatHari(t.tanggal)}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 function SetoranRow({ item }: { item: SetoranHafalan }) {
   return (
     <div className="flex items-start gap-3">
@@ -329,20 +388,7 @@ export default function AdminHomePage() {
             </div>
           ) : (
             <div>
-              <div className="flex items-end justify-between gap-3 h-48">
-                {kehadiranPerHari.map((d) => (
-                  <div key={d.tanggal} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-                    <span className="text-xs font-semibold text-slate-600">{d.persen}%</span>
-                    <div className="w-full max-w-14 bg-slate-100 rounded-t-lg h-28 flex flex-col justify-end overflow-hidden">
-                      <div
-                        className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 transition-all duration-700"
-                        style={{ height: `${d.persen}%` }}
-                      />
-                    </div>
-                    <span className="text-[11px] text-slate-400 truncate">{formatHari(d.tanggal)}</span>
-                  </div>
-                ))}
-              </div>
+              <GarisKehadiran data={kehadiranPerHari} />
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5 pt-4 border-t border-slate-100 text-sm">
                 <span className="text-slate-400">
                   Total {rekapKehadiran.total} presensi tercatat

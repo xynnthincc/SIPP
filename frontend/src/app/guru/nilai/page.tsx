@@ -10,6 +10,7 @@ interface SemesterLite {
   id: number;
   nama: string;
   jenis: "Akhir" | "Sementara";
+  parent_id: number | null;
   is_aktif: boolean;
   tahun_ajaran: { nama: string } | null;
 }
@@ -74,23 +75,31 @@ export default function NilaiGuruPage() {
     });
   }, []);
 
+  // Semester operasional: wadah Sementara ikut induk Akhir-nya untuk
+  // penugasan/kelas (hanya penyimpanan NILAI yang memakai wadah terpilih)
+  const semesterTerpilih = semesters.find((s) => String(s.id) === semesterId) ?? null;
+  const semesterOperasionalId =
+    semesterTerpilih?.jenis === "Sementara" && semesterTerpilih.parent_id
+      ? String(semesterTerpilih.parent_id)
+      : semesterId;
+
   // Daftar kelas unik yang diampu guru pada semester terpilih
   const kelasTersaring = useMemo(() => {
     const map = new Map<number, { id: number; nama: string }>();
     pengampuanList
-      .filter((p) => String(p.semester_id) === semesterId)
+      .filter((p) => String(p.semester_id) === semesterOperasionalId)
       .forEach((p) => {
         if (!map.has(p.kelas_rombel.id)) {
           map.set(p.kelas_rombel.id, { id: p.kelas_rombel.id, nama: p.kelas_rombel.nama });
         }
       });
     return [...map.values()].sort((a, b) => a.nama.localeCompare(b.nama));
-  }, [pengampuanList, semesterId]);
+  }, [pengampuanList, semesterOperasionalId]);
 
   async function muatKelas(kId: number, semId: string, daftar: Pengampuan[]) {
     // Kolom = mapel-mapel yang diampu guru di kelas ini (urut nama biar stabil)
     const mapels = daftar
-      .filter((p) => String(p.semester_id) === semId && p.kelas_rombel.id === kId)
+      .filter((p) => String(p.semester_id) === semesterOperasionalId && p.kelas_rombel.id === kId)
       .map((p) => ({ id: p.mapel_plus.id, nama: p.mapel_plus.nama }))
       .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i)
       .sort((a, b) => a.nama.localeCompare(b.nama));

@@ -62,7 +62,7 @@ class NilaiController extends Controller
             $jenis = JenisAssessment::findOrFail($data['jenis_assessment_id']);
             $kelasDiampu = GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('mapel_plus_id', $jenis->mapel_plus_id)
-                ->where('semester_id', $semester->id)
+                ->where('semester_id', $semester->induk()->id)
                 ->pluck('kelas_rombel_id');
 
             $kelasSiswa = Siswa::whereIn('id', collect($data['nilai'])->pluck('siswa_id'))

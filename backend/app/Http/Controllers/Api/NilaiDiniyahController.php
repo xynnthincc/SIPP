@@ -284,7 +284,7 @@ class NilaiDiniyahController extends Controller
 
     /* ── Helpers ──────────────────────────────────────────── */
 
-    /** Scope input massal: pemilik profil guru harus mengampu mapel di kelas tsb; wali kelas kelas binaannya; admin bebas. */
+    /** Scope input massal: pemilik profil guru harus mengampu mapel di kelas tsb (ikut induk bila Sementara); wali kelas kelas binaannya; admin bebas. */
     private function pastikanBolehNilaiMassal(User $user, int $mapelId, KelasRombel $kelas, Semester $semester): void
     {
         if ($user->hasRole('admin')) {
@@ -296,7 +296,7 @@ class NilaiDiniyahController extends Controller
             $boleh = GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('mapel_plus_id', $mapelId)
                 ->where('kelas_rombel_id', $kelas->id)
-                ->where('semester_id', $semester->id)
+                ->where('semester_id', $semester->induk()->id)
                 ->exists();
             if ($boleh) {
                 return;
@@ -512,7 +512,7 @@ class NilaiDiniyahController extends Controller
         if ($user->guru && $siswa->kelas_rombel_id) {
             return GuruMapelKelas::where('guru_id', $user->guru->id)
                 ->where('kelas_rombel_id', $siswa->kelas_rombel_id)
-                ->where('semester_id', $semester->id)
+                ->where('semester_id', $semester->induk()->id)
                 ->pluck('mapel_plus_id');
         }
 
