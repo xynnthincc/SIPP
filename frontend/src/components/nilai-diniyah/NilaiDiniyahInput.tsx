@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
 import { labelSemester } from "@/lib/semester";
+import { fetchSemuaSiswa } from "@/lib/siswa";
 import {
   PageHeader, Card, Button, Select, Skeleton, EmptyState, Alert,
   Table, TableHead, TableBody, Th, Td, TableRow, Badge,
@@ -103,8 +104,7 @@ export default function NilaiDiniyahInput() {
 
   const muatSiswa = useCallback(() => {
     if (!kelasId) return;
-    api.get("/siswa", { params: { kelas_rombel_id: kelasId } }).then((res) => {
-      const daftar: SiswaLite[] = res.data.data ?? res.data;
+    fetchSemuaSiswa<SiswaLite>({ kelas_rombel_id: kelasId }).then((daftar) => {
       daftar.sort((a, b) => a.nama.localeCompare(b.nama, "id-ID"));
       setSiswas(daftar);
       setLoadingSiswa(false);

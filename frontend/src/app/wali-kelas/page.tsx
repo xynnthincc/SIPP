@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { fetchSemuaSiswa } from "@/lib/siswa";
 import { useAuth } from "@/lib/auth-context";
 import { labelKelas, labelTingkat } from "@/lib/kelas";
 import {
@@ -51,8 +52,8 @@ export default function SiswaBinaanPage() {
       const kelasSaya = res.data[0] ?? null;
       setKelas(kelasSaya);
       if (kelasSaya) {
-        return api.get("/siswa", { params: { kelas_rombel_id: kelasSaya.id } }).then((r) => {
-          const daftar: SiswaBinaan[] = r.data.data ?? r.data;
+        // Ambil SEMUA halaman (backend paginate 20) — jangan cuma halaman pertama
+        return fetchSemuaSiswa<SiswaBinaan>({ kelas_rombel_id: kelasSaya.id }).then((daftar) => {
           daftar.sort((a, b) => a.nama.localeCompare(b.nama, "id-ID"));
           setSiswas(daftar);
         });

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { fetchSemuaSiswa } from "@/lib/siswa";
 import { PageHeader, Card, Button, Input, Select, Skeleton } from "@/components/ui";
 
 interface Siswa {
@@ -33,10 +34,10 @@ export default function ProgresHafalanPage() {
 
   useEffect(() => {
     Promise.all([
-      api.get("/siswa"),
+      fetchSemuaSiswa<Siswa>(),
       api.get<MapelPlus[]>("/mapel-plus"),
-    ]).then(([siswaRes, mapelRes]) => {
-      setSiswas(siswaRes.data.data ?? siswaRes.data);
+    ]).then(([siswaList, mapelRes]) => {
+      setSiswas(siswaList);
       setMapels(mapelRes.data.filter((m) => m.punya_progres_hafalan));
       setLoading(false);
     });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { fetchSemuaSiswa } from "@/lib/siswa";
 import { labelKelas } from "@/lib/kelas";
 import { PageHeader, Card, Button, Select, Skeleton, EmptyState } from "@/components/ui";
 
@@ -43,8 +44,7 @@ export default function PresensiPage() {
     if (!jadwalId) return;
     const jadwal = jadwals.find((j) => j.id === jadwalId);
     if (!jadwal) return;
-    api.get("/siswa", { params: { kelas_rombel_id: jadwal.guru_mapel_kelas.kelas_rombel.id } }).then((res) => {
-      const list: Siswa[] = res.data.data ?? res.data;
+    fetchSemuaSiswa<Siswa>({ kelas_rombel_id: jadwal.guru_mapel_kelas.kelas_rombel.id }).then((list) => {
       setSiswas(list);
       setStatus(Object.fromEntries(list.map((s) => [s.id, "Hadir" as Status])));
     });

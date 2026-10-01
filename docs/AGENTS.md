@@ -103,6 +103,7 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 
 ## Quirk struktur & penamaan
 - Nama tabel non-default (cek migration/model sebelum menulis tabel baru): `siswas`, `gurus`, `kelas_rombels`, `mapel_plus`, `rapors`, `presensis`, `nilais`, `progres_hafalans`, `catatan_gurus`, pivot `siswa_wali`.
+- `GET /api/siswa` di-paginate 20/halaman — daftar yang butuh LENGKAP (wali-kelas, dropdown input, presensi) wajib pakai helper `fetchSemuaSiswa()` (`frontend/src/lib/siswa.ts`) yang loop semua halaman, jangan ambil `data.data` halaman pertama saja (pernah bikin 2 siswa 7C "hilang").
 - Controller API di `backend/app/Http/Controllers/Api/`; model di `backend/app/Models/`.
 - Frontend: rute per role di `frontend/src/app/<role>/`; tiap layout memakai `DashboardShell` dengan `allowedRoles` + `navItems`. Komponen UI shared di `src/components/ui/`.
 
