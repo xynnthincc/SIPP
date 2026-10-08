@@ -6,7 +6,7 @@ import { useRoleNav } from "@/lib/nav";
 
 export default function WaliKelasLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const nav = useRoleNav(user?.role);
+  const nav = useRoleNav(user);
 
   return (
     <DashboardShell allowedRoles={nav.allowedRoles} navItems={nav.navItems} navGroups={nav.navGroups}>

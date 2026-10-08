@@ -36,7 +36,7 @@ class AuthController extends Controller
         $token = $user->createToken('sipp-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->userDenganFlag($user),
             'token' => $token,
         ]);
     }
@@ -50,6 +50,18 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($this->userDenganFlag($request->user()));
+    }
+
+    /**
+     * Tandai apakah user punya penugasan mengajar — dipakai frontend agar
+     * sidebar (grup "Guru Mapel") bisa dirender sinkron tanpa fetch dulu
+     * (mencegah flicker saat pindah halaman).
+     */
+    private function userDenganFlag(User $user): array
+    {
+        return array_merge($user->toArray(), [
+            'punya_penugasan_guru' => (bool) ($user->guru && $user->guru->guruMapelKelas()->exists()),
+        ]);
     }
 }

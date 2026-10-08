@@ -13,6 +13,8 @@ export interface User {
   role: Role;
   identifier: string | null;
   is_active: boolean;
+  /** Ada penugasan mengajar (dari /login & /me) — sidebar sinkron tanpa fetch. */
+  punya_penugasan_guru?: boolean;
 }
 
 // Label tampilan & path dashboard per role — dipakai di sidebar dan redirect setelah login

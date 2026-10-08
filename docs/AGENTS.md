@@ -87,6 +87,7 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 - Route `role:guru_pesantren,wali_kelas,admin`: jadwal CRUD, `presensi/massal`, `nilai/massal`, `progres-hafalan` store, `catatan-guru` store. Scope per item tetap di controller (kepemilikan jadwal/pengampuan/profil guru).
 - `NilaiController@storeMassal` & `NilaiDiniyahController@pastikanBolehNilaiMassal`: non-admin wajib profil guru; sah via penugasan pengampu ATAU (wali kelas) kelas binaan.
 - `JadwalController@index` di-scope lewat profil guru (`$user->guru`), role-agnostic.
+- `POST /api/login` & `GET /api/me` menyertakan `punya_penugasan_guru: bool` agar sidebar (`useRoleNav` di `frontend/src/lib/nav.ts`) render sinkron tanpa fetch dulu (cegah flicker saat pindah halaman); fetch `/pengampuan-saya` hanya sebagai revalidasi background + cache sesi per user.
 
 ## Tahun ajaran sebagai patokan sejarah (siswa naik kelas)
 - Tabel `siswa_kelas` = riwayat penempatan (siswa × kelas; kelas terikat TA). `siswas.kelas_rombel_id` tetap ada sebagai kelas SAAT INI (cache); setiap perubahan kelas via `SiswaController` / import / promosi otomatis mencatat baris riwayat.

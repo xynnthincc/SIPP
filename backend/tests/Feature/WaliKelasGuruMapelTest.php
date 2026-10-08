@@ -276,4 +276,23 @@ class WaliKelasGuruMapelTest extends TestCase
         $mapelIds = collect($res->json())->pluck('mapel_plus.id')->sort()->values()->all();
         $this->assertEquals([$this->mapelDiampu->id, $this->mapelLain->id], $mapelIds);
     }
+
+    public function test_login_dan_me_menyertakan_flag_penugasan_guru(): void
+    {
+        // Wali yang mengajar (ada penugasan di setUp) → true
+        $this->postJson('/api/login', ['email' => 'wali-guru@sipp.test', 'password' => 'password'])
+            ->assertStatus(200)
+            ->assertJsonPath('user.punya_penugasan_guru', true);
+
+        // Wali murni (tanpa profil guru) → false
+        $this->postJson('/api/login', ['email' => 'wali-murni@sipp.test', 'password' => 'password'])
+            ->assertStatus(200)
+            ->assertJsonPath('user.punya_penugasan_guru', false);
+
+        // Guru berprofil tapi tanpa penugasan → false
+        $this->actingAs($this->guru, 'sanctum')
+            ->getJson('/api/me')
+            ->assertStatus(200)
+            ->assertJsonPath('punya_penugasan_guru', false);
+    }
 }

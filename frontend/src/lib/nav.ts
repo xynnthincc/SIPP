@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "./api";
-import { Role } from "./types";
+import { Role, User } from "./types";
 
 export interface NavItem {
   href: string;
@@ -53,20 +53,54 @@ const GURU_PESANTREN_GROUPS: NavGroup[] = [
   },
 ];
 
+// Cache sesi per user: layout remount tiap pindah grup rute (/wali-kelas/*
+// vs /guru/*) sehingga fetch ulang tiap kali bikin menu "Guru Mapel" muncul
+// belakangan (flicker). Cache ini membuat navigasi dalam sesi tampil instan.
+let cachePenugasan: { userId: number; value: boolean } | null = null;
+let janjiBerjalan: Promise<boolean> | null = null;
+
+function ambilStatusPenugasan(): Promise<boolean> {
+  if (!janjiBerjalan) {
+    janjiBerjalan = api
+      .get<unknown[]>("/pengampuan-saya")
+      .then((res) => res.data.length > 0)
+      .catch(() => false)
+      .finally(() => {
+        janjiBerjalan = null;
+      });
+  }
+  return janjiBerjalan;
+}
+
 /**
  * Konfigurasi sidebar per role. Wali kelas yang juga mengajar (punya penugasan
  * pengampu) mendapat grup "Wali Kelas" + "Guru Mapel" — konsisten di layout
  * /wali-kelas/* maupun /guru/* sehingga sidebar tidak berubah saat pindah halaman.
+ *
+ * Status penugasan dibaca sinkron dari user login (tanpa fetch) bila tersedia,
+ * lalu direvalidasi di background — navigasi dalam sesi tidak flicker.
  */
-export function useRoleNav(role: Role | undefined): NavConfig {
-  const [punyaPenugasan, setPunyaPenugasan] = useState(false);
+export function useRoleNav(user: User | null): NavConfig {
+  const role = user?.role;
+  const userId = user?.id;
+  const [punyaPenugasan, setPunyaPenugasan] = useState<boolean>(
+    () =>
+      user?.punya_penugasan_guru ??
+      (userId !== undefined && cachePenugasan?.userId === userId ? cachePenugasan.value : false)
+  );
 
   useEffect(() => {
-    if (role !== "wali_kelas") return;
-    api.get<unknown[]>("/pengampuan-saya")
-      .then((res) => setPunyaPenugasan(res.data.length > 0))
-      .catch(() => setPunyaPenugasan(false));
-  }, [role]);
+    if (role !== "wali_kelas" || userId === undefined) return;
+    let aktif = true;
+    ambilStatusPenugasan().then((v) => {
+      if (!aktif) return;
+      cachePenugasan = { userId, value: v };
+      setPunyaPenugasan(v);
+    });
+    return () => {
+      aktif = false;
+    };
+  }, [role, userId]);
 
   if (role === "wali_kelas") {
     if (punyaPenugasan) {
