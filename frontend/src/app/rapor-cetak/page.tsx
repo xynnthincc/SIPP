@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas, labelTingkat } from "@/lib/kelas";
@@ -16,41 +16,560 @@ export default function RaporCetakPage() {
   );
 }
 
+
+/** Format tanggal ISO (yyyy-mm-dd) ke teks Indonesia: 20 Desember 2026 */
+function formatTanggalIndo(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function teksTanggalCetak(data: RaporCetak, tempatManual: string | null, tanggalManual: string | null): string {
+  // Opsi tanggal cetak manual (diisi di toolbar) menimpa string dari data semester
+  if (tanggalManual) {
+    return `${tempatManual || data.sekolah.kota_kabupaten || "Cimahi"}, ${formatTanggalIndo(tanggalManual)}`;
+  }
+  return data.semester.tempat_tanggal_rapot ||
+    `${data.sekolah.kota_kabupaten || "Cimahi"}, ${new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })}`;
+}
+
+/**
+ * Satu dokumen rapor (sampul + halaman nilai + halaman sub-tabel).
+ * Dipakai mode tunggal maupun beruntun (cetak semua rapor terpilih).
+ */
+function RaporDokumen({ data, tanggalManual, tempatManual }: { data: RaporCetak; tanggalManual: string | null; tempatManual: string | null }) {
+  const predikat =
+    data.predikat ||
+    (data.peringkat ? predikatByRank(data.peringkat) : predikatByRank(999));
+  const isSementara = data.semester.jenis === "Sementara";
+
+  return (
+    <div className="raport">
+            {/* ==================== HALAMAN SAMPUL / HALAMAN PERTAMA ==================== */}
+            <div className="lembar">
+              <div className="kop-judul">
+                <div className="arab-besar">التقرير نتائج الدراسية</div>
+                <div className="indo-kecil">المدرسة الوسطى معهد الإسلامية دار السرور</div>
+                <div className="judul-utama">{isSementara ? "LAPORAN SEMENTARA" : "LAPORAN"}</div>
+                <div className="sub-utama">HASIL BELAJAR PESERTA DIDIK</div>
+                <div className="sub-utama">SEKOLAH MENENGAH PERTAMA PLUS</div>
+                {isSementara && <div className="sub-utama">( PENILAIAN TENGAH SEMESTER )</div>}
+              </div>
+
+              <table className="sampul-identitas">
+                <tbody>
+                  <tr>
+                    <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Nama Sekolah</td>
+                    <td className="label-ar">اسم المدرسة</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">{data.siswa.nis || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Nomor Induk</td>
+                    <td className="label-ar">رقم دفتر القيد</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">
+                      {data.sekolah.alamat
+                        ? <>{data.sekolah.alamat}&nbsp; Kode Pos : {data.sekolah.kode_pos || "-"}&nbsp; Telp. {data.sekolah.telepon || "-"}</>
+                        : <>{data.sekolah.kode_pos ? `Kode Pos : ${data.sekolah.kode_pos}` : ""}{data.sekolah.telepon ? ` Telp. ${data.sekolah.telepon}` : ""}</>}
+                    </td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Alamat Sekolah</td>
+                    <td className="label-ar">عنوان المدرسة</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">{data.sekolah.kelurahan || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Kelurahan</td>
+                    <td className="label-ar">قرية</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">{data.sekolah.kecamatan || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Kecamatan</td>
+                    <td className="label-ar">منطقة جنوب</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">{data.sekolah.kota_kabupaten || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Kota/Kabupaten</td>
+                    <td className="label-ar">مدينة</td>
+                  </tr>
+                  <tr>
+                    <td className="isi">{data.sekolah.provinsi || "-"}</td>
+                    <td className="titik">:</td>
+                    <td className="label-id">Provinsi</td>
+                    <td className="label-ar">مقاطعة</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="sampul-garis" />
+
+              <div className="petunjuk-title">بيان عن الرموز الموجودة في هذه اللائحة</div>
+              <div className="petunjuk-title-id">Petunjuk penggunaan</div>
+
+              <div className="petunjuk-sub">
+                <span className="id-label">Keterangan Angka pada Nilai</span>
+                <span className="ar-label">١. معنى الأرقام في النتائج</span>
+              </div>
+              <table className="legenda">
+                <tbody>
+                  <tr>
+                    <td className="label">Istimewa</td>
+                    <td className="rentang">٩ ـ ممتاز</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Sangat Baik</td>
+                    <td className="rentang">٨ ـ جيد جدا</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Baik</td>
+                    <td className="rentang">٧ ـ جيد</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Cukup</td>
+                    <td className="rentang">٦ ـ متوسط</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Kurang</td>
+                    <td className="rentang">٥ ـ رديء</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="petunjuk-sub">
+                <span className="id-label">Keterangan Huruf pada Nilai</span>
+                <span className="ar-label">٢. معنى الأحرف في النتائج</span>
+              </div>
+              <table className="legenda">
+                <tbody>
+                  <tr>
+                    <td className="label">Baik (A)</td>
+                    <td className="rentang">أ ـ جيد</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Cukup (B)</td>
+                    <td className="rentang">ب ـ متوسط</td>
+                  </tr>
+                  <tr>
+                    <td className="label">Buruk (C)</td>
+                    <td className="rentang">ج ـ رديء</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* ==================== HALAMAN 1 (Nilai) ==================== */}
+            <div className="lembar break-page">
+              <table className="identitas">
+                <colgroup>
+                  <col style={{ width: "16%" }} />
+                  <col style={{ width: "3%" }} />
+                  <col style={{ width: "42%" }} />
+                  <col style={{ width: "14.5%" }} />
+                  <col style={{ width: "3%" }} />
+                  <col style={{ width: "21.5%" }} />
+                </colgroup>
+                <tbody>
+                  <tr>
+                    <td className="label-ar">اسم المدرسة</td>
+                    <td className="titik">:</td>
+                    <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
+                    <td className="label-ar">قسم</td>
+                    <td className="titik">:</td>
+                    <td className="isi">
+                      {data.kelas ? `${labelKelas(data.kelas.nama)} (${labelTingkat(data.kelas.tingkat)})` : "-"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="label-id">Nama Sekolah</td>
+                    <td />
+                    <td />
+                    <td className="label-id">Kelas</td>
+                    <td />
+                    <td />
+                  </tr>
+                  <tr>
+                    <td className="label-ar">عنوان المدرسة</td>
+                    <td className="titik">:</td>
+                    <td className="isi">{data.sekolah.alamat || "-"}</td>
+                    <td className="label-ar">نصف السنة</td>
+                    <td className="titik">:</td>
+                    <td className="isi">
+                      {data.semester.nama}
+                      {isSementara ? " (Sementara)" : ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="label-id">Alamat Sekolah</td>
+                    <td />
+                    <td />
+                    <td className="label-id">Semester</td>
+                    <td />
+                    <td />
+                  </tr>
+                  <tr>
+                    <td className="label-ar">اسم الطالب/الطالبة</td>
+                    <td className="titik">:</td>
+                    <td className="isi" rowSpan={2}>{data.siswa.nama}</td>
+                    <td className="label-ar">سنة الدراسة</td>
+                    <td className="titik">:</td>
+                    <td className="isi">{data.semester.tahun}</td>
+                  </tr>
+                  <tr>
+                    <td className="label-id">Nama Siswa</td>
+                    <td />
+                    <td className="label-id">Tahun Pelajaran</td>
+                    <td />
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+
+              <table className="nilai">
+                <thead>
+                  <tr>
+                    <th rowSpan={2} className="no" style={{ width: "6.5%" }}>
+                      <span className="th-ar">رقم</span>
+                      <span className="th-id">Nomor</span>
+                    </th>
+                    <th colSpan={2} rowSpan={2} style={{ width: "28.6%", verticalAlign: "middle" }}>
+                      <span className="th-ar">قنوان الدروس</span>
+                      <span className="th-id">Mata Pelajaran</span>
+                    </th>
+                    <th rowSpan={2} style={{ width: "9.1%" }}>
+                      <span className="th-ar">النهاية الصغرى</span>
+                      <span className="th-id">KKM</span>
+                    </th>
+                    <th colSpan={2} style={{ width: "40.2%" }}>
+                      <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th rowSpan={2} className="kriteria" style={{ width: "15.6%" }}>
+                      <span className="th-ar">معايير القيمة</span>
+                      <span className="th-id">Kriteria Penilaian</span>
+                    </th>
+                  </tr>
+                  <tr className="sub">
+                    <th style={{ width: "9.1%" }}>
+                      <span className="th-ar">شخصية</span>
+                      <span className="th-id">Angka</span>
+                    </th>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">حروف</span>
+                      <span className="th-id">Huruf</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.mapel.map((m, idx) => (
+                    <tr key={idx}>
+                      <td className="no">{angkaArab(idx + 1)}</td>
+                      <td className="mapel-ar" style={{ width: "14.3%" }}>{m.nama_ar}</td>
+                      <td className="mapel-id" style={{ width: "14.3%" }}>{m.nama_id}</td>
+                      <td>{m.kkm !== null ? angkaArab(m.kkm) : "-"}</td>
+                      <td>{m.nilai !== null ? angkaArab(m.nilai) : "-"}</td>
+                      <td>{m.nilai !== null ? (m.terbilang || terbilangArab(m.nilai)) : "-"}</td>
+                      <td>{m.nilai !== null ? (m.ket_nilai || ketNilai(m.nilai)) : "-"}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="no">{angkaArab(data.mapel.length + 1)}</td>
+                    <td colSpan={2} className="ring-label">
+                      <span className="ar">مجموع النتائج</span>
+                      <span className="id">Total Nilai</span>
+                    </td>
+                    <td colSpan={2} className="ring-val total">{angkaArab(data.total)}</td>
+                    <td className="deskripsi">
+                      <span className="ar">وصف تقدم التعلم</span>
+                      <span className="id">Deskripsi Kemajuan Belajar</span>
+                    </td>
+                    <td className="predikat">
+                      <span className="ar">المسند القيمة</span>
+                      <span className="id">Predikat</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="no">{angkaArab(data.mapel.length + 2)}</td>
+                    <td colSpan={2} className="ring-label">
+                      <span className="ar">التعادل</span>
+                      <span className="id">Rata-Rata</span>
+                    </td>
+                    <td colSpan={2} className="ring-val">
+                      {angkaArab(data.rata2)} ({angkaArab(data.rata2_bulat)})
+                    </td>
+                    <td className="deskripsi" rowSpan={2}>
+                      <span className="isi-deskripsi">{predikat.deskripsi}</span>
+                    </td>
+                    <td className="predikat">{predikat.predikat_ar}</td>
+                  </tr>
+                  <tr>
+                    <td className="no">{angkaArab(data.mapel.length + 3)}</td>
+                    <td colSpan={2} className="ring-label peringkat">
+                      <span className="ar">المرتبة</span>
+                      <span className="id">Peringkat</span>
+                    </td>
+                    <td colSpan={2} className="ring-val">{angkaArab(data.peringkat)}</td>
+                    <td className="predikat">{predikat.predikat_id}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* ==================== HALAMAN 2 ==================== */}
+            <div className="lembar break-page halaman-2">
+              {/* Pengembangan Diri */}
+              <table className="sub">
+                <thead>
+                  <tr>
+                    <th style={{ width: "15.6%" }}>
+                      <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">البيان</span>
+                      <span className="th-id">Keterangan</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">وظيفة التنمية الذاتية</span>
+                      <span className="th-id">Kegiatan Pengembangan Diri</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
+                    <td className="ket-materi">{ketHuruf(data.pembiasaan)}</td>
+                    <td className="id">Pembiasaan Pagi</td>
+                    <td className="ar">تعويد بالغدوة</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Praktik & Hafalan */}
+              <table className="sub">
+                <thead>
+                  <tr>
+                    <th style={{ width: "15.6%" }}>
+                      <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">ألمعلومة</span>
+                      <span className="th-id">Keterangan</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">الممارسة والمحفوظات وقرائة الكتب</span>
+                      <span className="th-id">Praktik, Hafalan dan Pembacaan Kitab</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.praktik.map((p, idx) => (
+                    <tr key={idx}>
+                      <td className="nilai-isi">{p.nilai !== null && p.nilai !== "" ? angkaArab(p.nilai) : "-"}</td>
+                      <td className="ket-materi">{p.keterangan || (p.nilai !== null && p.nilai !== "" ? ketNilaiId(p.nilai) : "-")}</td>
+                      <td className="id" style={{ width: "26.65%" }}>{p.nama_id}</td>
+                      <td className="ar" style={{ width: "26.65%" }}>{p.nama_ar || ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Sikap Sehari-hari */}
+              <table className="sub">
+                <thead>
+                  <tr>
+                    <th style={{ width: "15.6%" }}>
+                      <span className="th-ar">المهارة</span>
+                      <span className="th-id">Nilai</span>
+                    </th>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">البيان</span>
+                      <span className="th-id">Keterangan</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">المعاملة اليومية</span>
+                      <span className="th-id">Sikap Sehari-hari</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="nilai-isi">{hurufArab(data.sikap?.akhlaq)}</td>
+                    <td className="ket-materi">{ketHuruf(data.sikap?.akhlaq)}</td>
+                    <td className="id">Akhlaq</td>
+                    <td className="ar">اخلاق</td>
+                  </tr>
+                  <tr>
+                    <td className="nilai-isi">{hurufArab(data.sikap?.kepribadian)}</td>
+                    <td className="ket-materi">{ketHuruf(data.sikap?.kepribadian)}</td>
+                    <td className="id">Kepribadian</td>
+                    <td className="ar">شخصية</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Ketidakhadiran */}
+              <table className="sub">
+                <thead>
+                  <tr>
+                    <th style={{ width: "31.1%" }}>
+                      <span className="th-ar">معلومات</span>
+                      <span className="th-id">Keterangan</span>
+                    </th>
+                    <th style={{ width: "15.6%" }}>
+                      <span className="th-ar">ايام</span>
+                      <span className="th-id">Hari</span>
+                    </th>
+                    <th colSpan={2}>
+                      <span className="th-ar">الغياب</span>
+                      <span className="th-id">Ketidakhadiran</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td />
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.sakit) : ""}</td>
+                    <td className="id" style={{ width: "26.65%" }}>Sakit</td>
+                    <td className="ar" style={{ width: "26.65%" }}>المرض</td>
+                  </tr>
+                  <tr>
+                    <td />
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.izin) : ""}</td>
+                    <td className="id">Izin</td>
+                    <td className="ar">الرخصة</td>
+                  </tr>
+                  <tr>
+                    <td />
+                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.alpa) : ""}</td>
+                    <td className="id">Alpa</td>
+                    <td className="ar">لاهمال</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Area Tanda Tangan */}
+              <div className="ttd-area">
+                <div className="tanggal">
+                  {teksTanggalCetak(data, tempatManual, tanggalManual)}
+                </div>
+                <div className="ttd-cols">
+                  <div className="col">
+                    <span className="ar">ولي الطالب</span>
+                    <br />
+                    <span className="id">Wali Murid</span>
+                    <div className="space" />
+                    ( .............................. )
+                  </div>
+                  <div className="col">
+                    <span className="ar">ولي القسم</span>
+                    <br />
+                    <span className="id">Wali Kelas</span>
+                    <div className="space" />
+                    ( {data.wali_kelas || ".............................."} )
+                  </div>
+                </div>
+              </div>
+            </div>
+    </div>
+  );
+}
+
+type SlotHasil = { siswaId: string; data: RaporCetak | null; error: string | null };
+
+/** Ukuran blok muat rapor beruntun — hosting bersama aman di 4 request paralel. */
+const UKURAN_BLOK = 4;
+
 function RaporCetakView() {
   const searchParams = useSearchParams();
-  const siswaId = searchParams.get("siswa_id") || searchParams.get("id");
-  const semesterId = searchParams.get("semester_id");
   const router = useRouter();
+  const semesterId = searchParams.get("semester_id");
 
-  const [data, setData] = useState<RaporCetak | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Mode tunggal: siswa_id / id. Mode beruntun (cetak semua): siswa_ids=a,b,c
+  const idsParam =
+    searchParams.get("siswa_ids") ?? searchParams.get("siswa_id") ?? searchParams.get("id") ?? "";
+  const daftarId = useMemo(
+    () => idsParam.split(",").map((t) => t.trim()).filter(Boolean),
+    [idsParam]
+  );
+  const batchMode = daftarId.length > 1;
 
-  const muat = useCallback(() => {
-    if (!siswaId) return;
-    api
-      .get<RaporCetak>("/rapor/cetak", {
-        params: { siswa_id: siswaId, semester_id: semesterId || undefined },
-      })
-      .then((res) => {
-        setData(res.data);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
-        setError(pesan?.message ?? "Gagal memuat rapor.");
-        setLoading(false);
-      });
-  }, [siswaId, semesterId]);
+  // Opsi tanggal & tempat cetak manual (query: tanggal, tempat)
+  const tanggalParam = searchParams.get("tanggal") || "";
+  const tempatParam = searchParams.get("tempat") || "";
+  const [tanggalInput, setTanggalInput] = useState(tanggalParam);
+  const [tempatInput, setTempatInput] = useState(tempatParam);
+
+  // Kunci muat: hanya perubahan daftar id / semester yang menembilkan hasil —
+  // menerapkan tanggal manual tidak boleh memicu fetch ulang seluruh rapor.
+  const kunciMuat = `${semesterId ?? ""}|${daftarId.join(",")}`;
+  const [hasil, setHasil] = useState<{ kunci: string; slots: SlotHasil[] }>(() => ({
+    kunci: kunciMuat,
+    slots: [],
+  }));
+  const hasilList = hasil.kunci === kunciMuat ? hasil.slots : null;
+  const loading = hasilList === null;
 
   useEffect(() => {
-    muat();
-  }, [muat]);
+    if (daftarId.length === 0) return;
+    let batal = false;
+    // Muat beruntun per blok kecil — host bersama mudah menolak banyak koneksi paralel
+    (async () => {
+      const terkumpul: SlotHasil[] = daftarId.map((siswaId) => ({ siswaId, data: null, error: null }));
+      for (let i = 0; i < daftarId.length; i += UKURAN_BLOK) {
+        const blok = daftarId.slice(i, i + UKURAN_BLOK);
+        const hasilBlok = await Promise.allSettled(
+          blok.map((siswaId) =>
+            api.get<RaporCetak>("/rapor/cetak", {
+              params: { siswa_id: siswaId, semester_id: semesterId || undefined },
+            })
+          )
+        );
+        if (batal) return;
+        blok.forEach((siswaId, j) => {
+          const slot = terkumpul.find((t) => t.siswaId === siswaId);
+          if (!slot) return;
+          const r = hasilBlok[j];
+          if (r.status === "fulfilled") {
+            slot.data = r.value.data;
+          } else {
+            slot.error =
+              (r.reason as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+              "Gagal memuat rapor.";
+          }
+        });
+        setHasil({ kunci: kunciMuat, slots: terkumpul.map((t) => ({ ...t })) });
+      }
+    })();
+    return () => {
+      batal = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kunciMuat]);
 
-  const predikat =
-    data?.predikat ||
-    (data?.peringkat ? predikatByRank(data.peringkat) : predikatByRank(999));
-  const isSementara = data?.semester.jenis === "Sementara";
+  function terapkanTanggalManual() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tanggalInput) params.set("tanggal", tanggalInput); else params.delete("tanggal");
+    if (tempatInput) params.set("tempat", tempatInput); else params.delete("tempat");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  }
+
+  const dataPertama = (hasilList ?? []).find((h) => h.data)?.data ?? null;
+  const siswaPertama = dataPertama?.siswa ?? null;
+  const isSementaraPreview = dataPertama?.semester.jenis === "Sementara";
+  const jumlahSiap = (hasilList ?? []).filter((h) => h.data || h.error).length;
 
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white">
@@ -559,23 +1078,62 @@ function RaporCetakView() {
           `,
         }}
       />
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            /* Cetak beruntun: tiap rapor satu blok berurutan; terakhir tak menambah halaman kosong */
+            @media print {
+              .cetak-wrap.raport-batch { page-break-after: always !important; break-after: page !important; }
+              .cetak-wrap.raport-batch:last-child { page-break-after: auto !important; break-after: auto !important; }
+            }
+          `,
+        }}
+      />
 
       {/* Toolbar Print No-Print */}
-      <div className="no-print sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-3 shadow-sm">
+      <div className="no-print sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center gap-3">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             ← Kembali
           </Button>
           <p className="text-sm text-slate-600 font-medium">
-            Pratinjau {isSementara ? "Rapor Sementara" : "Rapor"} — {data?.siswa.nama ?? "Memuat…"}
+            {batchMode
+              ? `Pratinjau ${daftarId.length} rapor${jumlahSiap < daftarId.length ? ` — siap ${jumlahSiap}` : ""}`
+              : `Pratinjau ${isSementaraPreview ? "Rapor Sementara" : "Rapor"} — ${siswaPertama?.nama ?? "Memuat…"}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {data?.siswa && (
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Opsi tanggal cetak manual: bila diisi, menimpa tanggal dari data semester */}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={tanggalInput}
+              onChange={(e) => setTanggalInput(e.target.value)}
+              className="px-2 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+              title="Tanggal cetak manual (kosong = ikut data semester)"
+            />
+            <input
+              type="text"
+              value={tempatInput}
+              onChange={(e) => setTempatInput(e.target.value)}
+              placeholder="Tempat (mis. Cimahi)"
+              className="w-36 px-2 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
+              title="Tempat penerbitan (menimpa kota dari profil sekolah)"
+            />
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/biodata-cetak?id=${data.siswa.id}`)}
+              onClick={terapkanTanggalManual}
+              title="Terapkan opsi tanggal manual ke URL"
+            >
+              Terapkan
+            </Button>
+          </div>
+          {!batchMode && siswaPertama && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push(`/biodata-cetak?id=${siswaPertama.id}`)}
             >
               Cetak Biodata
             </Button>
@@ -586,463 +1144,36 @@ function RaporCetakView() {
         </div>
       </div>
 
-      <div className="cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8 print:p-0 print:border-none print:shadow-none print:my-0">
-        {loading && siswaId ? (
+      {loading ? (
+        <div className="cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8 print:p-0 print:border-none print:shadow-none print:my-0">
           <Skeleton className="h-96 w-full" />
-        ) : !siswaId ? (
+        </div>
+      ) : daftarId.length === 0 ? (
+        <div className="cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8 print:p-0 print:border-none print:shadow-none print:my-0">
           <div className="py-10">
             <Alert variant="danger">
-              Parameter siswa_id tidak ditemukan. Silakan pilih siswa dari menu rapor atau siswa binaan.
+              Parameter siswa tidak ditemukan. Silakan pilih siswa dari menu rapor atau siswa binaan.
             </Alert>
           </div>
-        ) : error ? (
-          <div className="py-10">
-            <Alert variant="danger" onClose={() => setError(null)}>
-              {error}
-            </Alert>
+        </div>
+      ) : (
+        (hasilList ?? []).map((h) => (
+          <div
+            key={h.siswaId}
+            className={`cetak-wrap bg-white shadow-xl border border-slate-200 max-w-[210mm] mx-auto my-6 p-8 print:p-0 print:border-none print:shadow-none print:my-0 ${batchMode ? "raport-batch" : ""}`}
+          >
+            {h.error ? (
+              <Alert variant="danger">
+                Gagal memuat rapor siswa #{h.siswaId}: {h.error}
+              </Alert>
+            ) : h.data ? (
+              <RaporDokumen data={h.data} tanggalManual={tanggalParam || null} tempatManual={tempatParam || null} />
+            ) : (
+              <Skeleton className="h-96 w-full" />
+            )}
           </div>
-        ) : data ? (
-          <div className="raport">
-            {/* ==================== HALAMAN SAMPUL / HALAMAN PERTAMA ==================== */}
-            <div className="lembar">
-              <div className="kop-judul">
-                <div className="arab-besar">التقرير نتائج الدراسية</div>
-                <div className="indo-kecil">المدرسة الوسطى معهد الإسلامية دار السرور</div>
-                <div className="judul-utama">{isSementara ? "LAPORAN SEMENTARA" : "LAPORAN"}</div>
-                <div className="sub-utama">HASIL BELAJAR PESERTA DIDIK</div>
-                <div className="sub-utama">SEKOLAH MENENGAH PERTAMA PLUS</div>
-                {isSementara && <div className="sub-utama">( PENILAIAN TENGAH SEMESTER )</div>}
-              </div>
-
-              <table className="sampul-identitas">
-                <tbody>
-                  <tr>
-                    <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Nama Sekolah</td>
-                    <td className="label-ar">اسم المدرسة</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.siswa.nis || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Nomor Induk</td>
-                    <td className="label-ar">رقم دفتر القيد</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">
-                      {data.sekolah.alamat
-                        ? <>{data.sekolah.alamat}&nbsp; Kode Pos : {data.sekolah.kode_pos || "-"}&nbsp; Telp. {data.sekolah.telepon || "-"}</>
-                        : <>{data.sekolah.kode_pos ? `Kode Pos : ${data.sekolah.kode_pos}` : ""}{data.sekolah.telepon ? ` Telp. ${data.sekolah.telepon}` : ""}</>}
-                    </td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Alamat Sekolah</td>
-                    <td className="label-ar">عنوان المدرسة</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.sekolah.kelurahan || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Kelurahan</td>
-                    <td className="label-ar">قرية</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.sekolah.kecamatan || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Kecamatan</td>
-                    <td className="label-ar">منطقة جنوب</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.sekolah.kota_kabupaten || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Kota/Kabupaten</td>
-                    <td className="label-ar">مدينة</td>
-                  </tr>
-                  <tr>
-                    <td className="isi">{data.sekolah.provinsi || "-"}</td>
-                    <td className="titik">:</td>
-                    <td className="label-id">Provinsi</td>
-                    <td className="label-ar">مقاطعة</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="sampul-garis" />
-
-              <div className="petunjuk-title">بيان عن الرموز الموجودة في هذه اللائحة</div>
-              <div className="petunjuk-title-id">Petunjuk penggunaan</div>
-
-              <div className="petunjuk-sub">
-                <span className="id-label">Keterangan Angka pada Nilai</span>
-                <span className="ar-label">١. معنى الأرقام في النتائج</span>
-              </div>
-              <table className="legenda">
-                <tbody>
-                  <tr>
-                    <td className="label">Istimewa</td>
-                    <td className="rentang">٩ ـ ممتاز</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Sangat Baik</td>
-                    <td className="rentang">٨ ـ جيد جدا</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Baik</td>
-                    <td className="rentang">٧ ـ جيد</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Cukup</td>
-                    <td className="rentang">٦ ـ متوسط</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Kurang</td>
-                    <td className="rentang">٥ ـ رديء</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className="petunjuk-sub">
-                <span className="id-label">Keterangan Huruf pada Nilai</span>
-                <span className="ar-label">٢. معنى الأحرف في النتائج</span>
-              </div>
-              <table className="legenda">
-                <tbody>
-                  <tr>
-                    <td className="label">Baik (A)</td>
-                    <td className="rentang">أ ـ جيد</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Cukup (B)</td>
-                    <td className="rentang">ب ـ متوسط</td>
-                  </tr>
-                  <tr>
-                    <td className="label">Buruk (C)</td>
-                    <td className="rentang">ج ـ رديء</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* ==================== HALAMAN 1 (Nilai) ==================== */}
-            <div className="lembar break-page">
-              <table className="identitas">
-                <colgroup>
-                  <col style={{ width: "16%" }} />
-                  <col style={{ width: "3%" }} />
-                  <col style={{ width: "42%" }} />
-                  <col style={{ width: "14.5%" }} />
-                  <col style={{ width: "3%" }} />
-                  <col style={{ width: "21.5%" }} />
-                </colgroup>
-                <tbody>
-                  <tr>
-                    <td className="label-ar">اسم المدرسة</td>
-                    <td className="titik">:</td>
-                    <td className="isi">{data.sekolah.nama_sekolah || "-"}</td>
-                    <td className="label-ar">قسم</td>
-                    <td className="titik">:</td>
-                    <td className="isi">
-                      {data.kelas ? `${labelKelas(data.kelas.nama)} (${labelTingkat(data.kelas.tingkat)})` : "-"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="label-id">Nama Sekolah</td>
-                    <td />
-                    <td />
-                    <td className="label-id">Kelas</td>
-                    <td />
-                    <td />
-                  </tr>
-                  <tr>
-                    <td className="label-ar">عنوان المدرسة</td>
-                    <td className="titik">:</td>
-                    <td className="isi">{data.sekolah.alamat || "-"}</td>
-                    <td className="label-ar">نصف السنة</td>
-                    <td className="titik">:</td>
-                    <td className="isi">
-                      {data.semester.nama}
-                      {isSementara ? " (Sementara)" : ""}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="label-id">Alamat Sekolah</td>
-                    <td />
-                    <td />
-                    <td className="label-id">Semester</td>
-                    <td />
-                    <td />
-                  </tr>
-                  <tr>
-                    <td className="label-ar">اسم الطالب/الطالبة</td>
-                    <td className="titik">:</td>
-                    <td className="isi" rowSpan={2}>{data.siswa.nama}</td>
-                    <td className="label-ar">سنة الدراسة</td>
-                    <td className="titik">:</td>
-                    <td className="isi">{data.semester.tahun}</td>
-                  </tr>
-                  <tr>
-                    <td className="label-id">Nama Siswa</td>
-                    <td />
-                    <td className="label-id">Tahun Pelajaran</td>
-                    <td />
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-
-              <table className="nilai">
-                <thead>
-                  <tr>
-                    <th rowSpan={2} className="no" style={{ width: "6.5%" }}>
-                      <span className="th-ar">رقم</span>
-                      <span className="th-id">Nomor</span>
-                    </th>
-                    <th colSpan={2} rowSpan={2} style={{ width: "28.6%", verticalAlign: "middle" }}>
-                      <span className="th-ar">قنوان الدروس</span>
-                      <span className="th-id">Mata Pelajaran</span>
-                    </th>
-                    <th rowSpan={2} style={{ width: "9.1%" }}>
-                      <span className="th-ar">النهاية الصغرى</span>
-                      <span className="th-id">KKM</span>
-                    </th>
-                    <th colSpan={2} style={{ width: "40.2%" }}>
-                      <span className="th-ar">المهارة</span>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th rowSpan={2} className="kriteria" style={{ width: "15.6%" }}>
-                      <span className="th-ar">معايير القيمة</span>
-                      <span className="th-id">Kriteria Penilaian</span>
-                    </th>
-                  </tr>
-                  <tr className="sub">
-                    <th style={{ width: "9.1%" }}>
-                      <span className="th-ar">شخصية</span>
-                      <span className="th-id">Angka</span>
-                    </th>
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">حروف</span>
-                      <span className="th-id">Huruf</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.mapel.map((m, idx) => (
-                    <tr key={idx}>
-                      <td className="no">{angkaArab(idx + 1)}</td>
-                      <td className="mapel-ar" style={{ width: "14.3%" }}>{m.nama_ar}</td>
-                      <td className="mapel-id" style={{ width: "14.3%" }}>{m.nama_id}</td>
-                      <td>{m.kkm !== null ? angkaArab(m.kkm) : "-"}</td>
-                      <td>{m.nilai !== null ? angkaArab(m.nilai) : "-"}</td>
-                      <td>{m.nilai !== null ? (m.terbilang || terbilangArab(m.nilai)) : "-"}</td>
-                      <td>{m.nilai !== null ? (m.ket_nilai || ketNilai(m.nilai)) : "-"}</td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <td className="no">{angkaArab(data.mapel.length + 1)}</td>
-                    <td colSpan={2} className="ring-label">
-                      <span className="ar">مجموع النتائج</span>
-                      <span className="id">Total Nilai</span>
-                    </td>
-                    <td colSpan={2} className="ring-val total">{angkaArab(data.total)}</td>
-                    <td className="deskripsi">
-                      <span className="ar">وصف تقدم التعلم</span>
-                      <span className="id">Deskripsi Kemajuan Belajar</span>
-                    </td>
-                    <td className="predikat">
-                      <span className="ar">المسند القيمة</span>
-                      <span className="id">Predikat</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="no">{angkaArab(data.mapel.length + 2)}</td>
-                    <td colSpan={2} className="ring-label">
-                      <span className="ar">التعادل</span>
-                      <span className="id">Rata-Rata</span>
-                    </td>
-                    <td colSpan={2} className="ring-val">
-                      {angkaArab(data.rata2)} ({angkaArab(data.rata2_bulat)})
-                    </td>
-                    <td className="deskripsi" rowSpan={2}>
-                      <span className="isi-deskripsi">{predikat.deskripsi}</span>
-                    </td>
-                    <td className="predikat">{predikat.predikat_ar}</td>
-                  </tr>
-                  <tr>
-                    <td className="no">{angkaArab(data.mapel.length + 3)}</td>
-                    <td colSpan={2} className="ring-label peringkat">
-                      <span className="ar">المرتبة</span>
-                      <span className="id">Peringkat</span>
-                    </td>
-                    <td colSpan={2} className="ring-val">{angkaArab(data.peringkat)}</td>
-                    <td className="predikat">{predikat.predikat_id}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* ==================== HALAMAN 2 ==================== */}
-            <div className="lembar break-page halaman-2">
-              {/* Pengembangan Diri */}
-              <table className="sub">
-                <thead>
-                  <tr>
-                    <th style={{ width: "15.6%" }}>
-                      <span className="th-ar">المهارة</span>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">البيان</span>
-                      <span className="th-id">Keterangan</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">وظيفة التنمية الذاتية</span>
-                      <span className="th-id">Kegiatan Pengembangan Diri</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="nilai-isi">{hurufArab(data.pembiasaan)}</td>
-                    <td className="ket-materi">{ketHuruf(data.pembiasaan)}</td>
-                    <td className="id">Pembiasaan Pagi</td>
-                    <td className="ar">تعويد بالغدوة</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Praktik & Hafalan */}
-              <table className="sub">
-                <thead>
-                  <tr>
-                    <th style={{ width: "15.6%" }}>
-                      <span className="th-ar">المهارة</span>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">ألمعلومة</span>
-                      <span className="th-id">Keterangan</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">الممارسة والمحفوظات وقرائة الكتب</span>
-                      <span className="th-id">Praktik, Hafalan dan Pembacaan Kitab</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.praktik.map((p, idx) => (
-                    <tr key={idx}>
-                      <td className="nilai-isi">{p.nilai !== null && p.nilai !== "" ? angkaArab(p.nilai) : "-"}</td>
-                      <td className="ket-materi">{p.keterangan || (p.nilai !== null && p.nilai !== "" ? ketNilaiId(p.nilai) : "-")}</td>
-                      <td className="id" style={{ width: "26.65%" }}>{p.nama_id}</td>
-                      <td className="ar" style={{ width: "26.65%" }}>{p.nama_ar || ""}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Sikap Sehari-hari */}
-              <table className="sub">
-                <thead>
-                  <tr>
-                    <th style={{ width: "15.6%" }}>
-                      <span className="th-ar">المهارة</span>
-                      <span className="th-id">Nilai</span>
-                    </th>
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">البيان</span>
-                      <span className="th-id">Keterangan</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">المعاملة اليومية</span>
-                      <span className="th-id">Sikap Sehari-hari</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="nilai-isi">{hurufArab(data.sikap?.akhlaq)}</td>
-                    <td className="ket-materi">{ketHuruf(data.sikap?.akhlaq)}</td>
-                    <td className="id">Akhlaq</td>
-                    <td className="ar">اخلاق</td>
-                  </tr>
-                  <tr>
-                    <td className="nilai-isi">{hurufArab(data.sikap?.kepribadian)}</td>
-                    <td className="ket-materi">{ketHuruf(data.sikap?.kepribadian)}</td>
-                    <td className="id">Kepribadian</td>
-                    <td className="ar">شخصية</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Ketidakhadiran */}
-              <table className="sub">
-                <thead>
-                  <tr>
-                    <th style={{ width: "31.1%" }}>
-                      <span className="th-ar">معلومات</span>
-                      <span className="th-id">Keterangan</span>
-                    </th>
-                    <th style={{ width: "15.6%" }}>
-                      <span className="th-ar">ايام</span>
-                      <span className="th-id">Hari</span>
-                    </th>
-                    <th colSpan={2}>
-                      <span className="th-ar">الغياب</span>
-                      <span className="th-id">Ketidakhadiran</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td />
-                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.sakit) : ""}</td>
-                    <td className="id" style={{ width: "26.65%" }}>Sakit</td>
-                    <td className="ar" style={{ width: "26.65%" }}>المرض</td>
-                  </tr>
-                  <tr>
-                    <td />
-                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.izin) : ""}</td>
-                    <td className="id">Izin</td>
-                    <td className="ar">الرخصة</td>
-                  </tr>
-                  <tr>
-                    <td />
-                    <td className="nilai-isi">{data.kehadiran ? angkaArab(data.kehadiran.alpa) : ""}</td>
-                    <td className="id">Alpa</td>
-                    <td className="ar">لاهمال</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              {/* Area Tanda Tangan */}
-              <div className="ttd-area">
-                <div className="tanggal">
-                  {data.semester.tempat_tanggal_rapot ||
-                    `${data.sekolah.kota_kabupaten || "Cimahi"}, ${new Date().toLocaleDateString("id-ID", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}`}
-                </div>
-                <div className="ttd-cols">
-                  <div className="col">
-                    <span className="ar">ولي الطالب</span>
-                    <br />
-                    <span className="id">Wali Murid</span>
-                    <div className="space" />
-                    ( .............................. )
-                  </div>
-                  <div className="col">
-                    <span className="ar">ولي القسم</span>
-                    <br />
-                    <span className="id">Wali Kelas</span>
-                    <div className="space" />
-                    ( {data.wali_kelas || ".............................."} )
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
+        ))
+      )}
     </div>
   );
 }

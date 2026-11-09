@@ -180,7 +180,14 @@ export default function NilaiDiniyahInput() {
             };
           }),
         nilai_praktik: rekap.praktik
-          .filter((p) => p.bisa_edit && (praktik[p.id]?.nilai !== "" || praktik[p.id]?.keterangan !== ""))
+          // Kirim hanya baris berubah (termasuk yang di-kosongkan) agar
+          // nilai/keterangan lama bisa DIHAPUS, bukan cuma ditimpa.
+          .filter((p) => {
+            if (!p.bisa_edit) return false;
+            const row = praktik[p.id];
+            return String(row?.nilai ?? "") !== String(p.nilai ?? "")
+              || String(row?.keterangan ?? "") !== String(p.keterangan ?? "");
+          })
           .map((p) => {
             const rawVal = praktik[p.id]?.nilai;
             const numVal = rawVal !== "" && rawVal !== undefined && rawVal !== null ? Number(rawVal) : null;
@@ -325,6 +332,7 @@ export default function NilaiDiniyahInput() {
                               type="number"
                               min={0}
                               max={100}
+                              step="any"
                               value={row?.nilai ?? ""}
                               onChange={(e) => setNilaiMapel({ ...nilaiMapel, [m.id]: { kkm: row?.kkm ?? "", nilai: e.target.value } })}
                               className="w-16 px-2 py-1.5 text-sm text-center font-semibold glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
@@ -401,6 +409,7 @@ export default function NilaiDiniyahInput() {
                               type="number"
                               min={0}
                               max={100}
+                              step="any"
                               value={row?.nilai ?? ""}
                               onChange={(e) => {
                                 setPraktik({

@@ -199,6 +199,7 @@ export function DashboardShell({
       "Jadwal & Aktivitas": "jadwal",
       "Input Presensi": "presensi",
       "Input Nilai": "nilai",
+      "Input Nilai Diniyah": "penilaian",
       "Progres Hafalan": "hafalan",
       "Rapor Saya": "rapor",
       "Siswa Binaan": "siswa",

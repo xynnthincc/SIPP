@@ -31,6 +31,13 @@ const navGroups = [
       { href: "/admin/sekolah", label: "Profil Sekolah" },
     ],
   },
+  {
+    label: "Penilaian",
+    items: [
+      { href: "/admin/nilai", label: "Input Nilai" },
+      { href: "/admin/nilai-diniyah", label: "Input Nilai Diniyah" },
+    ],
+  },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

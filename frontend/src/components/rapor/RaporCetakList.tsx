@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
 import { labelSemester } from "@/lib/semester";
@@ -73,6 +74,35 @@ export default function RaporCetakList({
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  // Pilih siswa untuk cetak beruntun (semua rapor terpilih dalam satu percetakan).
+  // Tersimpan berpasangan dengan kunci scope semester|kelas — pilihan lama
+  // otomatis tidak berlaku saat filter berubah, tanpa setState di effect.
+  const kunciScope = `${semesterId}|${kelasId}`;
+  const [pilihanSimpan, setPilihanSimpan] = useState<{ kunci: string; ids: number[] }>({ kunci: "", ids: [] });
+  const pilihan = pilihanSimpan.kunci === kunciScope ? pilihanSimpan.ids : [];
+  function setPilihan(ids: number[]) {
+    setPilihanSimpan({ kunci: kunciScope, ids });
+  }
+  const router = useRouter();
+
+  function togglePilih(siswaId: number) {
+    setPilihan(pilihan.includes(siswaId) ? pilihan.filter((id) => id !== siswaId) : [...pilihan, siswaId]);
+  }
+
+  function togglePilihSemua() {
+    const semuaId = tampil.map((p) => p.siswa.id);
+    const semuaTerpilih = semuaId.length > 0 && semuaId.every((id) => pilihan.includes(id));
+    setPilihan(
+      semuaTerpilih
+        ? pilihan.filter((id) => !semuaId.includes(id))
+        : [...new Set([...pilihan, ...semuaId])]
+    );
+  }
+
+  function cetakTerpilih() {
+    if (pilihan.length === 0 || !semesterId) return;
+    router.push(`/rapor-cetak?siswa_ids=${pilihan.join(",")}&semester_id=${semesterId}`);
+  }
 
   // Export Excel: wali kelas → kelas binaannya otomatis; admin → wajib pilih kelas
   async function exportExcel() {
@@ -221,7 +251,7 @@ export default function RaporCetakList({
               </Select>
             </div>
           )}
-          <div className="sm:self-end">
+          <div className="sm:self-end flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               onClick={exportExcel}
@@ -231,6 +261,14 @@ export default function RaporCetakList({
               className="w-full sm:w-auto"
             >
               Export Excel
+            </Button>
+            <Button
+              onClick={cetakTerpilih}
+              disabled={pilihan.length === 0 || !semesterId}
+              title={pilihan.length === 0 ? "Centang siswa di tabel untuk cetak beruntun" : `Cetak ${pilihan.length} rapor sekaligus`}
+              className="w-full sm:w-auto"
+            >
+              Cetak Terpilih ({pilihan.length})
             </Button>
           </div>
         </div>
@@ -252,6 +290,16 @@ export default function RaporCetakList({
         <Card className="p-0">
           <Table>
             <TableHead>
+              <Th className="w-10 text-center">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 accent-emerald-600 cursor-pointer"
+                  checked={tampil.length > 0 && tampil.every((p) => pilihan.includes(p.siswa.id))}
+                  onChange={togglePilihSemua}
+                  aria-label="Pilih semua siswa di halaman ini"
+                  title="Pilih semua siswa di halaman ini"
+                />
+              </Th>
               <Th className="w-12">No</Th>
               <Th>Nama Siswa</Th>
               <Th>NIS</Th>
@@ -266,6 +314,15 @@ export default function RaporCetakList({
                 const persenMapel = p.mapel_total > 0 ? Math.round((p.mapel_terisi / p.mapel_total) * 100) : 0;
                 return (
                   <TableRow key={p.siswa.id}>
+                    <Td className="text-center">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 accent-emerald-600 cursor-pointer"
+                        checked={pilihan.includes(p.siswa.id)}
+                        onChange={() => togglePilih(p.siswa.id)}
+                        aria-label={`Pilih rapor ${p.siswa.nama}`}
+                      />
+                    </Td>
                     <Td className="text-slate-400">{(safePage - 1) * PER_HALAMAN + i + 1}</Td>
                     <Td>
                       <div className="flex items-center gap-3">
