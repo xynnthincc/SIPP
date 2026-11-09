@@ -120,19 +120,22 @@ class ExportNilaiTest extends TestCase
         $namaFile = $response->headers->get('Content-Disposition');
         $this->assertStringContainsString('Nilai_7A_SemesterGanjil', $namaFile);
 
-        // Baca kembali xlsx-nya: urutan harus ranking terbaik di atas
+        // Baca kembali xlsx-nya: barisan diurutkan abjad (nama), kolom ranking tetap tampil
         $berkas = tempnam(sys_get_temp_dir(), 'sipp-test-');
         file_put_contents($berkas, $response->streamedContent());
         $sheet = IOFactory::load($berkas)->getActiveSheet();
         unlink($berkas);
 
-        $this->assertSame('Siswa Tinggi', $sheet->getCell('C5')->getValue());
-        $this->assertSame('Siswa Rendah', $sheet->getCell('C6')->getValue());
+        $this->assertSame('Siswa Rendah', $sheet->getCell('C5')->getValue());
+        $this->assertSame('Siswa Tinggi', $sheet->getCell('C6')->getValue());
         $this->assertSame(1, $sheet->getCell('A5')->getValue());
         $this->assertSame(2, $sheet->getCell('A6')->getValue());
-        $this->assertSame(90, $sheet->getCell('D5')->getValue());
-        $this->assertSame(90, $sheet->getCell('E5')->getValue()); // total
-        $this->assertEquals(90.0, $sheet->getCell('F5')->getValue()); // rata-rata (round → float)
+        // Kolom ranking tetap: Siswa Rendah (60) peringkat 2, Siswa Tinggi (90) peringkat 1
+        $this->assertSame(2, $sheet->getCell('G5')->getValue());
+        $this->assertSame(1, $sheet->getCell('G6')->getValue());
+        $this->assertSame(60, $sheet->getCell('D5')->getValue());
+        $this->assertSame(60, $sheet->getCell('E5')->getValue()); // total
+        $this->assertEquals(60.0, $sheet->getCell('F5')->getValue()); // rata-rata (round → float)
         $this->assertSame($tinggi->id, Siswa::where('nis', '999010')->first()->id);
     }
 

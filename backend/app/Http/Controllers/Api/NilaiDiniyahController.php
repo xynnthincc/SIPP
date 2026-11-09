@@ -92,10 +92,10 @@ class NilaiDiniyahController extends Controller
             'nilai_mapel' => ['sometimes', 'array'],
             'nilai_mapel.*.mapel_plus_id' => ['required', 'exists:mapel_plus,id'],
             'nilai_mapel.*.kkm' => ['required', 'integer', 'between:1,100'],
-            'nilai_mapel.*.nilai' => ['nullable', 'integer', 'between:0,100'],
+            'nilai_mapel.*.nilai' => ['nullable', 'numeric', 'between:0,100'],
             'nilai_praktik' => ['sometimes', 'array'],
             'nilai_praktik.*.praktik_item_id' => ['required', 'exists:praktik_items,id'],
-            'nilai_praktik.*.nilai' => ['nullable', 'integer', 'between:0,100'],
+            'nilai_praktik.*.nilai' => ['nullable', 'numeric', 'between:0,100'],
             'nilai_praktik.*.keterangan' => ['nullable', 'string', 'max:255'],
             'pembiasaan' => ['sometimes', 'array'],
             'pembiasaan.nilai' => ['nullable', 'in:A,B,C'],
@@ -205,7 +205,7 @@ class NilaiDiniyahController extends Controller
             'nilai' => ['required', 'array', 'min:1'],
             'nilai.*.siswa_id' => ['required', 'exists:siswas,id'],
             'nilai.*.kkm' => ['nullable', 'integer', 'between:1,100'],
-            'nilai.*.nilai' => ['nullable', 'integer', 'between:0,100'],
+            'nilai.*.nilai' => ['nullable', 'numeric', 'between:0,100'],
         ], [
             'nilai.*.nilai.between' => 'Nilai harus di antara 0-100.',
         ]);
@@ -315,8 +315,8 @@ class NilaiDiniyahController extends Controller
     /**
      * Export Excel daftar nilai satu kelas per semester (wali kelas & admin):
      * kolom NIS, nama, nilai efektif tiap mapel, total, rata-rata, dan ranking —
-     * diurutkan dari ranking terbaik. Nilai efektif = nilai langsung atau
-     * agregasi sumatif (sama dengan rapor).
+     * baris diurutkan berdasarkan NAMA siswa (abjad). Nilai efektif = nilai
+     * langsung atau agregasi sumatif (sama dengan rapor).
      */
     public function export(Request $request)
     {
@@ -371,7 +371,7 @@ class NilaiDiniyahController extends Controller
                 return $langsung ?? $gabung;
             });
 
-            $total = (int) $nilaiPerMapel->filter()->sum();
+            $total = $nilaiPerMapel->filter()->sum();
             $rataRata = $mapels->count() > 0 ? round($total / $mapels->count(), 2) : 0;
 
             return [
@@ -393,7 +393,8 @@ class NilaiDiniyahController extends Controller
             $ranking[$row['siswa']->id] = $rankSekarang;
         }
 
-        return $this->buatXlsx($kelas, $semester, $mapels, $urutan, $ranking);
+        // Barisan diurutkan berdasarkan nama (abjad) — ranking tetap ditampilkan sebagai kolom
+        return $this->buatXlsx($kelas, $semester, $mapels, $baris, $ranking);
     }
 
     private function buatXlsx($kelas, $semester, $mapels, $baris, $ranking)
@@ -431,7 +432,7 @@ class NilaiDiniyahController extends Controller
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setWrapText(true);
 
-        // Data — sudah terurut ranking terbaik di atas
+        // Data — urut abjad (nama siswa), ranking tetap tampil sebagai kolom
         $barisExcel = 5;
         foreach ($baris as $i => $row) {
             $sheet->setCellValue("A{$barisExcel}", $i + 1);

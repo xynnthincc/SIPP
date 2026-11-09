@@ -169,11 +169,12 @@ class RaporController extends Controller
         $jumlahMapelTerisi = 0;
         foreach ($mapel as &$row) {
             if ($row['nilai'] !== null) {
-                $total += (int) $row['nilai'];
+                $total += (float) $row['nilai'];
                 $jumlahMapelTerisi++;
             }
         }
         unset($row);
+        $total = round($total, 2);
         $rata2 = $jumlahMapelTerisi > 0 ? round($total / $jumlahMapelTerisi, 2) : 0;
         $peringkat = $this->hitungPeringkat($siswa, $semester);
 
@@ -269,8 +270,8 @@ class RaporController extends Controller
                     'kkm' => $kkm,
                     'nilai' => $nilai,
                     'angka_arab' => $nilai !== null ? ArabBilangan::angkaArab($nilai) : null,
-                    'terbilang' => $nilai !== null ? ArabBilangan::terbilangArab((int) $nilai) : null,
-                    'ket_nilai' => $nilai !== null ? ArabBilangan::ketNilai((int) $nilai) : null,
+                    'terbilang' => $nilai !== null ? ArabBilangan::terbilangArab($nilai) : null,
+                    'ket_nilai' => $nilai !== null ? ArabBilangan::ketNilai($nilai) : null,
                 ];
             })->all();
     }

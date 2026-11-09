@@ -45,4 +45,38 @@ class ProgresHafalanController extends Controller
 
         return ProgresHafalan::create($data);
     }
+
+    /**
+     * Koreksi setoran hafalan: hanya perekam (dicatat_oleh) atau admin yang
+     * boleh mengedit. Field boleh parsial.
+     */
+    public function update(Request $request, ProgresHafalan $progresHafalan)
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('admin') || $progresHafalan->dicatat_oleh === $user->id, 403, 'Anda tidak merekam catatan hafalan ini.');
+
+        $data = $request->validate([
+            'siswa_id' => ['sometimes', 'exists:siswas,id'],
+            'mapel_plus_id' => ['sometimes', 'exists:mapel_plus,id'],
+            'tanggal_setoran' => ['sometimes', 'date'],
+            'materi' => ['sometimes', 'string', 'max:150'],
+            'status' => ['sometimes', 'in:Lancar,Perlu Perbaikan,Mengulang'],
+            'catatan' => ['nullable', 'string'],
+        ]);
+
+        $progresHafalan->update($data);
+
+        return $progresHafalan->fresh(['mapelPlus', 'siswa.kelasRombel']);
+    }
+
+    /** Hapus catatan hafalan yang salah input — juga dibatasi perekam/admin. */
+    public function destroy(Request $request, ProgresHafalan $progresHafalan)
+    {
+        $user = $request->user();
+        abort_unless($user->hasRole('admin') || $progresHafalan->dicatat_oleh === $user->id, 403, 'Anda tidak merekam catatan hafalan ini.');
+
+        $progresHafalan->delete();
+
+        return response()->noContent();
+    }
 }

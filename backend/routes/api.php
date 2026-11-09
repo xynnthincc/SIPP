@@ -34,7 +34,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
-    // Bisa diakses semua role login (read-only, discope di controller sesuai role)
     Route::get('/rapor/cetak', [RaporController::class, 'cetak']);
     Route::get('/rapor/pdf', [RaporController::class, 'pdf']);
     Route::get('/rapor/progres', [RaporController::class, 'progres']);
@@ -114,6 +113,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/presensi/massal', [PresensiController::class, 'storeMassal']);
         Route::post('/nilai/massal', [NilaiController::class, 'storeMassal']);
         Route::post('/progres-hafalan', [ProgresHafalanController::class, 'store']);
+        Route::put('/progres-hafalan/{progresHafalan}', [ProgresHafalanController::class, 'update']);
+        Route::delete('/progres-hafalan/{progresHafalan}', [ProgresHafalanController::class, 'destroy']);
         Route::post('/catatan-guru', [CatatanGuruController::class, 'store']);
     });
 
