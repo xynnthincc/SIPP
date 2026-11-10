@@ -32,6 +32,10 @@ class NilaiController extends Controller
         return Nilai::with('siswa', 'jenisAssessment.mapelPlus')
             ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
             ->when($request->semester_id, fn ($q, $id) => $q->where('semester_id', $id))
+            // Filter opsional untuk aplikasi mobile (prefill nilai harian):
+            // tanpa parameter ini perilaku endpoint tidak berubah sama sekali.
+            ->when($request->jenis_assessment_id, fn ($q, $id) => $q->where('jenis_assessment_id', $id))
+            ->when($request->kelas_rombel_id, fn ($q, $id) => $q->whereHas('siswa', fn ($sq) => $sq->where('kelas_rombel_id', $id)))
             ->get();
     }
 
