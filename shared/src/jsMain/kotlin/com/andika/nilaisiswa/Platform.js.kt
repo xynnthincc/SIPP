@@ -1,6 +1,7 @@
 package com.andika.nilaisiswa
 
 import web.navigator.navigator
+import kotlin.js.Date
 
 class JsPlatform: Platform {
     private val userAgent = navigator.userAgent
@@ -12,3 +13,11 @@ class JsPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = JsPlatform()
+
+/** Tanggal hari ini dalam format ISO yyyy-MM-dd (zona waktu browser). */
+actual fun tanggalHariIni(): String {
+    val d = Date()
+    val bulan = "${d.getMonth() + 1}".padStart(2, '0')
+    val hari = "${d.getDate()}".padStart(2, '0')
+    return "${d.getFullYear()}-$bulan-$hari"
+}

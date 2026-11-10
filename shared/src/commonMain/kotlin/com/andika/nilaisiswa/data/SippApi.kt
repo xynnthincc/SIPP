@@ -297,8 +297,19 @@ object SippApi {
         return allSiswa
     }
 
-    suspend fun getNilai(semesterId: Int): List<NilaiRecord> {
-        val response = request("nilai?semester_id=$semesterId")
+    suspend fun getNilai(
+        semesterId: Int,
+        jenisAssessmentId: Int? = null,
+        kelasRombelId: Int? = null
+    ): List<NilaiRecord> {
+        // Filter opsional didukung backend: tanpa parameter, endpoint tetap
+        // berperilaku sama (semua nilai semester — dipakai fitur rekap lain).
+        val params = buildString {
+            append("nilai?semester_id=$semesterId")
+            if (jenisAssessmentId != null) append("&jenis_assessment_id=$jenisAssessmentId")
+            if (kelasRombelId != null) append("&kelas_rombel_id=$kelasRombelId")
+        }
+        val response = request(params)
         val listEl = when {
             response is JsonArray -> response
             response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
@@ -505,5 +516,79 @@ object SippApi {
     }
 
     suspend fun checkSession(): UserProfile = me()
+
+    // ---------------------------------------------------------------
+    // Presensi via Jadwal (integrasi dengan backend produksi)
+    // Backend mengenal presensi per slot JADWAL: GET /presensi?jadwal_id=
+    // dan POST /presensi/massal {jadwal_id, tanggal, presensi:[...]}. Ini
+    // satu-satunya jalur yang benar-benar tersimpan di server — jangan
+    // pakai fallback cache lokal yang menampilkan sukses palsu.
+    // ---------------------------------------------------------------
+
+    /** Daftar slot jadwal guru yang login (sudah di-scope backend ke guru tsb). */
+    suspend fun getJadwalSaya(): List<JadwalItem> {
+        val response = request("jadwal")
+        val listEl = when {
+            response is JsonArray -> response
+            response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
+            else -> JsonArray(emptyList())
+        }
+        return json.decodeFromJsonElement(listEl)
+    }
+
+    /** Presensi tersimpan untuk satu slot jadwal pada tanggal tertentu. */
+    suspend fun getPresensiByJadwal(jadwalId: Int, tanggal: String): List<AbsensiRecord> {
+        val response = request("presensi?jadwal_id=$jadwalId&tanggal=$tanggal")
+        val listEl = when {
+            response is JsonArray -> response
+            response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
+            else -> JsonArray(emptyList())
+        }
+        val server = json.decodeFromJsonElement<List<PresensiServerItem>>(listEl)
+        return server.map {
+            AbsensiRecord(
+                id = it.id,
+                siswaId = it.siswaId,
+                tanggal = it.tanggal,
+                status = StatusKehadiran.fromCode(it.status).code,
+                catatan = it.keterangan
+            )
+        }
+    }
+
+    /**
+     * Simpan presensi massal untuk slot jadwal (endpoint resmi backend).
+     * Mengembalikan true hanya bila server mengonfirmasi — error melempar
+     * exception agar layar bisa menampilkan pesan koneksi/payload yang jujur.
+     */
+    suspend fun simpanPresensiMassal(
+        jadwalId: Int,
+        tanggal: String,
+        items: List<AbsensiItem>
+    ): Boolean {
+        val jsonArray = buildJsonArray {
+            items.forEach { item ->
+                add(buildJsonObject {
+                    put("siswa_id", item.siswaId)
+                    // Backend mewajibkan label lengkap: Hadir/Sakit/Izin/Alpa
+                    put("status", StatusKehadiran.fromCode(item.status).label)
+                    if (!item.catatan.isNullOrBlank()) {
+                        put("keterangan", item.catatan)
+                    }
+                })
+            }
+        }
+
+        request(
+            path = "presensi/massal",
+            method = HttpMethod.Post,
+            body = buildJsonObject {
+                put("jadwal_id", jadwalId)
+                put("tanggal", tanggal)
+                put("presensi", jsonArray)
+            }
+        )
+        return true
+    }
 }
 

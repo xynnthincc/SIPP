@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.andika.nilaisiswa.components.*
 import com.andika.nilaisiswa.data.SippApi
 import com.andika.nilaisiswa.data.models.*
+import com.andika.nilaisiswa.tanggalHariIni
 import com.andika.nilaisiswa.theme.*
 import kotlinx.coroutines.launch
 
@@ -49,8 +52,11 @@ fun AbsensiScreen(
     // Map: siswaId -> Boolean (apakah input catatan sedang dibuka)
     val showNoteMap = remember { mutableStateMapOf<Int, Boolean>() }
 
-    var tanggalInput by remember { mutableStateOf("2026-10-28") }
-    var pertemuanInput by remember { mutableStateOf("1") }
+    // Presensi di backend berbasis SLOT JADWAL (hari/jam) — pilih slot dulu.
+    var jadwalList by remember { mutableStateOf<List<JadwalItem>>(emptyList()) }
+    var jadwalDipilih by remember { mutableStateOf<JadwalItem?>(null) }
+
+    var tanggalInput by remember { mutableStateOf(tanggalHariIni()) }
 
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
@@ -76,11 +82,31 @@ fun AbsensiScreen(
                     }
                 }
 
-                // 2. Ambil absensi yang mungkin sudah tersimpan untuk tanggal ini
-                val existingAbsensi = SippApi.getAbsensi(
-                    pengampuanId = pengampuan.id,
-                    tanggal = tanggalInput,
-                    pertemuan = pertemuanInput.toIntOrNull()
+                // 2. Slot jadwal milik guru untuk mapel & kelas pengampuan ini
+                val jadwalRes = SippApi.getJadwalSaya().filter { j ->
+                    val gmk = j.guruMapelKelas
+                    gmk != null &&
+                        gmk.mapelPlus?.id == pengampuan.mapelPlus.id &&
+                        gmk.kelasRombel?.id == pengampuan.kelasRombel.id
+                }
+                jadwalList = jadwalRes
+                if (jadwalRes.isEmpty()) {
+                    // Backend menyimpan presensi per slot jadwal; tanpa slot,
+                    // presensi harus dibuat lewat web (admin/guru) dulu.
+                    errorMessage =
+                        "Mapel ini belum punya slot jadwal. Buat jadwal terlebih dahulu di web (Jadwal & Pengampu), lalu presensi bisa diinput di sini."
+                    isLoading = false
+                    return@launch
+                }
+                if (jadwalDipilih?.id !in jadwalRes.map { it.id }) {
+                    jadwalDipilih = jadwalRes.first()
+                }
+                val slot = jadwalDipilih ?: jadwalRes.first()
+
+                // 3. Ambil presensi yang sudah tersimpan untuk slot & tanggal ini
+                val existingAbsensi = SippApi.getPresensiByJadwal(
+                    jadwalId = slot.id,
+                    tanggal = tanggalInput
                 )
 
                 existingAbsensi.forEach { rec ->
@@ -98,7 +124,7 @@ fun AbsensiScreen(
         }
     }
 
-    LaunchedEffect(pengampuan.id, tanggalInput, pertemuanInput) {
+    LaunchedEffect(pengampuan.id, tanggalInput, jadwalDipilih?.id) {
         loadData()
     }
 
@@ -137,6 +163,12 @@ fun AbsensiScreen(
 
         scope.launch {
             try {
+                val slot = jadwalDipilih ?: run {
+                    errorMessage = "Pilih slot jadwal terlebih dahulu."
+                    isSaving = false
+                    return@launch
+                }
+
                 val itemsToSave = siswaList.map { s ->
                     val st = statusMap[s.id] ?: StatusKehadiran.HADIR
                     val note = catatanMap[s.id]?.trim()
@@ -147,18 +179,18 @@ fun AbsensiScreen(
                     )
                 }
 
-                SippApi.simpanAbsensi(
-                    pengampuanId = pengampuan.id,
-                    mapelPlusId = pengampuan.mapelPlus.id,
-                    kelasRombelId = pengampuan.kelasRombel.id,
-                    semesterId = semester.id,
+                // Endpoint resmi backend: POST /presensi/massal per slot jadwal.
+                // Bila gagal (koneksi/payload), exception dilempar dan tampil
+                // di banner error — tidak ada lagi tampilan sukses palsu.
+                SippApi.simpanPresensiMassal(
+                    jadwalId = slot.id,
                     tanggal = tanggalInput,
-                    pertemuan = pertemuanInput.toIntOrNull() ?: 1,
                     items = itemsToSave
                 )
 
                 isSaving = false
-                successMessage = "Presensi pertemuan ke-$pertemuanInput ($tanggalInput) berhasil disimpan! ($countHadir Hadir, $countSakit Sakit, $countIzin Izin, $countAlpa Alpa)"
+                successMessage =
+                    "Presensi slot ${slot.labelSlot} ($tanggalInput) tersimpan! ($countHadir Hadir, $countSakit Sakit, $countIzin Izin, $countAlpa Alpa)"
             } catch (e: Exception) {
                 isSaving = false
                 errorMessage = e.message ?: "Gagal menyimpan presensi ke server."
@@ -242,34 +274,59 @@ fun AbsensiScreen(
                         }
                     }
 
-                    // Input Pertemuan
+                    // Pilih Slot Jadwal (presensi tersimpan per slot di backend)
                     Column(modifier = Modifier.weight(0.9f)) {
                         Text(
-                            text = "Pertemuan Ke",
+                            text = "Slot Jadwal",
                             style = SippTypography.labelSmall,
                             color = Slate500,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Slate100)
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        if (jadwalList.isEmpty() && !isLoading) {
                             Text(
-                                text = "Ke-",
+                                text = "Belum ada slot",
                                 style = SippTypography.bodySmall,
                                 color = Slate400
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = pertemuanInput,
-                                style = SippTypography.bodySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Slate800
-                            )
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                jadwalList.forEach { slot ->
+                                    val dipilih = jadwalDipilih?.id == slot.id
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (dipilih) SippTealMedium.copy(alpha = 0.12f) else Slate100)
+                                            .clickable {
+                                                if (jadwalDipilih?.id != slot.id) {
+                                                    jadwalDipilih = slot
+                                                    successMessage = null
+                                                }
+                                            }
+                                            .padding(horizontal = 10.dp, vertical = 10.dp)
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = slot.hari,
+                                                style = SippTypography.bodySmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (dipilih) SippTealMedium else Slate800
+                                            )
+                                            if (!slot.jamMulai.isNullOrBlank()) {
+                                                Text(
+                                                    text = listOfNotNull(slot.jamMulai.take(5), slot.jamSelesai?.take(5)).joinToString("-"),
+                                                    style = SippTypography.labelSmall,
+                                                    color = Slate600
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -663,7 +720,7 @@ fun AbsensiScreen(
                         color = Slate900
                     )
                     Text(
-                        text = "Presensi santri pertemuan ke-$pertemuanInput ($tanggalInput) dengan $countHadir hadir, $countSakit sakit, $countIzin izin, dan $countAlpa alpa akan disimpan.",
+                        text = "Presensi santri slot ${jadwalDipilih?.labelSlot ?: "-"} ($tanggalInput) dengan $countHadir hadir, $countSakit sakit, $countIzin izin, dan $countAlpa alpa akan disimpan.",
                         style = SippTypography.bodySmall,
                         color = Slate600,
                         modifier = Modifier.padding(vertical = 12.dp)

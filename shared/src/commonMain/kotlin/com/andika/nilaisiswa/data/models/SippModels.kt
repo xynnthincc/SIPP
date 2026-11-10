@@ -293,3 +293,36 @@ data class AbsensiRecord(
     val catatan: String? = null
 )
 
+@Serializable
+data class PresensiServerItem(
+    val id: Int = 0,
+    @SerialName("siswa_id") val siswaId: Int,
+    @SerialName("jadwal_id") val jadwalId: Int = 0,
+    val tanggal: String = "",
+    val status: String = "H",
+    val keterangan: String? = null
+)
+
+/** Slot jadwal mengajar (hari/jam) — dasar penomoran presensi di backend. */
+@Serializable
+data class JadwalItem(
+    val id: Int = 0,
+    val hari: String = "",
+    @SerialName("jam_mulai") val jamMulai: String? = null,
+    @SerialName("jam_selesai") val jamSelesai: String? = null,
+    @SerialName("guru_mapel_kelas") val guruMapelKelas: GuruMapelKelasItem? = null
+) {
+    val labelSlot: String
+        get() = listOf(hari, listOfNotNull(jamMulai, jamSelesai).joinToString("-"))
+            .filter { it.isNotBlank() }
+            .joinToString(" · ")
+}
+
+@Serializable
+data class GuruMapelKelasItem(
+    val id: Int = 0,
+    @SerialName("semester_id") val semesterId: Int = 0,
+    @SerialName("mapel_plus") val mapelPlus: MapelPlusItem? = null,
+    @SerialName("kelas_rombel") val kelasRombel: KelasRombelItem? = null
+)
+

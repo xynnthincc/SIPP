@@ -65,10 +65,15 @@ fun InputNilaiScreen(
                 val siswaRes = SippApi.getSiswa(pengampuan.kelasRombel.id)
                 siswaList = siswaRes
 
-                // 2. Ambil nilai yang sudah tersimpan untuk asesmen ini pada semester ini
-                val existingNilai = SippApi.getNilai(semester.id)
-                val relevantNilai = existingNilai.filter { it.jenisAssessmentId == jenisAssessment.id }
-                relevantNilai.forEach { row ->
+                // 2. Ambil nilai yang sudah tersimpan untuk asesmen ini pada
+                // kelas & semester ini (backend mendukung filter opsional —
+                // payload kecil, tidak menarik nilai kelas/asesmen lain)
+                val existingNilai = SippApi.getNilai(
+                    semesterId = semester.id,
+                    jenisAssessmentId = jenisAssessment.id,
+                    kelasRombelId = pengampuan.kelasRombel.id
+                )
+                existingNilai.forEach { row ->
                     if (row.nilai != null) {
                         nilaiMap[row.siswaId] = if (row.nilai % 1.0 == 0.0) row.nilai.toInt().toString() else row.nilai.toString()
                     }
