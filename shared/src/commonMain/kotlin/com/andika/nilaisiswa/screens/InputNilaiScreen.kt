@@ -173,7 +173,7 @@ fun InputNilaiScreen(
                         text = "Terisi: $totalTerisi dari ${siswaList.size} Siswa",
                         style = SippTypography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (totalTerisi == siswaList.size && siswaList.isNotEmpty()) SippTealDark else Slate600
+                        color = if (totalTerisi == siswaList.size && siswaList.isNotEmpty()) SippPrimaryDark else Slate600
                     )
                     Text(
                         text = "KKM: ${kkm.toInt()}",
@@ -338,7 +338,7 @@ fun InputNilaiScreen(
                                         ),
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         singleLine = true,
-                                        cursorBrush = SolidColor(SippTealPrimary),
+                                        cursorBrush = SolidColor(SippPrimary),
                                         decorationBox = { inner ->
                                             Box(contentAlignment = Alignment.Center) {
                                                 if (currentVal.isEmpty()) {
@@ -381,7 +381,7 @@ fun InputNilaiScreen(
                                             color = Slate800
                                         ),
                                         singleLine = true,
-                                        cursorBrush = SolidColor(SippTealPrimary),
+                                        cursorBrush = SolidColor(SippPrimary),
                                         decorationBox = { innerTextField ->
                                             if (currentCatatan.isEmpty()) {
                                                 Text(

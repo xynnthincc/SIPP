@@ -5,6 +5,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -12,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.andika.nilaisiswa.navigation.Screen
 import com.andika.nilaisiswa.screens.*
+import com.andika.nilaisiswa.theme.GlowDarkEmerald
+import com.andika.nilaisiswa.theme.GlowEmerald
 import com.andika.nilaisiswa.theme.SippSurfaceBg
 import com.andika.nilaisiswa.theme.SippTheme
 
@@ -24,6 +30,28 @@ fun App() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(SippSurfaceBg)
+                .drawBehind {
+                    // Glow radial emerald ala body web (globals.css):
+                    // kanan-atas emerald-900 4.5%, kiri-bawah emerald 6%.
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(GlowDarkEmerald, Color.Transparent),
+                            radius = size.width * 0.85f,
+                            center = Offset(size.width * 1.08f, size.height * -0.02f)
+                        ),
+                        radius = size.width * 0.85f,
+                        center = Offset(size.width * 1.08f, size.height * -0.02f)
+                    )
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(GlowEmerald, Color.Transparent),
+                            radius = size.width * 0.8f,
+                            center = Offset(-size.width * 0.08f, size.height * 1.05f)
+                        ),
+                        radius = size.width * 0.8f,
+                        center = Offset(-size.width * 0.08f, size.height * 1.05f)
+                    )
+                }
                 .safeDrawingPadding()
         ) {
             AnimatedContent(

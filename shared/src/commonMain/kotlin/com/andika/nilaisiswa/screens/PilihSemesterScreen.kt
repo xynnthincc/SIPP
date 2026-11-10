@@ -99,7 +99,7 @@ fun PilihSemesterScreen(
                     SippCard(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { onSemesterSelected(sem) },
-                        borderColor = if (isDefault) SippTealPrimary else Slate200,
+                        borderColor = if (isDefault) SippPrimary else Slate200,
                         padding = 16.dp
                     ) {
                         Row(
@@ -157,7 +157,7 @@ fun PilihSemesterScreen(
                             Text(
                                 text = "→",
                                 style = SippTypography.titleMedium,
-                                color = SippTealDark,
+                                color = SippPrimaryDark,
                                 fontWeight = FontWeight.Bold
                             )
                         }

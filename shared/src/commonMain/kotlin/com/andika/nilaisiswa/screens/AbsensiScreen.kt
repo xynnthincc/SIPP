@@ -230,11 +230,11 @@ fun AbsensiScreen(
                 )
             }
 
-            // Top Configuration Bar: Tanggal, Pertemuan, & Aksi Cepat
+            // Top Configuration Bar: Tanggal, Slot Jadwal, & Aksi Cepat (glass)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(Color(0xDAFFFFFF))
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
@@ -261,7 +261,7 @@ fun AbsensiScreen(
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = null,
-                                tint = SippTealDark,
+                                tint = SippPrimaryDark,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -300,7 +300,7 @@ fun AbsensiScreen(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(10.dp))
-                                            .background(if (dipilih) SippTealMedium.copy(alpha = 0.12f) else Slate100)
+                                            .background(if (dipilih) SippPrimaryMedium.copy(alpha = 0.12f) else Slate100)
                                             .clickable {
                                                 if (jadwalDipilih?.id != slot.id) {
                                                     jadwalDipilih = slot
@@ -314,7 +314,7 @@ fun AbsensiScreen(
                                                 text = slot.hari,
                                                 style = SippTypography.bodySmall,
                                                 fontWeight = FontWeight.Bold,
-                                                color = if (dipilih) SippTealMedium else Slate800
+                                                color = if (dipilih) SippPrimaryMedium else Slate800
                                             )
                                             if (!slot.jamMulai.isNullOrBlank()) {
                                                 Text(

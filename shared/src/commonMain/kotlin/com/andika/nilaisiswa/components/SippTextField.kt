@@ -2,7 +2,6 @@ package com.andika.nilaisiswa.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,9 +10,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
@@ -23,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andika.nilaisiswa.theme.*
 
+/**
+ * "glass-input" ala web: putih translu, border 1.5 slate-300,
+ * focus berubah jadi border emerald.
+ */
 @Composable
 fun SippTextField(
     value: String,
@@ -39,15 +47,23 @@ fun SippTextField(
     singleLine: Boolean = true,
     error: String? = null
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+
     val shape = if (isPill) CircleShape else RoundedCornerShape(12.dp)
-    val borderColor = if (error != null) StatusDangerText else Slate200
+    val borderColor = when {
+        error != null -> StatusDangerText.copy(alpha = 0.65f)
+        isFocused -> SippPrimary
+        else -> Slate300 // #cbd5e1 — border glass-input web
+    }
+    val borderWidth = if (isFocused && error == null) 2.dp else 1.5.dp
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (label != null) {
             Text(
                 text = label,
-                style = SippTypography.labelMedium,
-                color = Slate700,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = if (isFocused) SippPrimary else Slate600,
                 modifier = Modifier.padding(bottom = 6.dp)
             )
         }
@@ -57,9 +73,14 @@ fun SippTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
+                .onFocusChanged { isFocused = it.isFocused }
                 .clip(shape)
-                .background(Color(0xFFF8FAFC), shape)
-                .border(1.dp, borderColor, shape)
+                .background(
+                    if (isFocused) Color.White.copy(alpha = 0.9f)
+                    else Color.White.copy(alpha = 0.75f),
+                    shape
+                )
+                .border(borderWidth, borderColor, shape)
                 .padding(horizontal = if (isPill) 18.dp else 14.dp, vertical = 13.dp),
             textStyle = TextStyle(
                 fontSize = 14.sp,
@@ -70,7 +91,7 @@ fun SippTextField(
             visualTransformation = visualTransformation,
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
-            cursorBrush = SolidColor(SippTealPrimary),
+            cursorBrush = SolidColor(SippPrimary),
             decorationBox = { innerTextField ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

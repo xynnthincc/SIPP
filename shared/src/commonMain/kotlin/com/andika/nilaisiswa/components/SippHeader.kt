@@ -1,6 +1,7 @@
 package com.andika.nilaisiswa.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andika.nilaisiswa.theme.*
 
+/**
+ * Header glass ala web: putih translu, hairline bawah, tombol kembali
+ * sebagai icon-tile bulat feminim.
+ */
 @Composable
 fun SippHeader(
     title: String,
@@ -29,7 +34,8 @@ fun SippHeader(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Color(0xDAFFFFFF)) // rgba(255,255,255,0.85)
+            .border(0.5.dp, SippCardBorder.copy(alpha = 0.4f))
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -41,7 +47,7 @@ fun SippHeader(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(Slate100)
+                        .background(Slate100.copy(alpha = 0.6f))
                         .clickable { onBack() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -58,14 +64,15 @@ fun SippHeader(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = SippTypography.titleLarge,
-                    color = Slate900,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.2f).sp,
+                    color = Slate900
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        style = SippTypography.labelSmall,
+                        fontSize = 11.sp,
                         color = Slate500,
                         modifier = Modifier.padding(top = 2.dp)
                     )

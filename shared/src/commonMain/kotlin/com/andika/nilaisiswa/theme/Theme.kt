@@ -82,10 +82,10 @@ val SippTypography = Typography(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = SippTealPrimary,
+    primary = SippPrimary,
     onPrimary = Color.White,
     primaryContainer = SippEmeraldLight,
-    onPrimaryContainer = SippTealDark,
+    onPrimaryContainer = SippPrimaryDark,
     secondary = SippEmerald,
     onSecondary = Color.White,
     background = SippSurfaceBg,

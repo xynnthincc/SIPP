@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -27,6 +26,9 @@ enum class SippButtonVariant {
     Danger
 }
 
+/**
+ * Tombol ala web: radius-XL, font-medium, emerald solid/gradasi.
+ */
 @Composable
 fun SippButton(
     text: String,
@@ -37,24 +39,24 @@ fun SippButton(
     loading: Boolean = false,
     leadingIcon: (@Composable () -> Unit)? = null
 ) {
-    val shape = CircleShape // SIPP Login & Primary button pakai pill (rounded-full)
+    val shape = RoundedCornerShape(14.dp) // web: rounded-xl
 
     val backgroundModifier = when (variant) {
         SippButtonVariant.PrimaryGradient ->
-            if (enabled && !loading) Modifier.background(SippTealGradient, shape)
+            if (enabled && !loading) Modifier.background(SippBrandGradient, shape)
             else Modifier.background(Color(0xFFCBD5E1), shape)
 
         SippButtonVariant.EmeraldSolid ->
-            if (enabled && !loading) Modifier.background(SippEmerald, shape)
+            if (enabled && !loading) Modifier.background(SippPrimary, shape)
             else Modifier.background(Color(0xFFCBD5E1), shape)
 
         SippButtonVariant.Outline ->
             Modifier
-                .background(Color.White, shape)
+                .background(Color.White.copy(alpha = 0.55f), shape)
                 .border(1.dp, if (enabled) Slate200 else Color(0xFFE2E8F0), shape)
 
         SippButtonVariant.Ghost ->
-            Modifier.background(Color.Transparent, shape)
+            Modifier.background(Color(0x66FFFFFF), shape) // hover-white/50 style
 
         SippButtonVariant.Danger ->
             if (enabled && !loading) Modifier.background(Color(0xFFEF4444), shape)
@@ -65,8 +67,10 @@ fun SippButton(
         SippButtonVariant.PrimaryGradient,
         SippButtonVariant.EmeraldSolid,
         SippButtonVariant.Danger -> Color.White
-        SippButtonVariant.Outline,
-        SippButtonVariant.Ghost -> if (enabled) Slate700 else Slate400
+        SippButtonVariant.Outline ->
+            if (enabled) Slate700 else Slate400
+        SippButtonVariant.Ghost ->
+            if (enabled) Slate700 else Slate400
     }
 
     Box(
@@ -74,13 +78,13 @@ fun SippButton(
             .clip(shape)
             .then(backgroundModifier)
             .clickable(enabled = enabled && !loading) { onClick() }
-            .padding(horizontal = 20.dp, vertical = 13.dp),
+            .padding(horizontal = 22.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center
     ) {
         if (loading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(18.dp),
-                color = if (variant == SippButtonVariant.Outline) SippTealDark else Color.White,
+                color = if (variant == SippButtonVariant.Outline) SippPrimary else Color.White,
                 strokeWidth = 2.dp
             )
         } else {
@@ -96,7 +100,7 @@ fun SippButton(
                     text = text,
                     color = textColor,
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium
                 )
             }
         }

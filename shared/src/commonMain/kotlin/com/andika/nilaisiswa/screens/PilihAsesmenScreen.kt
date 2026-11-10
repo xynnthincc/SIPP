@@ -496,7 +496,7 @@ fun PilihAsesmenScreen(
                                 text = "Sumatif (Rapor)",
                                 fontSize = 12.sp,
                                 fontWeight = if (newKategori == "sumatif") FontWeight.Bold else FontWeight.Medium,
-                                color = if (newKategori == "sumatif") SippTealDark else Slate600
+                                color = if (newKategori == "sumatif") SippPrimaryDark else Slate600
                             )
                         }
 
@@ -514,7 +514,7 @@ fun PilihAsesmenScreen(
                                 text = "Formatif (Proses)",
                                 fontSize = 12.sp,
                                 fontWeight = if (newKategori == "formatif") FontWeight.Bold else FontWeight.Medium,
-                                color = if (newKategori == "formatif") SippTealDark else Slate600
+                                color = if (newKategori == "formatif") SippPrimaryDark else Slate600
                             )
                         }
                     }
@@ -642,7 +642,7 @@ fun PilihAsesmenScreen(
                                 text = "Sumatif (Rapor)",
                                 fontSize = 12.sp,
                                 fontWeight = if (editKategori == "sumatif") FontWeight.Bold else FontWeight.Medium,
-                                color = if (editKategori == "sumatif") SippTealDark else Slate600
+                                color = if (editKategori == "sumatif") SippPrimaryDark else Slate600
                             )
                         }
 
@@ -660,7 +660,7 @@ fun PilihAsesmenScreen(
                                 text = "Formatif (Proses)",
                                 fontSize = 12.sp,
                                 fontWeight = if (editKategori == "formatif") FontWeight.Bold else FontWeight.Medium,
-                                color = if (editKategori == "formatif") SippTealDark else Slate600
+                                color = if (editKategori == "formatif") SippPrimaryDark else Slate600
                             )
                         }
                     }

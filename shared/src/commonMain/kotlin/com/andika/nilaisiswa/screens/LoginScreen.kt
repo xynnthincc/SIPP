@@ -111,7 +111,7 @@ fun LoginScreen(
             Text(
                 text = "SIPP Darussurur",
                 style = SippTypography.headlineMedium,
-                color = SippTealDark,
+                color = SippPrimaryDark,
                 fontWeight = FontWeight.Bold
             )
 
@@ -198,7 +198,7 @@ fun LoginScreen(
                             text = if (showPassword) "Sembunyikan" else "Lihat",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = SippTealPrimary,
+                            color = SippPrimary,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
                                 .clickable { showPassword = !showPassword }

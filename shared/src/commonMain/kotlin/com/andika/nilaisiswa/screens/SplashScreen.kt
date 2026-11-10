@@ -73,7 +73,7 @@ fun SplashScreen(
             Text(
                 text = "SIPP Darussurur",
                 style = SippTypography.headlineMedium,
-                color = SippTealDark,
+                color = SippPrimaryDark,
                 fontWeight = FontWeight.Bold
             )
 
@@ -89,7 +89,7 @@ fun SplashScreen(
 
             CircularProgressIndicator(
                 modifier = Modifier.size(28.dp),
-                color = SippTealAccent,
+                color = SippPrimaryAccent,
                 strokeWidth = 2.5.dp
             )
         }

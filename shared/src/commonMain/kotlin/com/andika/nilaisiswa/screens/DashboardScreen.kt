@@ -110,11 +110,11 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Header Top Bar
+            // Header Top Bar (glass, seperti SippHeader)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(Color(0xDAFFFFFF))
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Row(
@@ -148,7 +148,7 @@ fun DashboardScreen(
                         Text(
                             text = user.name.take(1).uppercase().ifBlank { "G" },
                             style = SippTypography.titleMedium,
-                            color = SippTealDark,
+                            color = SippPrimaryDark,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -185,8 +185,8 @@ fun DashboardScreen(
                             Row(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(Color.White)
-                                    .border(1.dp, Slate200, CircleShape)
+                                    .background(Color.White.copy(alpha = 0.75f))
+                                    .border(1.dp, Slate300, CircleShape)
                                     .clickable { showSemesterSheet = true }
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -194,7 +194,7 @@ fun DashboardScreen(
                                 Icon(
                                     imageVector = Icons.Default.DateRange,
                                     contentDescription = "Semester",
-                                    tint = SippTealDark,
+                                    tint = SippPrimaryDark,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -202,7 +202,7 @@ fun DashboardScreen(
                                     text = sem.nama,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = SippTealDark
+                                    color = SippPrimaryDark
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
@@ -225,7 +225,6 @@ fun DashboardScreen(
                         // Card 1: Nilai Asesmen
                         SippCard(
                             modifier = Modifier.weight(1f),
-                            backgroundColor = Color.White,
                             borderColor = SippEmeraldBorder,
                             padding = 16.dp,
                             onClick = {
@@ -281,7 +280,6 @@ fun DashboardScreen(
                         // Card 2: Presensi / Absensi Siswa
                         SippCard(
                             modifier = Modifier.weight(1f),
-                            backgroundColor = Color.White,
                             borderColor = StatusInfoBorder,
                             padding = 16.dp,
                             onClick = {
@@ -365,7 +363,7 @@ fun DashboardScreen(
                             Text(
                                 text = "${pengampuanTersaring.map { it.mapelPlus.id }.distinct().size}",
                                 style = SippTypography.headlineMedium,
-                                color = SippTealDark,
+                                color = SippPrimaryDark,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
@@ -390,7 +388,7 @@ fun DashboardScreen(
                             Text(
                                 text = "${pengampuanTersaring.map { it.kelasRombel.id }.distinct().size}",
                                 style = SippTypography.headlineMedium,
-                                color = SippTealDark,
+                                color = SippPrimaryDark,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
@@ -638,7 +636,7 @@ fun DashboardScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "Pilih",
-                                    tint = SippTealDark,
+                                    tint = SippPrimaryDark,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -722,7 +720,7 @@ fun DashboardScreen(
                                     text = sem.nama,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) SippTealDark else Slate800
+                                    color = if (isSelected) SippPrimaryDark else Slate800
                                 )
                                 sem.tahunAjaran?.let {
                                     Text(
@@ -743,7 +741,7 @@ fun DashboardScreen(
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = "Terpilih",
-                                        tint = SippTealDark,
+                                        tint = SippPrimaryDark,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }

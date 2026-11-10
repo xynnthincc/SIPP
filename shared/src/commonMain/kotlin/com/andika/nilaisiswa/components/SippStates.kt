@@ -41,7 +41,7 @@ fun SippLoadingView(
         ) {
             CircularProgressIndicator(
                 modifier = Modifier.size(36.dp),
-                color = SippTealPrimary,
+                color = SippPrimary,
                 strokeWidth = 3.dp
             )
             Spacer(modifier = Modifier.height(14.dp))
@@ -67,8 +67,8 @@ fun SippEmptyState(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Color.White, shape)
-            .border(1.dp, Slate200, shape)
+            .background(Color(0xD6FFFFFF), shape)
+            .border(1.dp, SippCardBorderSoft, shape)
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

@@ -88,7 +88,7 @@ fun ProfilScreen(
                     Text(
                         text = name.take(1).uppercase().ifBlank { "G" },
                         style = SippTypography.headlineLarge,
-                        color = SippTealDark,
+                        color = SippPrimaryDark,
                         fontWeight = FontWeight.Bold
                     )
                 }
