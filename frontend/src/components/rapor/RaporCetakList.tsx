@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
 import { labelSemester } from "@/lib/semester";
 import {
-  PageHeader, Card, Button, Badge, Select, Skeleton, EmptyState, Pagination,
+  PageHeader, Card, Button, Badge, Select, Input, Skeleton, EmptyState, Pagination,
   Table, TableHead, TableBody, Th, Td, TableRow,
 } from "@/components/ui";
 
@@ -74,6 +74,9 @@ export default function RaporCetakList({
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  // Tanggal cetak manual (opsional) — bila diisi, diteruskan ke /rapor-cetak
+  // sebagai query `tanggal` dan menimpa tanggal dari data semester.
+  const [tanggalCetak, setTanggalCetak] = useState("");
   // Pilih siswa untuk cetak beruntun (semua rapor terpilih dalam satu percetakan).
   // Tersimpan berpasangan dengan kunci scope semester|kelas — pilihan lama
   // otomatis tidak berlaku saat filter berubah, tanpa setState di effect.
@@ -90,18 +93,24 @@ export default function RaporCetakList({
   }
 
   function togglePilihSemua() {
-    const semuaId = tampil.map((p) => p.siswa.id);
+    // Pilih semua siswa di SEMUA halaman pagination (bukan hanya halaman aktif).
+    // Kebalikannya juga: klik saat terpilih semua = bersihkan pilihan.
+    const semuaId = daftar.map((p) => p.siswa.id);
     const semuaTerpilih = semuaId.length > 0 && semuaId.every((id) => pilihan.includes(id));
-    setPilihan(
-      semuaTerpilih
-        ? pilihan.filter((id) => !semuaId.includes(id))
-        : [...new Set([...pilihan, ...semuaId])]
-    );
+    setPilihan(semuaTerpilih ? [] : semuaId);
+  }
+
+  // URL halaman cetak rapor — mode beruntun memakai siswa_ids (halaman cetak
+  // menerima 1 id maupun banyak), plus tanggal manual bila dipilih di filter.
+  function urlRaporCetak(idsParam: string): string {
+    const params = new URLSearchParams({ siswa_ids: idsParam, semester_id: semesterId });
+    if (tanggalCetak) params.set("tanggal", tanggalCetak);
+    return `/rapor-cetak?${params.toString()}`;
   }
 
   function cetakTerpilih() {
     if (pilihan.length === 0 || !semesterId) return;
-    router.push(`/rapor-cetak?siswa_ids=${pilihan.join(",")}&semester_id=${semesterId}`);
+    router.push(urlRaporCetak(pilihan.join(",")));
   }
 
   // Export Excel: wali kelas → kelas binaannya otomatis; admin → wajib pilih kelas
@@ -251,6 +260,15 @@ export default function RaporCetakList({
               </Select>
             </div>
           )}
+          <div className="flex-1 min-w-[180px]">
+            <Input
+              label="Tanggal Cetak"
+              type="date"
+              value={tanggalCetak}
+              onChange={(e) => setTanggalCetak(e.target.value)}
+              hint={tanggalCetak ? undefined : "opsional — kosong = ikut data semester"}
+            />
+          </div>
           <div className="sm:self-end flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
@@ -265,7 +283,7 @@ export default function RaporCetakList({
             <Button
               onClick={cetakTerpilih}
               disabled={pilihan.length === 0 || !semesterId}
-              title={pilihan.length === 0 ? "Centang siswa di tabel untuk cetak beruntun" : `Cetak ${pilihan.length} rapor sekaligus`}
+              title={pilihan.length === 0 ? "Centang siswa di tabel — centang di header untuk pilih semua (semua halaman)" : `Cetak ${pilihan.length} rapor sekaligus`}
               className="w-full sm:w-auto"
             >
               Cetak Terpilih ({pilihan.length})
@@ -273,6 +291,11 @@ export default function RaporCetakList({
           </div>
         </div>
         {exportError && <p className="text-xs text-red-600 mt-2">{exportError}</p>}
+        {pilihan.length > 0 && !exportError && (
+          <p className="text-xs text-emerald-700 mt-2">
+            {pilihan.length} dari {daftar.length} siswa terpilih — pilihan berlaku di semua halaman pagination.
+          </p>
+        )}
       </Card>
 
       {loading ? (
@@ -294,10 +317,13 @@ export default function RaporCetakList({
                 <input
                   type="checkbox"
                   className="w-4 h-4 accent-emerald-600 cursor-pointer"
-                  checked={tampil.length > 0 && tampil.every((p) => pilihan.includes(p.siswa.id))}
+                  ref={(el) => {
+                    if (el) el.indeterminate = pilihan.length > 0 && pilihan.length < daftar.length;
+                  }}
+                  checked={daftar.length > 0 && pilihan.length === daftar.length}
                   onChange={togglePilihSemua}
-                  aria-label="Pilih semua siswa di halaman ini"
-                  title="Pilih semua siswa di halaman ini"
+                  aria-label="Pilih semua siswa (semua halaman)"
+                  title="Pilih semua siswa (semua halaman)"
                 />
               </Th>
               <Th className="w-12">No</Th>
@@ -358,7 +384,7 @@ export default function RaporCetakList({
                         <Link href={`/biodata-cetak?id=${p.siswa.id}`}>
                           <Button size="sm" variant="outline">Biodata</Button>
                         </Link>
-                        <Link href={`/rapor-cetak?siswa_id=${p.siswa.id}&semester_id=${semesterId}`}>
+                        <Link href={urlRaporCetak(String(p.siswa.id))}>
                           <Button size="sm">Rapor</Button>
                         </Link>
                       </div>
