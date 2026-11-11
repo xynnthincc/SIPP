@@ -1109,6 +1109,7 @@ function RaporCetakView() {
               type="date"
               value={tanggalInput}
               onChange={(e) => setTanggalInput(e.target.value)}
+              onClick={(e) => { try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { /* diabaikan */ } }}
               className="px-2 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
               title="Tanggal cetak manual (kosong = ikut data semester)"
             />

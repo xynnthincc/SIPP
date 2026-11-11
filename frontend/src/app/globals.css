@@ -141,6 +141,89 @@ body {
   outline: none;
 }
 
+/* ── Input tanggal & waktu — setema glass ──
+   Popup kalender/jam tetap milik browser (tidak bisa di-styling), tapi field-nya
+   memakai ikon setema emerald + segmen tanggal/jam interaktif. Klik di mana pun
+   membuka picker native (lihat showPicker di komponen ui/Input). Browser tanpa
+   pseudo-element webkit (mis. Firefox lama) tetap tampil default — tidak rusak. */
+:root {
+  --ikon-kalender-slate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3.75 7.5a2.25 2.25 0 0 1 2.25-2.25h12a2.25 2.25 0 0 1 2.25 2.25v11.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V7.5zM3.75 9.75h16.5'/%3E%3C/svg%3E");
+  --ikon-kalender-emerald: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3.75 7.5a2.25 2.25 0 0 1 2.25-2.25h12a2.25 2.25 0 0 1 2.25 2.25v11.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V7.5zM3.75 9.75h16.5'/%3E%3C/svg%3E");
+  --ikon-jam-slate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'/%3E%3C/svg%3E");
+  --ikon-jam-emerald: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0z'/%3E%3C/svg%3E");
+}
+
+input[type="date"].glass-input,
+input[type="datetime-local"].glass-input {
+  --ikon-picker: var(--ikon-kalender-slate);
+  --ikon-picker-aktif: var(--ikon-kalender-emerald);
+}
+
+input[type="time"].glass-input {
+  --ikon-picker: var(--ikon-jam-slate);
+  --ikon-picker-aktif: var(--ikon-jam-emerald);
+}
+
+/* Tombol ikon kalender/jam di kanan field */
+.glass-input::-webkit-calendar-picker-indicator {
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
+  padding: 0;
+  background-image: var(--ikon-picker);
+  background-size: 16px 16px;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.glass-input:hover::-webkit-calendar-picker-indicator,
+.glass-input:focus::-webkit-calendar-picker-indicator {
+  background-image: var(--ikon-picker-aktif);
+  opacity: 0.95;
+}
+
+/* Segmen tanggal/jam — hover & fokus pakai tint emerald */
+.glass-input::-webkit-datetime-edit {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-input:disabled::-webkit-datetime-edit {
+  color: #94a3b8;
+}
+
+.glass-input::-webkit-datetime-edit-month-field,
+.glass-input::-webkit-datetime-edit-day-field,
+.glass-input::-webkit-datetime-edit-year-field,
+.glass-input::-webkit-datetime-edit-hour-field,
+.glass-input::-webkit-datetime-edit-minute-field,
+.glass-input::-webkit-datetime-edit-second-field,
+.glass-input::-webkit-datetime-edit-ampm-field {
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.glass-input::-webkit-datetime-edit-month-field:hover,
+.glass-input::-webkit-datetime-edit-day-field:hover,
+.glass-input::-webkit-datetime-edit-year-field:hover,
+.glass-input::-webkit-datetime-edit-hour-field:hover,
+.glass-input::-webkit-datetime-edit-minute-field:hover,
+.glass-input::-webkit-datetime-edit-second-field:hover,
+.glass-input::-webkit-datetime-edit-ampm-field:hover,
+.glass-input::-webkit-datetime-edit-month-field:focus,
+.glass-input::-webkit-datetime-edit-day-field:focus,
+.glass-input::-webkit-datetime-edit-year-field:focus,
+.glass-input::-webkit-datetime-edit-hour-field:focus,
+.glass-input::-webkit-datetime-edit-minute-field:focus,
+.glass-input::-webkit-datetime-edit-second-field:focus,
+.glass-input::-webkit-datetime-edit-ampm-field:focus {
+  background-color: var(--accent-light);
+  outline: none;
+}
+
 .glass-sidebar {
   background: var(--surface-sidebar);
   backdrop-filter: blur(var(--glass-blur-lg));

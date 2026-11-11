@@ -89,7 +89,13 @@ export default function PresensiPage() {
           </div>
           <div className="w-full sm:w-48">
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
-            <input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-full px-4 py-2.5 text-sm glass-input" />
+            <input
+              type="date"
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              onClick={(e) => { try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { /* diabaikan */ } }}
+              className="w-full px-4 py-2.5 text-sm glass-input"
+            />
           </div>
         </div>
       </Card>
