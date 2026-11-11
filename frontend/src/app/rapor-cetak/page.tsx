@@ -511,6 +511,21 @@ function RaporCetakView() {
   const [tanggalInput, setTanggalInput] = useState(tanggalParam);
   const [tempatInput, setTempatInput] = useState(tempatParam);
 
+  // Tanggal & tempat yang pernah diterapkan disimpan sebagai default permanen
+  // (localStorage) — dipakai lagi di cetak berikutnya sampai user menggantinya.
+  const [tanggalTersimpan, setTanggalTersimpan] = useState("");
+  const [tempatTersimpan, setTempatTersimpan] = useState("");
+  useEffect(() => {
+    const t = localStorage.getItem("rapor_tanggal_cetak") ?? "";
+    const p = localStorage.getItem("rapor_tempat_cetak") ?? "";
+    setTanggalTersimpan(t);
+    setTempatTersimpan(p);
+    // Prefill field bila URL tidak membawa parameter (cetakan baru).
+    if (!tanggalParam) setTanggalInput(t);
+    if (!tempatParam) setTempatInput(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Kunci muat: hanya perubahan daftar id / semester yang menembilkan hasil —
   // menerapkan tanggal manual tidak boleh memicu fetch ulang seluruh rapor.
   const kunciMuat = `${semesterId ?? ""}|${daftarId.join(",")}`;
@@ -559,12 +574,24 @@ function RaporCetakView() {
   }, [kunciMuat]);
 
   function terapkanTanggalManual() {
+    // Simpan sebagai default permanen — cetak berikutnya langsung terisi.
+    if (tanggalInput) localStorage.setItem("rapor_tanggal_cetak", tanggalInput);
+    else localStorage.removeItem("rapor_tanggal_cetak");
+    if (tempatInput) localStorage.setItem("rapor_tempat_cetak", tempatInput);
+    else localStorage.removeItem("rapor_tempat_cetak");
+    setTanggalTersimpan(tanggalInput);
+    setTempatTersimpan(tempatInput);
+
     const params = new URLSearchParams(searchParams.toString());
     if (tanggalInput) params.set("tanggal", tanggalInput); else params.delete("tanggal");
     if (tempatInput) params.set("tempat", tempatInput); else params.delete("tempat");
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : "?", { scroll: false });
   }
+
+  // Tanggal & tempat efektif: parameter URL menang, lalu default tersimpan.
+  const tanggalManualAktif = tanggalParam || tanggalTersimpan || null;
+  const tempatManualAktif = tempatParam || tempatTersimpan || null;
 
   const dataPertama = (hasilList ?? []).find((h) => h.data)?.data ?? null;
   const siswaPertama = dataPertama?.siswa ?? null;
@@ -1111,7 +1138,7 @@ function RaporCetakView() {
               onChange={(e) => setTanggalInput(e.target.value)}
               onClick={(e) => { try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { /* diabaikan */ } }}
               className="px-2 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
-              title="Tanggal cetak manual (kosong = ikut data semester)"
+              title="Tanggal cetak — tersimpan sebagai default (dipakai lagi di cetak berikutnya)"
             />
             <input
               type="text"
@@ -1119,13 +1146,13 @@ function RaporCetakView() {
               onChange={(e) => setTempatInput(e.target.value)}
               placeholder="Tempat (mis. Cimahi)"
               className="w-36 px-2 py-1.5 text-sm glass-input rounded-lg focus:ring-2 focus:ring-emerald-500"
-              title="Tempat penerbitan (menimpa kota dari profil sekolah)"
+              title="Tempat penerbitan — tersimpan sebagai default (dipakai lagi di cetak berikutnya)"
             />
             <Button
               type="button"
               variant="outline"
               onClick={terapkanTanggalManual}
-              title="Terapkan opsi tanggal manual ke URL"
+              title="Simpan tanggal & tempat sebagai default permanen"
             >
               Terapkan
             </Button>
@@ -1168,7 +1195,7 @@ function RaporCetakView() {
                 Gagal memuat rapor siswa #{h.siswaId}: {h.error}
               </Alert>
             ) : h.data ? (
-              <RaporDokumen data={h.data} tanggalManual={tanggalParam || null} tempatManual={tempatParam || null} />
+              <RaporDokumen data={h.data} tanggalManual={tanggalManualAktif} tempatManual={tempatManualAktif} />
             ) : (
               <Skeleton className="h-96 w-full" />
             )}

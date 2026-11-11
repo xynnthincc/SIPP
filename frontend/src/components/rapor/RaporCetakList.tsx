@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
 import { labelSemester } from "@/lib/semester";
 import {
-  PageHeader, Card, Button, Badge, Select, Input, Skeleton, EmptyState, Pagination,
+  PageHeader, Card, Button, Badge, Select, Skeleton, EmptyState, Pagination,
   Table, TableHead, TableBody, Th, Td, TableRow,
 } from "@/components/ui";
 
@@ -74,9 +74,6 @@ export default function RaporCetakList({
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
-  // Tanggal cetak manual (opsional) — bila diisi, diteruskan ke /rapor-cetak
-  // sebagai query `tanggal` dan menimpa tanggal dari data semester.
-  const [tanggalCetak, setTanggalCetak] = useState("");
   // Pilih siswa untuk cetak beruntun (semua rapor terpilih dalam satu percetakan).
   // Tersimpan berpasangan dengan kunci scope semester|kelas — pilihan lama
   // otomatis tidak berlaku saat filter berubah, tanpa setState di effect.
@@ -101,11 +98,10 @@ export default function RaporCetakList({
   }
 
   // URL halaman cetak rapor — mode beruntun memakai siswa_ids (halaman cetak
-  // menerima 1 id maupun banyak), plus tanggal manual bila dipilih di filter.
+  // menerima 1 id maupun banyak). Tanggal & tempat cetak diatur di halaman
+  // cetak dan tersimpan permanen sebagai default di sana.
   function urlRaporCetak(idsParam: string): string {
-    const params = new URLSearchParams({ siswa_ids: idsParam, semester_id: semesterId });
-    if (tanggalCetak) params.set("tanggal", tanggalCetak);
-    return `/rapor-cetak?${params.toString()}`;
+    return `/rapor-cetak?siswa_ids=${idsParam}&semester_id=${semesterId}`;
   }
 
   function cetakTerpilih() {
@@ -260,15 +256,6 @@ export default function RaporCetakList({
               </Select>
             </div>
           )}
-          <div className="flex-1 min-w-[180px]">
-            <Input
-              label="Tanggal Cetak"
-              type="date"
-              value={tanggalCetak}
-              onChange={(e) => setTanggalCetak(e.target.value)}
-              hint={tanggalCetak ? undefined : "opsional — kosong = ikut data semester"}
-            />
-          </div>
           <div className="sm:self-end flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
