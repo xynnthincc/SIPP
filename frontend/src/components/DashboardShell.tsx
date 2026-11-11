@@ -92,12 +92,68 @@ function SidebarIcon({ name }: { name: string }) {
     ),
     "kelompok-akademik": (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3.75l8.25 4.125L12 12 3.75 7.875 12 3.75zM3.75 12L12 16.125 20.25 12M3.75 16.125L12 20.25l8.25-4.125" />
       </svg>
     ),
     tenaga: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 5.25h15a1.5 1.5 0 011.5 1.5v10.5a1.5 1.5 0 01-1.5 1.5h-15a1.5 1.5 0 01-1.5-1.5V6.75a1.5 1.5 0 011.5-1.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.125 11.25a1.875 1.875 0 103.75 0 1.875 1.875 0 10-3.75 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.375 15.75h5.25M14.25 9.75h4.125M14.25 12.75h4.125" />
+      </svg>
+    ),
+    konfigurasi: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+      </svg>
+    ),
+    predikat: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.563.563 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+      </svg>
+    ),
+    "nilai-diniyah": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 13.875A8.625 8.625 0 0110.125 3.75 8.625 8.625 0 1020.25 13.875z" />
+      </svg>
+    ),
+    "jadwal-aktivitas": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 6.75A2.25 2.25 0 016 4.5h12a2.25 2.25 0 012.25 2.25v11.25A2.25 2.25 0 0118 20.25H6a2.25 2.25 0 01-2.25-2.25V6.75zM3.75 9.75h16.5M12 12.375v1.875l1.5 1.125" />
+      </svg>
+    ),
+    "jadwal-saya": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 6.75A2.25 2.25 0 016 4.5h12a2.25 2.25 0 012.25 2.25v11.25A2.25 2.25 0 0118 20.25H6a2.25 2.25 0 01-2.25-2.25V6.75zM3.75 9.75h16.5M9.375 14.625l1.875 1.875 3.375-3.75" />
+      </svg>
+    ),
+    praktik: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 4.5h4.5a1.5 1.5 0 011.5 1.5v.75h-7.5V6a1.5 1.5 0 011.5-1.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 6.75h9a1.5 1.5 0 011.5 1.5v10.5a1.5 1.5 0 01-1.5 1.5h-9a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.375h6M9 15.375h6" />
+      </svg>
+    ),
+    "wali-kelas": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.749h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+    binaan: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+      </svg>
+    ),
+    "guru-mapel": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 3.75h13.5a1.5 1.5 0 011.5 1.5v13.5a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V5.25a1.5 1.5 0 011.5-1.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.375 9.75a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 20.25c.75-3 2.625-4.5 4.875-4.5s4.125 1.5 4.875 4.5" />
+      </svg>
+    ),
+    "rapor-saya": (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
       </svg>
     ),
     penilaian: (
@@ -177,37 +233,39 @@ export function DashboardShell({
   }
 
   function getNavIconName(label: string): string {
+    // Satu icon unik per label menu — tidak ada icon yang dipakai
+    // dua label berbeda. Nama icon harus ada di record SidebarIcon di atas.
     const map: Record<string, string> = {
+      // Admin
       "Ringkasan": "ringkasan",
       "Manajemen Akademik": "kelompok-akademik",
-      "Sivitas Akademika": "tenaga",
-      "Civitas Academica": "tenaga",
-      "Konfigurasi & Evaluasi": "penilaian",
-      "Kelompok Akademik": "kelompok-akademik",
-      "Tenaga & Peserta Didik": "tenaga",
-      "Penilaian": "penilaian",
-      "Sekolah": "sekolah",
       "Tahun Ajaran & Semester": "tahun-ajaran",
       "Kelas/Rombel": "kelas",
-      "Data Siswa": "siswa",
-      "Data Guru": "guru",
-      "Kelola Pengguna": "pengguna",
-      "Mata Pelajaran Plus": "mapel",
-      "Rentang Predikat": "nilai",
       "Jadwal & Pengampu": "jadwal",
-      "Jadwal Saya": "jadwal",
-      "Jadwal & Aktivitas": "jadwal",
-      "Input Presensi": "presensi",
-      "Input Nilai": "nilai",
-      "Input Nilai Diniyah": "penilaian",
-      "Progres Hafalan": "hafalan",
-      "Rapor Saya": "rapor",
-      "Siswa Binaan": "siswa",
-      "Rapor Pesantren": "rapor",
-      "Progres Anak": "progres",
+      "Mata Pelajaran Plus": "mapel",
+      "Sivitas Akademika": "tenaga",
+      "Data Guru": "guru",
+      "Data Siswa": "siswa",
+      "Kelola Pengguna": "pengguna",
+      "Konfigurasi & Evaluasi": "konfigurasi",
       "Cetak Rapor": "rapor",
-      "Praktik & Hafalan": "hafalan",
+      "Praktik & Hafalan": "praktik",
+      "Rentang Predikat": "predikat",
       "Profil Sekolah": "sekolah",
+      "Penilaian": "penilaian",
+      "Input Nilai": "nilai",
+      "Input Nilai Diniyah": "nilai-diniyah",
+      // Guru & wali kelas
+      "Jadwal Saya": "jadwal-saya",
+      "Input Presensi": "presensi",
+      "Progres Hafalan": "hafalan",
+      "Jadwal & Aktivitas": "jadwal-aktivitas",
+      "Wali Kelas": "wali-kelas",
+      "Guru Mapel": "guru-mapel",
+      "Siswa Binaan": "binaan",
+      // Siswa & ortu
+      "Rapor Saya": "rapor-saya",
+      "Progres Anak": "progres",
     };
     return map[label] || "ringkasan";
   }
