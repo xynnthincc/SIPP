@@ -1,0 +1,97 @@
+name: Deploy SIPP to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Deploy clean-slate (wipe + upload) TIDAK BOLEH overlap: dua run bersamaan
+# akan saling hapus file (satu wipe sementara satunya upload → 550 + situs rusak).
+# Run baru antre sampai run berjalan selesai; jangan cancel run berjalan.
+concurrency:
+  group: sipp-hostinger-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-frontend:
+    name: Build & Deploy Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build Frontend
+        env:
+          NEXT_PUBLIC_API_URL: https://api-sipp.smpplusdarussururcimahi.sch.id/api
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Clean FTP Host
+        id: ftp
+        run: |
+          CLEAN_HOST=$(echo "${{ secrets.FTP_HOST }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||')
+          echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+
+      - name: Sync Frontend to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ steps.ftp.outputs.host }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: sipp/
+          local-dir: frontend/out/
+          dangerous-clean-slate: true
+          security: loose
+          # FTP Hostinger sering lambat merespons (LIST/wipe ratusan file);
+          # default 30 detik terlalu kecil → "Timeout (control socket)".
+          timeout: 120000
+
+  deploy-backend:
+    name: Sync Backend Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Clean FTP Host
+        id: ftp
+        run: |
+          CLEAN_HOST=$(echo "${{ secrets.FTP_HOST }}" | sed -e 's|^[^/]*//||' -e 's|/.*$||' -e 's|:.*$||')
+          echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+
+      - name: Sync Backend to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ steps.ftp.outputs.host }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: api-sipp/
+          local-dir: backend/
+          dangerous-clean-slate: false
+          security: loose
+          timeout: 60000
+          exclude: |
+            **/.ftp-deploy-sync
+            **/.git*
+            **/.git*/**
+            **/vendor/**
+            **/node_modules/**
+            **/.env
+            **/.env.*
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/tests/**
+            **/*.log
+            **/bootstrap/cache/**

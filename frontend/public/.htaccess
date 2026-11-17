@@ -1,0 +1,40 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Paksa HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # File atau folder fisik yang ada langsung diproses
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # RSC payload Next.js static export: browser meminta path bertitik
+  # (/admin/__next.admin.__PAGE__.txt) sedangkan file tersimpan sebagai direktori
+  # (/admin/__next.admin/__PAGE__.txt) — tulis ulang bertingkat lalu satu tingkat.
+  RewriteRule ^(.*/__next\.[^/]*)\.([^/.]+)\.__PAGE__\.txt$ $1/$2/__PAGE__.txt [N]
+  RewriteRule ^(.*/__next\.[^/]*)\.__PAGE__\.txt$ $1/__PAGE__.txt [L]
+
+  # Route Next.js trailing slash: /admin/guru -> /admin/guru/index.html
+  RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+  RewriteRule ^(.*)/?$ /$1/index.html [L]
+
+  # Route file .html langsung jika ada
+  RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+  RewriteRule ^(.*)$ /$1.html [L]
+
+  # Fallback ke 404
+  ErrorDocument 404 /404.html
+</IfModule>
+
+# Izinkan akses ke __next.admin RSC payload dirs (Next.js App Router)
+<IfModule mod_authz_core.c>
+  <FilesMatch "^__">
+    Require all granted
+  </FilesMatch>
+</IfModule>
+
+# Nonaktifkan blocking __* oleh LiteSpeed/Apache
+Options -MultiViews
