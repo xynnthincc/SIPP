@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
+import { SiswaImportModal } from "@/components/siswa/SiswaImportModal";
 import {
   PageHeader, Card, Button, Input, Select, Table, TableHead, TableBody, Th, Td, TableRow,
   Badge, Skeleton, EmptyState, ConfirmModal, IconButton, Alert, Pagination,
@@ -63,6 +64,7 @@ export default function SiswaPage() {
   const [hapus, setHapus] = useState<Siswa | null>(null);
   const [hapusLoading, setHapusLoading] = useState(false);
   const [hapusError, setHapusError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(() => {
     api.get("/siswa", {
@@ -120,7 +122,12 @@ export default function SiswaPage() {
       <PageHeader
         title="Data Siswa"
         description="Kelola seluruh data siswa SMP Plus YPP Darussurur."
-        action={<Button onClick={() => router.push("/admin/siswa/form")}>+ Tambah Siswa</Button>}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>Import Excel</Button>
+            <Button onClick={() => router.push("/admin/siswa/form")}>+ Tambah Siswa</Button>
+          </div>
+        }
       />
 
       {hapusError && (
@@ -177,8 +184,13 @@ export default function SiswaPage() {
       ) : data.length === 0 ? (
         <EmptyState
           title="Belum ada siswa"
-          description="Tambahkan siswa baru melalui tombol Tambah Siswa."
-          action={<Button onClick={() => router.push("/admin/siswa/form")}>+ Tambah Siswa</Button>}
+          description="Tambahkan siswa baru satu per satu, atau import sekaligus dari file Excel."
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(true)}>Import Excel</Button>
+              <Button onClick={() => router.push("/admin/siswa/form")}>+ Tambah Siswa</Button>
+            </div>
+          }
         />
       ) : (
         <Card className="p-0">
@@ -244,6 +256,12 @@ export default function SiswaPage() {
         loading={hapusLoading}
         title="Hapus Siswa"
         message={`Yakin ingin menghapus siswa "${hapus?.nama}"? Data nilai, presensi, dan rapor terkait juga akan terhapus.`}
+      />
+
+      <SiswaImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSelesai={() => { setPage(1); load(); }}
       />
     </div>
   );

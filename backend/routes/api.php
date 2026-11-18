@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\RaporController;
 use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\SemesterController;
 use App\Http\Controllers\Api\SiswaController;
+use App\Http\Controllers\Api\SiswaImportController;
 use App\Http\Controllers\Api\TahunAjaranController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -95,6 +96,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin,wali_kelas')->group(function () {
         Route::apiResource('siswa', SiswaController::class)->except(['show', 'index']);
         Route::post('/siswas/{siswa}/foto', [SiswaController::class, 'uploadFoto']);
+    });
+
+    // Import massal siswa (.xlsx) — di luar resource agar tidak tertutup POST /siswa
+    Route::middleware('role:admin,wali_kelas')->group(function () {
+        Route::post('/siswa/import', [SiswaImportController::class, 'store']);
     });
     Route::get('/siswa/{siswa}', [SiswaController::class, 'show']);
 
