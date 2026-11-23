@@ -76,15 +76,15 @@ fun DashboardScreen(
                 val semList = SippApi.getSemester()
                 semesters = semList
 
-                val pengList = SippApi.getPengampuanSaya()
-                pengampuanList = pengList
-
-                // Pilih semester yang memiliki penugasan guru yang login, atau semester aktif
                 if (selectedSemester == null) {
-                    selectedSemester = semList.find { s -> pengList.any { it.semesterId == s.id } }
-                        ?: semList.find { it.isAktif }
-                        ?: semList.firstOrNull()
+                    selectedSemester = semList.find { it.isAktif } ?: semList.firstOrNull()
                 }
+
+                // Backend yang melakukan filter semester (termasuk normalisasi
+                // wadah "Sementara" ke induk "Akhir"), jadi tidak ada fallback
+                // ke penugasan tahun ajaran lain.
+                pengampuanList = selectedSemester?.let { SippApi.getPengampuanSaya(it.id) }
+                    ?: SippApi.getPengampuanSaya()
 
                 isLoading = false
             } catch (e: Exception) {
@@ -94,12 +94,8 @@ fun DashboardScreen(
         }
     }
 
-    val pengampuanTersaring = remember(pengampuanList, selectedSemester) {
-        val filtered = pengampuanList.filter { p ->
-            selectedSemester == null || p.semesterId == 0 || p.semesterId == selectedSemester?.id
-        }
-        if (filtered.isNotEmpty()) filtered else pengampuanList
-    }
+    // Sudah di-scope backend berdasarkan semester terpilih.
+    val pengampuanTersaring = pengampuanList
 
     LaunchedEffect(Unit) {
         loadData()
@@ -717,6 +713,7 @@ fun DashboardScreen(
                                 .clickable {
                                     selectedSemester = sem
                                     showSemesterSheet = false
+                                    loadData()
                                 }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -731,7 +728,7 @@ fun DashboardScreen(
                                 )
                                 sem.tahunAjaran?.let {
                                     Text(
-                                        text = "Tahun Ajaran: ${it.nama}",
+                                        text = "Tahun Ajaran: ${it.nama} · ${sem.jenis}",
                                         fontSize = 12.sp,
                                         color = Slate500
                                     )

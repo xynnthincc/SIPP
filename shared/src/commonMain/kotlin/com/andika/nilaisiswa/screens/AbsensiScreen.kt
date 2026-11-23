@@ -89,7 +89,7 @@ fun AbsensiScreen(
                 }
 
                 // 2. Slot jadwal milik guru untuk mapel & kelas pengampuan ini
-                val jadwalRes = SippApi.getJadwalSaya().filter { j ->
+                val jadwalRes = SippApi.getJadwalSaya(semester.id).filter { j ->
                     val gmk = j.guruMapelKelas
                     gmk != null &&
                         gmk.mapelPlus?.id == pengampuan.mapelPlus.id &&

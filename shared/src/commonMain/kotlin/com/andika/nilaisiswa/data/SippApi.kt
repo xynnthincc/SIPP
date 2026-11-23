@@ -163,8 +163,9 @@ object SippApi {
         return json.decodeFromJsonElement(listEl)
     }
 
-    suspend fun getPengampuanSaya(): List<PengampuanItem> {
-        val response = request("pengampuan-saya")
+    suspend fun getPengampuanSaya(semesterId: Int? = null): List<PengampuanItem> {
+        val path = if (semesterId == null) "pengampuan-saya" else "pengampuan-saya?semester_id=$semesterId"
+        val response = request(path)
         val listEl = when {
             response is JsonArray -> response
             response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
@@ -525,9 +526,10 @@ object SippApi {
     // pakai fallback cache lokal yang menampilkan sukses palsu.
     // ---------------------------------------------------------------
 
-    /** Daftar slot jadwal guru yang login (sudah di-scope backend ke guru tsb). */
-    suspend fun getJadwalSaya(): List<JadwalItem> {
-        val response = request("jadwal")
+    /** Daftar slot jadwal guru yang login (sudah di-scope backend ke guru & semester tsb). */
+    suspend fun getJadwalSaya(semesterId: Int? = null): List<JadwalItem> {
+        val path = if (semesterId == null) "jadwal" else "jadwal?semester_id=$semesterId"
+        val response = request(path)
         val listEl = when {
             response is JsonArray -> response
             response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray

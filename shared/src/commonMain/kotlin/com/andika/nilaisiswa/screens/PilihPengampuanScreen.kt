@@ -32,13 +32,12 @@ fun PilihPengampuanScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(semester.id) {
         isLoading = true
         scope.launch {
             try {
-                val allPengampuan = SippApi.getPengampuanSaya()
-                val filtered = allPengampuan.filter { it.semesterId == 0 || it.semesterId == semester.id }
-                pengampuanList = if (filtered.isNotEmpty()) filtered else allPengampuan
+                // Backend sudah menormalkan Sementara -> induk Akhir saat filter semester.
+                pengampuanList = SippApi.getPengampuanSaya(semester.id)
                 isLoading = false
             } catch (e: Exception) {
                 isLoading = false

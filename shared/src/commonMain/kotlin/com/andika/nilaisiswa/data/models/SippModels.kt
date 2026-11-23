@@ -316,9 +316,11 @@ data class JadwalItem(
     @SerialName("guru_mapel_kelas") val guruMapelKelas: GuruMapelKelasItem? = null
 ) {
     val labelSlot: String
-        get() = listOf(hari, listOfNotNull(jamMulai, jamSelesai).joinToString("-"))
-            .filter { it.isNotBlank() }
-            .joinToString(" · ")
+        get() = listOfNotNull(
+            hari.takeIf { it.isNotBlank() },
+            listOfNotNull(jamMulai, jamSelesai).joinToString("-").takeIf { it.isNotBlank() },
+            guruMapelKelas?.semester?.let { "${it.nama} (${it.jenis})" }
+        ).joinToString(" · ")
 }
 
 @Serializable
@@ -326,6 +328,7 @@ data class GuruMapelKelasItem(
     val id: Int = 0,
     @SerialName("semester_id") val semesterId: Int = 0,
     @SerialName("mapel_plus") val mapelPlus: MapelPlusItem? = null,
-    @SerialName("kelas_rombel") val kelasRombel: KelasRombelItem? = null
+    @SerialName("kelas_rombel") val kelasRombel: KelasRombelItem? = null,
+    val semester: SemesterItem? = null
 )
 
