@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import RaporCetakList from "@/components/rapor/RaporCetakList";
 
+/**
+ * Rapor siswa binaan wali kelas.
+ * Kelas terkunci otomatis ke kelas binaan (backend /kelas-rombel sudah
+ * di-scope), tapi semester tetap bisa dipilih — termasuk wadah Sementara.
+ */
 export default function WaliKelasRaporPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    if (user?.role === "admin") {
-      router.replace("/admin/rapor");
-    } else {
-      router.replace("/wali-kelas");
-    }
-  }, [user, router]);
-
-  return null;
+  return (
+    <RaporCetakList
+      bolehPilihKelas={false}
+      judul="Rapor Siswa Binaan"
+      deskripsi="Pantau kesiapan nilai dan cetak rapor siswa di kelas binaan Anda — real-time, tanpa proses validasi."
+    />
+  );
 }

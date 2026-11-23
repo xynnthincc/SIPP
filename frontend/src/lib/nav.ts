@@ -22,6 +22,7 @@ export interface NavConfig {
 
 const WALI_ITEMS: NavItem[] = [
   { href: "/wali-kelas", label: "Siswa Binaan" },
+  { href: "/wali-kelas/rapor", label: "Cetak Rapor" },
   { href: "/wali-kelas/nilai-diniyah", label: "Input Nilai Diniyah" },
 ];
 
