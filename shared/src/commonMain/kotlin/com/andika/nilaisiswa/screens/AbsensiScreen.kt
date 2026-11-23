@@ -71,6 +71,12 @@ fun AbsensiScreen(
         errorMessage = null
         scope.launch {
             try {
+                // State dari slot/tanggal sebelumnya HARUS dibersihkan. Jika tidak,
+                // status & catatan lama ikut tersimpan ke jadwal baru saat pindah chip.
+                statusMap.clear()
+                catatanMap.clear()
+                showNoteMap.clear()
+
                 // 1. Ambil daftar siswa kelas rombel
                 val siswaRes = SippApi.getSiswa(pengampuan.kelasRombel.id)
                 siswaList = siswaRes

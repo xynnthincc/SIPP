@@ -127,7 +127,10 @@ data class UserProfile(
     val identifier: String? = null,
     @Serializable(with = FlexibleBooleanSerializer::class)
     @SerialName("is_active")
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    @Serializable(with = FlexibleBooleanSerializer::class)
+    @SerialName("punya_penugasan_guru")
+    val punyaPenugasanGuru: Boolean = false
 ) {
     val roleLabel: String
         get() = when (role) {

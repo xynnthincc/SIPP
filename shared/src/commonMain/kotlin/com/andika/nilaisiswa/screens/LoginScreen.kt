@@ -43,8 +43,9 @@ import org.jetbrains.compose.resources.painterResource
 fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
-    var email by remember { mutableStateOf("ahmad-nahrowi@sipp.sch.id") }
-    var password by remember { mutableStateOf("password") }
+    // Kredensial demo sengaja kosong: jangan kirim akun nyata di dalam APK.
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }

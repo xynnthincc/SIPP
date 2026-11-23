@@ -58,6 +58,11 @@ fun DashboardScreen(
     var showMapelPickerSheet by remember { mutableStateOf(false) }
     var pickerTargetMode by remember { mutableStateOf("nilai") } // "nilai" atau "absensi"
 
+    // Fitur input nilai/presensi hanya untuk akun guru. Flag dari /me dipakai
+    // supaya wali kelas tanpa penugasan mapel tidak melihat kartu yang tak bisa dipakai.
+    val bolehInputGuru = user.role in setOf("guru_pesantren", "wali_kelas", "admin") &&
+        (user.role == "admin" || user.punyaPenugasanGuru)
+
     val scope = rememberCoroutineScope()
 
     fun loadData() {
@@ -218,6 +223,7 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Hero Action Cards: Input Nilai & Presensi Siswa
+                    if (bolehInputGuru) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -331,6 +337,7 @@ fun DashboardScreen(
                                 )
                             }
                         }
+                    }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))

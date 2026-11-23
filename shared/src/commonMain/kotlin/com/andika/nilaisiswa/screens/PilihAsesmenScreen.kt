@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.andika.nilaisiswa.components.*
 import com.andika.nilaisiswa.data.SippApi
+import com.andika.nilaisiswa.data.TokenStore
 import com.andika.nilaisiswa.data.models.JenisAssessmentItem
 import com.andika.nilaisiswa.data.models.PengampuanItem
 import com.andika.nilaisiswa.data.models.SemesterItem
@@ -72,6 +73,9 @@ fun PilihAsesmenScreen(
 
     val scope = rememberCoroutineScope()
 
+    // Backend hanya mengizinkan admin membuat/edit/hapus jenis asesmen.
+    val bolehKelolaAsesmen = TokenStore.getUserRole() == "admin"
+
     fun loadData() {
         isLoading = true
         errorMessage = null
@@ -91,6 +95,10 @@ fun PilihAsesmenScreen(
     }
 
     fun handleSimpanAsesmenBaru() {
+        if (!bolehKelolaAsesmen) {
+            addError = "Hanya admin yang bisa menambah jenis asesmen."
+            return
+        }
         if (newNama.isBlank()) {
             addError = "Nama asesmen tidak boleh kosong."
             return
@@ -128,6 +136,10 @@ fun PilihAsesmenScreen(
     }
 
     fun handleSimpanEdit() {
+        if (!bolehKelolaAsesmen) {
+            editError = "Hanya admin yang bisa mengubah jenis asesmen."
+            return
+        }
         val target = editingItem ?: return
         if (editNama.isBlank()) {
             editError = "Nama asesmen tidak boleh kosong."
@@ -165,6 +177,10 @@ fun PilihAsesmenScreen(
     }
 
     fun handleHapusAsesmen() {
+        if (!bolehKelolaAsesmen) {
+            deleteError = "Hanya admin yang bisa menghapus jenis asesmen."
+            return
+        }
         val target = deletingItem ?: return
         isDeleting = true
         deleteError = null
@@ -239,7 +255,8 @@ fun PilihAsesmenScreen(
                     )
                 }
 
-                // Tombol Tambah Asesmen Baru
+                // Tombol Tambah Asesmen Baru (admin saja)
+                if (bolehKelolaAsesmen) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -267,6 +284,7 @@ fun PilihAsesmenScreen(
                         )
                     }
                 }
+                }
             }
 
             if (isLoading) {
@@ -280,9 +298,13 @@ fun PilihAsesmenScreen(
                 ) {
                     SippEmptyState(
                         title = "Belum Ada Jenis Asesmen",
-                        description = "Mata pelajaran ${pengampuan.mapelPlus.nama} belum memiliki asesmen. Klik tombol di bawah untuk membuat jenis asesmen baru.",
-                        actionText = "Tambah Asesmen Pertama",
-                        onAction = { showAddDialog = true }
+                        description = if (bolehKelolaAsesmen) {
+                            "Mata pelajaran ${pengampuan.mapelPlus.nama} belum memiliki asesmen. Klik tombol di bawah untuk membuat jenis asesmen baru."
+                        } else {
+                            "Mata pelajaran ${pengampuan.mapelPlus.nama} belum memiliki asesmen. Hubungi admin sekolah untuk menambahkannya."
+                        },
+                        actionText = if (bolehKelolaAsesmen) "Tambah Asesmen Pertama" else null,
+                        onAction = if (bolehKelolaAsesmen) ({ showAddDialog = true }) else null
                     )
                 }
             } else {
@@ -293,7 +315,7 @@ fun PilihAsesmenScreen(
                 ) {
                     item {
                         Text(
-                            text = "Pilih asesmen untuk menginput nilai atau gunakan tombol aksi untuk edit/hapus:",
+                            text = if (bolehKelolaAsesmen) "Pilih asesmen untuk menginput nilai atau gunakan tombol aksi untuk edit/hapus:" else "Pilih asesmen untuk menginput nilai:",
                             style = SippTypography.labelMedium,
                             color = Slate500,
                             modifier = Modifier.padding(bottom = 2.dp)
@@ -351,7 +373,8 @@ fun PilihAsesmenScreen(
                                     }
                                 }
 
-                                // Tombol Aksi: Edit & Hapus
+                                // Tombol Aksi: Edit & Hapus (admin saja)
+                                if (bolehKelolaAsesmen) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -400,6 +423,7 @@ fun PilihAsesmenScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
+                                }
 
                                     Spacer(modifier = Modifier.width(4.dp))
 
