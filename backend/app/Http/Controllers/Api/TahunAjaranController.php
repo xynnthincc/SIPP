@@ -12,6 +12,7 @@ use App\Models\Siswa;
 use App\Models\SiswaKelas;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TahunAjaranController extends Controller
 {
@@ -67,50 +68,67 @@ class TahunAjaranController extends Controller
             ->groupBy('siswa_id')
             ->map(fn ($rows) => $rows->sortByDesc('id')->first());
 
-        $naik = 0;
-        $lulus = 0;
-        $kelasDibuat = [];
+        // Seluruh promosi bersifat atomik: kalau satu kelas gagal dibuat,
+        // tidak ada siswa yang setengah berpindah tahun ajaran.
+        $hasil = DB::transaction(function () use ($penempatan, $tujuan) {
+            $naik = 0;
+            $lulus = 0;
+            $kelasDibuat = [];
 
-        foreach ($penempatan as $item) {
-            $kelasLama = $item->kelasRombel;
+            foreach ($penempatan as $item) {
+                $kelasLama = $item->kelasRombel;
 
-            if ($kelasLama->tingkat >= 9) {
-                $lulus++;
+                if ($kelasLama->tingkat >= 9) {
+                    // Alumni tidak ikut promosi dan tidak boleh muncul sebagai
+                    // siswa aktif di tahun ajaran berikutnya.
+                    $item->siswa->update(['is_aktif' => false]);
+                    $lulus++;
 
-                continue;
-            }
+                    continue;
+                }
 
-            $tingkatBaru = $kelasLama->tingkat + 1;
-            $namaBaru = preg_replace('/^\d+/', (string) $tingkatBaru, $kelasLama->nama);
+                $tingkatBaru = $kelasLama->tingkat + 1;
+                $namaBaru = preg_replace('/^\d+/', (string) $tingkatBaru, $kelasLama->nama);
 
-            $kelasTujuan = KelasRombel::where('nama', $namaBaru)
-                ->where('tahun_ajaran_id', $tujuan->id)
-                ->first();
+                $kelasTujuan = KelasRombel::where('nama', $namaBaru)
+                    ->where('tahun_ajaran_id', $tujuan->id)
+                    ->first();
 
-            if (! $kelasTujuan) {
-                $kelasTujuan = KelasRombel::create([
-                    'nama' => $namaBaru,
-                    'tingkat' => $tingkatBaru,
-                    'tahun_ajaran_id' => $tujuan->id,
+                if (! $kelasTujuan) {
+                    $kelasTujuan = KelasRombel::create([
+                        'nama' => $namaBaru,
+                        'tingkat' => $tingkatBaru,
+                        'tahun_ajaran_id' => $tujuan->id,
+                    ]);
+                    $kelasDibuat[] = $namaBaru;
+                }
+
+                // Idempoten: promosi dijalankan ulang tidak menduplikasi riwayat.
+                if (SiswaKelas::where('siswa_id', $item->siswa_id)
+                    ->where('kelas_rombel_id', $kelasTujuan->id)
+                    ->exists()) {
+                    continue;
+                }
+
+                SiswaKelas::create([
+                    'siswa_id' => $item->siswa_id,
+                    'kelas_rombel_id' => $kelasTujuan->id,
                 ]);
-                $kelasDibuat[] = $namaBaru;
+
+                $item->siswa->update(['kelas_rombel_id' => $kelasTujuan->id]);
+                $naik++;
             }
 
-            SiswaKelas::firstOrCreate([
-                'siswa_id' => $item->siswa_id,
-                'kelas_rombel_id' => $kelasTujuan->id,
-            ]);
+            return [
+                'naik' => $naik,
+                'lulus' => $lulus,
+                'kelas_dibuat' => $kelasDibuat,
+            ];
+        });
 
-            $item->siswa->update(['kelas_rombel_id' => $kelasTujuan->id]);
-            $naik++;
-        }
-
-        return response()->json([
-            'naik' => $naik,
-            'lulus' => $lulus,
-            'kelas_dibuat' => $kelasDibuat,
+        return response()->json(array_merge($hasil, [
             'tahun_ajaran_tujuan' => $tujuan->nama,
-        ]);
+        ]));
     }
 
     public function update(Request $request, TahunAjaran $tahunAjaran)
