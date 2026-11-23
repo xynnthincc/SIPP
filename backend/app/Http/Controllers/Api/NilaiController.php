@@ -18,6 +18,13 @@ class NilaiController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'siswa_id' => ['nullable', 'integer'],
+            'semester_id' => ['nullable', 'integer'],
+            'jenis_assessment_id' => ['nullable', 'integer'],
+            'kelas_rombel_id' => ['nullable', 'integer'],
+        ]);
+
         $user = $request->user();
         $siswaId = $request->siswa_id;
 
@@ -29,14 +36,27 @@ class NilaiController extends Controller
             abort(422, 'Parameter siswa_id wajib diisi untuk akun orang tua.');
         }
 
-        return Nilai::with('siswa', 'jenisAssessment.mapelPlus')
+        $query = Nilai::with('siswa', 'jenisAssessment.mapelPlus')
             ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
             ->when($request->semester_id, fn ($q, $id) => $q->where('semester_id', $id))
             // Filter opsional untuk aplikasi mobile (prefill nilai harian):
             // tanpa parameter ini perilaku endpoint tidak berubah sama sekali.
             ->when($request->jenis_assessment_id, fn ($q, $id) => $q->where('jenis_assessment_id', $id))
-            ->when($request->kelas_rombel_id, fn ($q, $id) => $q->whereHas('siswa', fn ($sq) => $sq->where('kelas_rombel_id', $id)))
-            ->get();
+            ->when($request->kelas_rombel_id, fn ($q, $id) => $q->whereHas('siswa', fn ($sq) => $sq->where('kelas_rombel_id', $id)));
+
+        if (! $user->hasRole('admin', 'kepala_sekolah', 'siswa', 'orang_tua')) {
+            $query->whereHas('siswa', fn ($q) => $q
+                ->whereIn('kelas_rombel_id', $this->kelasYangBolehDiakses($user)));
+
+            // Wali kelas melihat seluruh mapel di kelas binaannya (kebutuhan rapor).
+            // Guru pesantren dibatasi pada mapel yang benar-benar diampunya.
+            if ($user->hasRole('guru_pesantren') && $user->guru) {
+                $mapelIds = $user->guru->guruMapelKelas()->pluck('mapel_plus_id');
+                $query->whereHas('jenisAssessment', fn ($q) => $q->whereIn('mapel_plus_id', $mapelIds));
+            }
+        }
+
+        return $query->get();
     }
 
     /**
@@ -53,6 +73,9 @@ class NilaiController extends Controller
             'nilai.*.nilai' => ['required', 'numeric', 'min:0', 'max:100'],
             'nilai.*.catatan' => ['nullable', 'string'],
         ]);
+
+        $siswaIds = collect($data['nilai'])->pluck('siswa_id');
+        abort_unless($siswaIds->duplicates()->isEmpty(), 422, 'Siswa duplikat dalam payload nilai.');
 
         $semester = Semester::findOrFail($data['semester_id']);
         abort_unless($semester->penilaian_dibuka, 422, 'Periode penilaian semester ini sudah ditutup.');
@@ -107,6 +130,7 @@ class NilaiController extends Controller
      */
     public function rekapSiswa(Request $request, $siswaId, $semesterId)
     {
+        abort_unless(Semester::whereKey((int) $semesterId)->exists(), 422, 'Semester tidak valid.');
         $this->pastikanBolehLihatSiswa($request, (int) $siswaId);
 
         $nilais = Nilai::with('jenisAssessment.mapelPlus')

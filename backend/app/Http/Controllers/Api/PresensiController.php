@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\ScopesSiswaAccess;
 use App\Http\Controllers\Controller;
 use App\Models\Jadwal;
 use App\Models\Presensi;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 
 class PresensiController extends Controller
@@ -14,6 +15,12 @@ class PresensiController extends Controller
 
     public function index(Request $request)
     {
+        $request->validate([
+            'siswa_id' => ['nullable', 'integer'],
+            'jadwal_id' => ['nullable', 'integer'],
+            'tanggal' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
         $user = $request->user();
         $siswaId = $request->siswa_id;
 
@@ -25,11 +32,25 @@ class PresensiController extends Controller
             abort(422, 'Parameter siswa_id wajib diisi untuk akun orang tua.');
         }
 
-        return Presensi::with('siswa', 'jadwal.guruMapelKelas.mapelPlus')
+        $query = Presensi::with('siswa', 'jadwal.guruMapelKelas.mapelPlus')
             ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
             ->when($request->jadwal_id, fn ($q, $id) => $q->where('jadwal_id', $id))
-            ->when($request->tanggal, fn ($q, $t) => $q->whereDate('tanggal', $t))
-            ->get();
+            ->when($request->tanggal, fn ($q, $t) => $q->whereDate('tanggal', $t));
+
+        // Guru pesantren hanya melihat presensi pada jadwal yang diampunya;
+        // wali kelas melihat presensi siswa di kelas binaannya.
+        if ($user->hasRole('guru_pesantren')) {
+            abort_unless($user->guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
+            $query->whereHas(
+                'jadwal.guruMapelKelas.guru',
+                fn ($q) => $q->where('user_id', $user->id)
+            );
+        } elseif ($user->hasRole('wali_kelas')) {
+            $query->whereHas('siswa', fn ($q) => $q
+                ->whereIn('kelas_rombel_id', $this->kelasYangBolehDiakses($user)));
+        }
+
+        return $query->get();
     }
 
     /**
@@ -49,6 +70,20 @@ class PresensiController extends Controller
 
         $jadwal = Jadwal::findOrFail($data['jadwal_id']);
         $this->pastikanGuruPemilikJadwal($request, $jadwal);
+
+        $siswaIds = collect($data['presensi'])->pluck('siswa_id');
+        abort_unless($siswaIds->duplicates()->isEmpty(), 422, 'Siswa duplikat dalam payload presensi.');
+
+        $kelasId = $jadwal->guruMapelKelas?->kelas_rombel_id;
+        $siswas = Siswa::with('kelasHistories')->whereIn('id', $siswaIds)->get();
+        abort_unless($siswas->count() === $siswaIds->unique()->count(), 422, 'Ada siswa dalam payload yang tidak ditemukan.');
+
+        foreach ($siswas as $siswa) {
+            $terdaftar = $siswa->kelas_rombel_id === $kelasId
+                || $siswa->kelasHistories->contains('kelas_rombel_id', $kelasId);
+
+            abort_unless($terdaftar, 403, 'Siswa bukan anggota kelas pada jadwal ini.');
+        }
 
         $hasil = collect($data['presensi'])->map(function ($item) use ($data, $request) {
             return Presensi::updateOrCreate(

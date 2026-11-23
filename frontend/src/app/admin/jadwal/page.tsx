@@ -85,10 +85,10 @@ export default function JadwalAdminPage() {
 
   const loadJadwal = useCallback(() => {
     if (!kelasId) return;
-    api.get<JadwalItem[]>("/jadwal", { params: { kelas_rombel_id: kelasId } })
+    api.get<JadwalItem[]>("/jadwal", { params: { kelas_rombel_id: kelasId, semester_id: semesterId } })
       .then((res) => setJadwalState({ kelas: kelasId, items: res.data }))
       .catch(() => setJadwalState({ kelas: kelasId, items: [] }));
-  }, [kelasId]);
+  }, [kelasId, semesterId]);
 
   useEffect(() => { loadPengampu(); }, [loadPengampu]);
   useEffect(() => { loadJadwal(); }, [loadJadwal]);

@@ -24,10 +24,17 @@ class ProgresHafalanController extends Controller
             abort(422, 'Parameter siswa_id wajib diisi untuk akun orang tua.');
         }
 
-        return ProgresHafalan::with('mapelPlus', 'siswa.kelasRombel')
-            ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
-            ->orderByDesc('tanggal_setoran')
-            ->get();
+        $query = ProgresHafalan::with('mapelPlus', 'siswa.kelasRombel')
+            ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id));
+
+        // Tanpa siswa_id, guru/wali kelas tetap hanya melihat setoran
+        // pada kelas binaan/ampuan mereka (admin & kepala sekolah bebas).
+        if (! $user->hasRole('admin', 'kepala_sekolah', 'siswa', 'orang_tua')) {
+            $query->whereHas('siswa', fn ($q) => $q
+                ->whereIn('kelas_rombel_id', $this->kelasYangBolehDiakses($user)));
+        }
+
+        return $query->orderByDesc('tanggal_setoran')->get();
     }
 
     public function store(Request $request)
@@ -40,6 +47,8 @@ class ProgresHafalanController extends Controller
             'status' => ['required', 'in:Lancar,Perlu Perbaikan,Mengulang'],
             'catatan' => ['nullable', 'string'],
         ]);
+
+        $this->pastikanBolehLihatSiswa($request, (int) $data['siswa_id']);
 
         $data['dicatat_oleh'] = $request->user()->id;
 
@@ -63,6 +72,10 @@ class ProgresHafalanController extends Controller
             'status' => ['sometimes', 'in:Lancar,Perlu Perbaikan,Mengulang'],
             'catatan' => ['nullable', 'string'],
         ]);
+
+        if (isset($data['siswa_id'])) {
+            $this->pastikanBolehLihatSiswa($request, (int) $data['siswa_id']);
+        }
 
         $progresHafalan->update($data);
 

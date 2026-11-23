@@ -7,6 +7,7 @@ use App\Models\Siswa;
 use App\Models\SiswaKelas;
 use App\Models\TahunAjaran;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
@@ -136,7 +137,8 @@ class ImportSiswaService
 
             $data['tanggal_lahir'] = $this->ambilTanggal($sheet, 'G'.$r);
             $data['kelas_rombel_id'] = $kelasId;
-            $data['is_aktif'] = true;
+            // Status aktif sengaja tidak ditimpa: siswa lulus/nonaktif harus tetap
+            // seperti semula (kolom DB sudah punya default true untuk siswa baru).
             $data['_nisn'] = $nisn;
 
             $rows[$key] = $data;
@@ -243,36 +245,45 @@ class ImportSiswaService
      */
     public function jalankan(array $plan): array
     {
-        foreach ($plan['updateByNis'] as $nis => $data) {
-            Siswa::where('nis', $nis)->update(collect($data)->except('_nisn', '_sumber')->all());
-        }
-        foreach ($plan['updateById'] as $id => $data) {
-            Siswa::whereKey($id)->update(collect($data)->except('_nisn', '_sumber')->all());
-        }
-
-        $barisInsert = collect($plan['insert'])
-            ->map(fn ($d) => collect($d)->except('_nisn', '_sumber')->all())
-            ->values()
-            ->all();
-
-        foreach (array_chunk($barisInsert, 100) as $chunk) {
-            Siswa::insert($chunk);
-        }
-
-        // Sinkronkan riwayat penempatan (siswa_kelas) untuk semua kelas saat ini
-        Siswa::whereNotNull('kelas_rombel_id')->chunkById(200, function ($siswas) {
-            foreach ($siswas as $siswa) {
-                SiswaKelas::firstOrCreate([
-                    'siswa_id' => $siswa->id,
-                    'kelas_rombel_id' => $siswa->kelas_rombel_id,
-                ]);
+        return DB::transaction(function () use ($plan) {
+            foreach ($plan['updateByNis'] as $nis => $data) {
+                $kolom = collect($data)->except('_nisn', '_sumber')->all();
+                $kolom['updated_at'] = now();
+                Siswa::where('nis', $nis)->update($kolom);
             }
-        });
+            foreach ($plan['updateById'] as $id => $data) {
+                $kolom = collect($data)->except('_nisn', '_sumber')->all();
+                $kolom['updated_at'] = now();
+                Siswa::whereKey($id)->update($kolom);
+            }
 
-        return [
-            'insert' => $plan['ringkasan']['total_insert'],
-            'update' => $plan['ringkasan']['total_update'],
-        ];
+            $barisInsert = collect($plan['insert'])
+                ->map(fn ($d) => array_merge(
+                    collect($d)->except('_nisn', '_sumber')->all(),
+                    ['created_at' => now(), 'updated_at' => now()]
+                ))
+                ->values()
+                ->all();
+
+            foreach (array_chunk($barisInsert, 100) as $chunk) {
+                Siswa::insert($chunk);
+            }
+
+            // Sinkronkan riwayat penempatan (siswa_kelas) untuk semua kelas saat ini
+            Siswa::whereNotNull('kelas_rombel_id')->chunkById(200, function ($siswas) {
+                foreach ($siswas as $siswa) {
+                    SiswaKelas::firstOrCreate([
+                        'siswa_id' => $siswa->id,
+                        'kelas_rombel_id' => $siswa->kelas_rombel_id,
+                    ]);
+                }
+            });
+
+            return [
+                'insert' => $plan['ringkasan']['total_insert'],
+                'update' => $plan['ringkasan']['total_update'],
+            ];
+        });
     }
 
     /** Baca NIPD/NISN: angka Excel dikembalikan tanpa notasi ilmiah, string di-trim. */

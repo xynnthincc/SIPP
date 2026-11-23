@@ -27,21 +27,25 @@ class SiswaController extends Controller
             return Siswa::with('kelasRombel', 'wali')->whereIn('id', $idAnak)->get();
         }
 
-        if ($user->hasRole('guru_pesantren')) {
-            // Guru hanya boleh melihat siswa pada kelas yang diampunya.
-            $kelasDiampu = $user->guru?->guruMapelKelas()->distinct()->pluck('kelas_rombel_id') ?? collect();
-            $kelasId = $kelasDiampu->isNotEmpty() ? $kelasDiampu->all() : [-1];
+        if ($user->hasRole('guru_pesantren', 'wali_kelas')) {
+            // Guru/wali kelas hanya melihat siswa pada kelas binaan atau yang diampunya.
+            $kelasBoleh = $this->kelasYangBolehDiakses($user);
+            $kelasId = $kelasBoleh->isNotEmpty() ? $kelasBoleh->all() : [-1];
 
             return Siswa::with('kelasRombel', 'wali')
                 ->whereIn('kelas_rombel_id', $kelasId)
                 ->when($request->kelas_rombel_id, fn ($q, $id) => $q->where('kelas_rombel_id', $id))
-                ->when($request->search, fn ($q, $s) => $q->where('nama', 'like', "%{$s}%")->orWhere('nis', 'like', "%{$s}%"))
+                ->when($request->search, fn ($q, $s) => $q->where(fn ($qq) => $qq
+                    ->where('nama', 'like', "%{$s}%")
+                    ->orWhere('nis', 'like', "%{$s}%")))
                 ->paginate(20);
         }
 
         return Siswa::with('kelasRombel', 'wali')
             ->when($request->kelas_rombel_id, fn ($q, $id) => $q->where('kelas_rombel_id', $id))
-            ->when($request->search, fn ($q, $s) => $q->where('nama', 'like', "%{$s}%")->orWhere('nis', 'like', "%{$s}%"))
+            ->when($request->search, fn ($q, $s) => $q->where(fn ($qq) => $qq
+                ->where('nama', 'like', "%{$s}%")
+                ->orWhere('nis', 'like', "%{$s}%")))
             ->paginate(20);
     }
 

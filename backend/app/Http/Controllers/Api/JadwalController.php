@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\GuruMapelKelas;
 use App\Models\Jadwal;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 
 class JadwalController extends Controller
@@ -14,12 +16,18 @@ class JadwalController extends Controller
         // hanya melihat jadwal pengampuannya sendiri
         $user = $request->user();
 
-        return Jadwal::with('guruMapelKelas.guru.user', 'guruMapelKelas.mapelPlus', 'guruMapelKelas.kelasRombel')
+        return Jadwal::with('guruMapelKelas.guru.user', 'guruMapelKelas.mapelPlus', 'guruMapelKelas.kelasRombel', 'guruMapelKelas.semester')
             ->when($user->guru, function ($q) use ($user) {
                 $q->whereHas('guruMapelKelas.guru', fn ($qq) => $qq->where('user_id', $user->id));
             })
             ->when($request->kelas_rombel_id, function ($q, $id) {
                 $q->whereHas('guruMapelKelas', fn ($qq) => $qq->where('kelas_rombel_id', $id));
+            })
+            ->when($request->semester_id, function ($q, $id) {
+                // Wadah Sementara memakai jadwal induk Akhir-nya (sama seperti pengampuan).
+                $semester = Semester::find((int) $id);
+                $semesterId = $semester ? $semester->induk()->id : (int) $id;
+                $q->whereHas('guruMapelKelas', fn ($qq) => $qq->where('semester_id', $semesterId));
             })
             ->orderByRaw("CASE hari
                 WHEN 'Senin' THEN 1 WHEN 'Selasa' THEN 2 WHEN 'Rabu' THEN 3
@@ -39,6 +47,8 @@ class JadwalController extends Controller
             'ruangan' => ['nullable', 'string'],
         ]);
 
+        $this->pastikanGuruMapelKelas($request, (int) $data['guru_mapel_kelas_id']);
+
         return Jadwal::create($data);
     }
 
@@ -52,15 +62,53 @@ class JadwalController extends Controller
             'ruangan' => ['nullable', 'string'],
         ]);
 
+        $this->pastikanJadwalMilik($request, $jadwal);
+        $this->pastikanGuruMapelKelas($request, (int) $data['guru_mapel_kelas_id']);
+
         $jadwal->update($data);
 
         return $jadwal;
     }
 
-    public function destroy(Jadwal $jadwal)
+    public function destroy(Request $request, Jadwal $jadwal)
     {
+        $this->pastikanJadwalMilik($request, $jadwal);
+
         $jadwal->delete();
 
         return response()->noContent();
+    }
+
+    /** Pastikan penugasan yang dipakai pembuat jadwal benar-benar milik user login. */
+    private function pastikanGuruMapelKelas(Request $request, int $id): GuruMapelKelas
+    {
+        $guruMapelKelas = GuruMapelKelas::findOrFail($id);
+        $user = $request->user();
+
+        if (! $user->hasRole('admin', 'kepala_sekolah')) {
+            abort_unless(
+                $guruMapelKelas->guru?->user_id === $user->id,
+                403,
+                'Anda bukan pengampu penugasan ini.'
+            );
+        }
+
+        return $guruMapelKelas;
+    }
+
+    /** Jadwal yang diubah/dihapus harus masih menjadi pengampuannya sendiri. */
+    private function pastikanJadwalMilik(Request $request, Jadwal $jadwal): void
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('admin', 'kepala_sekolah')) {
+            return;
+        }
+
+        abort_unless(
+            $jadwal->guruMapelKelas?->guru?->user_id === $user->id,
+            403,
+            'Anda bukan pengampu jadwal ini.'
+        );
     }
 }

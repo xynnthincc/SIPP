@@ -26,10 +26,17 @@ class CatatanGuruController extends Controller
             abort(422, 'Parameter siswa_id wajib diisi untuk akun orang tua.');
         }
 
-        return CatatanGuru::with('guru')
-            ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id))
-            ->orderByDesc('tanggal')
-            ->get();
+        $query = CatatanGuru::with('guru')
+            ->when($siswaId, fn ($q, $id) => $q->where('siswa_id', $id));
+
+        // Tanpa siswa_id, guru/wali kelas tetap hanya melihat catatan
+        // pada kelas binaan/ampuan mereka (admin & kepala sekolah bebas).
+        if (! $user->hasRole('admin', 'kepala_sekolah', 'siswa', 'orang_tua')) {
+            $query->whereHas('siswa', fn ($q) => $q
+                ->whereIn('kelas_rombel_id', $this->kelasYangBolehDiakses($user)));
+        }
+
+        return $query->orderByDesc('tanggal')->get();
     }
 
     public function store(Request $request)
@@ -40,6 +47,9 @@ class CatatanGuruController extends Controller
             'catatan' => ['required', 'string'],
             'lampiran' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf,mp3,m4a,mp4,webm', 'max:15360'],
         ]);
+
+        // Siswa harus masih berada dalam kelas yang diampu / diwalikan user.
+        $this->pastikanBolehLihatSiswa($request, (int) $data['siswa_id']);
 
         $guru = $request->user()->guru;
         abort_unless($guru, 403, 'Hanya guru pesantren yang dapat menambahkan catatan.');

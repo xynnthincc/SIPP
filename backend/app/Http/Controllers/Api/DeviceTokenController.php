@@ -18,6 +18,15 @@ class DeviceTokenController extends Controller
 
         $user = $request->user();
 
+        // Token unik secara global: jangan biarkan akun lain merebut token perangkat
+        // milik user lain (push notification nyasar).
+        $pemilik = DeviceToken::where('token', $data['token'])->first();
+        abort_unless(
+            $pemilik === null || $pemilik->user_id === $user->id,
+            422,
+            'Token perangkat sudah terdaftar untuk akun lain.'
+        );
+
         DeviceToken::updateOrCreate(
             ['token' => $data['token']],
             ['user_id' => $user->id, 'platform' => $data['platform'], 'last_used_at' => now()]

@@ -98,8 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/siswas/{siswa}/foto', [SiswaController::class, 'uploadFoto']);
     });
 
-    // Import massal siswa (.xlsx) — di luar resource agar tidak tertutup POST /siswa
-    Route::middleware('role:admin,wali_kelas')->group(function () {
+    // Import massal siswa (.xlsx) — only admin: menimpa data lintas kelas.
+    Route::middleware('role:admin')->group(function () {
         Route::post('/siswa/import', [SiswaImportController::class, 'store']);
     });
     Route::get('/siswa/{siswa}', [SiswaController::class, 'show']);

@@ -12,7 +12,15 @@ interface JadwalItem {
   guru_mapel_kelas: {
     mapel_plus: { nama: string };
     kelas_rombel: { id: number; nama: string };
+    semester?: { nama: string; jenis?: string } | null;
   };
+}
+
+interface SemesterLite {
+  id: number;
+  nama: string;
+  jenis?: string;
+  is_aktif?: boolean;
 }
 
 interface Siswa {
@@ -58,7 +66,13 @@ export default function PresensiPage() {
 
   useEffect(() => {
     let aktif = true;
-    api.get<JadwalItem[]>("/jadwal")
+    api.get<SemesterLite[]>("/semester")
+      .then((res) => {
+        const sem = res.data.find((s) => s.is_aktif) ?? res.data[0];
+        return api.get<JadwalItem[]>("/jadwal", {
+          params: sem ? { semester_id: sem.id } : {},
+        });
+      })
       .then((res) => {
         if (aktif) setJadwals(res.data);
       })
@@ -156,7 +170,7 @@ export default function PresensiPage() {
             >
               {jadwals.map((j) => (
                 <option key={j.id} value={j.id}>
-                  {`${j.hari} · ${j.guru_mapel_kelas.mapel_plus.nama} · ${labelKelas(j.guru_mapel_kelas.kelas_rombel.nama) ?? j.guru_mapel_kelas.kelas_rombel.nama}`}
+                  {`${j.hari} · ${j.guru_mapel_kelas.mapel_plus.nama} · ${labelKelas(j.guru_mapel_kelas.kelas_rombel.nama) ?? j.guru_mapel_kelas.kelas_rombel.nama}${j.guru_mapel_kelas.semester ? ` · ${j.guru_mapel_kelas.semester.nama}${j.guru_mapel_kelas.semester.jenis ? ` (${j.guru_mapel_kelas.semester.jenis})` : ""}` : ""}`}
                 </option>
               ))}
             </Select>
