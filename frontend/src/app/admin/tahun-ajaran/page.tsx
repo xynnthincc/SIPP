@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import {
-  PageHeader, Card, Button, Select, Skeleton, ConfirmModal, IconButton, Alert, EmptyState,
+  PageHeader, Card, Button, Select, Skeleton, ConfirmModal, IconButton, Alert, EmptyState, Modal,
 } from "@/components/ui";
 
 interface Semester {
@@ -56,6 +56,7 @@ export default function TahunAjaranPage() {
   const [promosiTA, setPromosiTA] = useState<TahunAjaran | null>(null);
   const [promosiTujuan, setPromosiTujuan] = useState("");
   const [promosiLoading, setPromosiLoading] = useState(false);
+  const [promosiError, setPromosiError] = useState<string | null>(null);
   const [promosiHasil, setPromosiHasil] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -122,6 +123,7 @@ export default function TahunAjaranPage() {
   async function handlePromosi() {
     if (!promosiTA || !promosiTujuan) return;
     setPromosiLoading(true);
+    setPromosiError(null);
     try {
       const res = await api.post<{ naik: number; lulus: number; tahun_ajaran_tujuan: string }>(
         `/tahun-ajaran/${promosiTA.id}/promosi`,
@@ -134,7 +136,7 @@ export default function TahunAjaranPage() {
       await load();
     } catch (err: unknown) {
       const pesan = (err as { response?: { data?: { message?: string } } })?.response?.data;
-      setHapusError(pesan?.message ?? "Gagal mempromosikan siswa.");
+      setPromosiError(pesan?.message ?? "Gagal mempromosikan siswa.");
     } finally {
       setPromosiLoading(false);
     }
@@ -183,7 +185,11 @@ export default function TahunAjaranPage() {
                 <div className="flex items-center gap-1">
                   <Button
                     variant="outline"
-                    onClick={() => { setPromosiTA(ta); setPromosiTujuan(""); setHapusError(null); }}
+                    onClick={() => {
+                      setPromosiTA(ta);
+                      setPromosiTujuan("");
+                      setPromosiError(null);
+                    }}
                   >
                     Naik Kelas
                   </Button>
@@ -269,34 +275,87 @@ export default function TahunAjaranPage() {
       />
 
       {/* Modal promosi kenaikan kelas antar tahun ajaran */}
-      {promosiTA !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-1">Naik Kelas — {promosiTA.nama}</h3>
-            <p className="text-sm text-slate-500 mb-4">
-              Pindahkan seluruh siswa aktif ke kelas tingkat di atasnya (nama kelas sama) pada
-              tahun ajaran tujuan. Siswa tingkat 9 tidak dipindahkan (anggap lulus). Kelas tujuan
-              dibuat otomatis bila belum ada; nilai & rapor semester TA {promosiTA.nama} tetap tersimpan.
-            </p>
-            <Select
-              label="Tahun Ajaran Tujuan"
-              value={promosiTujuan}
-              onChange={(e) => setPromosiTujuan(e.target.value)}
-              placeholder="Pilih tahun ajaran tujuan"
-              required
-            >
-              {data.filter((t) => t.id !== promosiTA.id).map((t) => (
-                <option key={t.id} value={t.id}>{t.nama}</option>
-              ))}
-            </Select>
-            <div className="flex justify-end gap-3 mt-5">
-              <Button type="button" variant="outline" onClick={() => setPromosiTA(null)}>Batal</Button>
-              <Button onClick={handlePromosi} loading={promosiLoading} disabled={!promosiTujuan}>
-                Promosikan
+      {promosiTA && (
+        <Modal
+          open={promosiTA !== null}
+          onClose={() => {
+            if (!promosiLoading) {
+              setPromosiTA(null);
+              setPromosiError(null);
+            }
+          }}
+          title={`Naik Kelas — ${promosiTA.nama}`}
+          description="Pindahkan seluruh siswa aktif ke kelas tingkat berikutnya pada tahun ajaran tujuan."
+          maxWidth="sm"
+          footer={
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={promosiLoading}
+                onClick={() => {
+                  setPromosiTA(null);
+                  setPromosiError(null);
+                }}
+              >
+                Batal
               </Button>
+              <Button
+                onClick={handlePromosi}
+                loading={promosiLoading}
+                disabled={!promosiTujuan || data.filter((t) => t.id !== promosiTA.id).length === 0}
+              >
+                Promosikan Siswa
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4 text-sm">
+            {promosiError && (
+              <Alert variant="danger" onClose={() => setPromosiError(null)}>
+                {promosiError}
+              </Alert>
+            )}
+
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600 space-y-2">
+              <span className="font-semibold text-slate-700 block">Ketentuan Kenaikan:</span>
+              <ul className="space-y-1.5 pl-4 list-disc marker:text-slate-400 leading-relaxed text-slate-600">
+                <li>
+                  <strong className="text-slate-800 font-semibold">Kelas 7 & 8:</strong> Naik ke tingkat berikutnya (contoh: 7A &rarr; 8A). Rombel otomatis dibuat bila belum ada di TA tujuan.
+                </li>
+                <li>
+                  <strong className="text-slate-800 font-semibold">Kelas 9:</strong> Ditetapkan lulus dan tidak dipindahkan ke rombel baru.
+                </li>
+                <li>
+                  <strong className="text-slate-800 font-semibold">Riwayat & Nilai:</strong> Data penempatan kelas lama, nilai semester, dan rapor di TA {promosiTA.nama} tetap aman tersimpan.
+                </li>
+              </ul>
             </div>
+
+            {data.filter((t) => t.id !== promosiTA.id).length > 0 ? (
+              <Select
+                label="Tahun Ajaran Tujuan"
+                value={promosiTujuan}
+                onChange={(e) => {
+                  setPromosiTujuan(e.target.value);
+                  setPromosiError(null);
+                }}
+                placeholder="Pilih tahun ajaran tujuan"
+                required
+              >
+                {data.filter((t) => t.id !== promosiTA.id).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nama}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
+                Belum ada tahun ajaran tujuan. Tambahkan tahun ajaran baru terlebih dahulu.
+              </div>
+            )}
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

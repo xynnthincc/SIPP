@@ -33,14 +33,20 @@ interface Setoran {
   mapel_plus?: { id: number; nama: string } | null;
 }
 
-const FORM_KOSONG = {
-  siswa_id: "",
-  mapel_plus_id: "",
-  tanggal_setoran: new Date().toISOString().slice(0, 10),
-  materi: "",
-  status: "Lancar",
-  catatan: "",
-};
+// Tanggal lokal (bukan UTC) agar 00:00–06:59 WIB tidak mundur sehari.
+function formKosong() {
+  const d = new Date();
+  const bulan = String(d.getMonth() + 1).padStart(2, "0");
+  const hari = String(d.getDate()).padStart(2, "0");
+  return {
+    siswa_id: "",
+    mapel_plus_id: "",
+    tanggal_setoran: `${d.getFullYear()}-${bulan}-${hari}`,
+    materi: "",
+    status: "Lancar",
+    catatan: "",
+  };
+}
 
 const VARIAN_STATUS: Record<string, "success" | "warning" | "danger"> = {
   "Lancar": "success",
@@ -52,7 +58,7 @@ export default function ProgresHafalanPage() {
   const { user } = useAuth();
   const [siswas, setSiswas] = useState<Siswa[]>([]);
   const [mapels, setMapels] = useState<MapelPlus[]>([]);
-  const [form, setForm] = useState(FORM_KOSONG);
+  const [form, setForm] = useState(formKosong);
   const [editId, setEditId] = useState<number | null>(null);
   const [daftar, setDaftar] = useState<Setoran[]>([]);
   const [memuatDaftar, setMemuatDaftar] = useState(true);
@@ -202,7 +208,7 @@ export default function ProgresHafalanPage() {
           <div className="flex items-center gap-3">
             <Button type="submit" loading={saving}>{editId !== null ? "Simpan Koreksi" : "Simpan Progres"}</Button>
             {editId !== null && (
-              <Button type="button" variant="outline" onClick={() => { setEditId(null); setForm({ ...FORM_KOSONG, siswa_id: form.siswa_id, mapel_plus_id: form.mapel_plus_id }); }}>
+              <Button type="button" variant="outline" onClick={() => { setEditId(null); setForm({ ...formKosong(), siswa_id: form.siswa_id, mapel_plus_id: form.mapel_plus_id }); }}>
                 Batal Edit
               </Button>
             )}
