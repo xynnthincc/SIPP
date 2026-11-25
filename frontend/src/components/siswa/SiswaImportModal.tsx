@@ -53,6 +53,7 @@ export function SiswaImportModal({ open, onClose, onSelesai }: Props) {
   const [memproses, setMemproses] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasil, setHasil] = useState<HasilImport | null>(null);
+  const [mengunduhTemplate, setMengunduhTemplate] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function reset() {
@@ -97,6 +98,26 @@ export function SiswaImportModal({ open, onClose, onSelesai }: Props) {
     }
   }
 
+  async function unduhTemplate() {
+    setMengunduhTemplate(true);
+    setError(null);
+    try {
+      const res = await api.get("/siswa/template", { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Template_Import_Siswa.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Gagal mengunduh template. Coba lagi.");
+    } finally {
+      setMengunduhTemplate(false);
+    }
+  }
+
   const r = hasil?.ringkasan;
 
   return (
@@ -104,7 +125,7 @@ export function SiswaImportModal({ open, onClose, onSelesai }: Props) {
       open={open}
       onClose={tutup}
       title="Import Data Siswa"
-      description='Unggah file .xlsx hasil ekspor e-rapor "Daftar Peserta Didik per Kelas" (sheet "Semua Siswa").'
+      description='Unggah file .xlsx. Bisa memakai template dari tombol Download Template, atau ekspor e-rapor "Daftar Peserta Didik per Kelas" (sheet "Semua Siswa").'
       maxWidth="lg"
       footer={
         <>
@@ -132,6 +153,15 @@ export function SiswaImportModal({ open, onClose, onSelesai }: Props) {
     >
       <div className="space-y-4">
         {error && <Alert variant="danger" onClose={() => setError(null)}>{error}</Alert>}
+
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-3 flex flex-col sm:flex-row sm:items-center gap-2.5 justify-between">
+          <p className="text-xs text-emerald-800 leading-relaxed">
+            Belum punya file? Unduh template, isi data siswa, lalu unggah kembali.
+          </p>
+          <Button variant="outline" size="sm" onClick={unduhTemplate} loading={mengunduhTemplate} className="shrink-0">
+            Download Template
+          </Button>
+        </div>
 
         {/* Pilih file */}
         <div>

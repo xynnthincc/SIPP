@@ -54,8 +54,12 @@ class PresensiController extends Controller
     }
 
     /**
-     * Input presensi massal untuk satu jadwal/hari (dipakai guru pesantren).
+     * Input presensi massal untuk satu jadwal/hari (khusus wali kelas).
      * payload: { jadwal_id, tanggal, presensi: [{siswa_id, status, keterangan}] }
+     *
+     * Presensi hanya boleh dicatat wali kelas kelas terkait (admin tetap bisa
+     * untuk koreksi). Guru mapel tidak lagi bisa mencatat presensi agar satu
+     * hari tidak punya banyak versi absensi yang saling menimpa.
      */
     public function storeMassal(Request $request)
     {
@@ -69,12 +73,14 @@ class PresensiController extends Controller
         ]);
 
         $jadwal = Jadwal::findOrFail($data['jadwal_id']);
-        $this->pastikanGuruPemilikJadwal($request, $jadwal);
+        $kelasId = $jadwal->guruMapelKelas?->kelas_rombel_id;
+        abort_unless($kelasId, 422, 'Jadwal ini belum terhubung ke kelas.');
+
+        $this->pastikanBolehCatatPresensi($request, (int) $kelasId);
 
         $siswaIds = collect($data['presensi'])->pluck('siswa_id');
         abort_unless($siswaIds->duplicates()->isEmpty(), 422, 'Siswa duplikat dalam payload presensi.');
 
-        $kelasId = $jadwal->guruMapelKelas?->kelas_rombel_id;
         $siswas = Siswa::with('kelasHistories')->whereIn('id', $siswaIds)->get();
         abort_unless($siswas->count() === $siswaIds->unique()->count(), 422, 'Ada siswa dalam payload yang tidak ditemukan.');
 
@@ -103,18 +109,23 @@ class PresensiController extends Controller
         return response()->json($hasil);
     }
 
-    private function pastikanGuruPemilikJadwal(Request $request, Jadwal $jadwal): void
+    /**
+     * Hanya wali kelas dari kelas pada jadwal tersebut (admin untuk koreksi).
+     * Guru mapel — termasuk wali kelas yang mengajar di kelas lain — ditolak.
+     */
+    private function pastikanBolehCatatPresensi(Request $request, int $kelasId): void
     {
         $user = $request->user();
 
-        if ($user->hasRole('admin', 'kepala_sekolah')) {
+        if ($user->hasRole('admin')) {
             return;
         }
 
         abort_unless(
-            $jadwal->guruMapelKelas->guru->user_id === $user->id,
+            $user->hasRole('wali_kelas')
+                && $user->kelasDiwalikan()->whereKey($kelasId)->exists(),
             403,
-            'Anda bukan pengampu jadwal ini.'
+            'Presensi hanya dapat diinput oleh wali kelas kelas ini.'
         );
     }
 }

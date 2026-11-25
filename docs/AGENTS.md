@@ -34,8 +34,21 @@ Rapor adalah **cetakan real-time dari data nilai**, TANPA status/validasi/penerb
 ## Export Excel daftar nilai (wali kelas)
 `GET /api/nilai-diniyah/export?semester_id=` (route `role:wali_kelas,admin`):
 - Wali kelas → otomatis kelas binaannya (tanpa parameter kelas); admin wajib kirim `kelas_rombel_id`. Guru & lainnya 403.
-- File `.xlsx` dibuat `PhpOffice\PhpSpreadsheet` (dependensi composer): kolom NIS, nama, 1 kolom per mapel (nilai efektif = langsung ?? agregasi sumatif), total, rata-rata (total / jumlah mapel), ranking — **barisan diurutkan ABJAD (nama)**; kolom ranking tetap tampil (total sama = ranking sama).
+- File `.xlsx` dibuat `PhpOffice\PhpSpreadsheet` (dependensi composer): kolom NIS, nama, 1 kolom per mapel (nilai efektif = langsung ?? agregasi sumatif), **Hadir, Sakit, Izin, Alpa**, total, rata-rata (total / jumlah mapel), ranking — **barisan diurutkan ABJAD (nama)**; kolom ranking tetap tampil.
+- **Ranking tie-break presensi** (transparansi saat nilai kembar): urutan total desc → hadir desc → alpa asc → sakit asc → izin asc. Baris dengan total DAN rekap presensi identik tetap mendapat ranking sama.
+- Rekap presensi per siswa (`kehadiranKelas()`) menghitung **hari unik** dari `presensis` semester induk (prioritas status per hari: Alpa > Sakit > Izin > Hadir); siswa tanpa presensi sama sekali di-fallback ke `kehadiran_rekaps` (sakit/izin/alpa manual wali kelas, hadir 0).
 - Frontend: tombol "Export Excel" di `RaporCetakList` (mode wali kelas), unduh via axios `responseType: "blob"` lalu `URL.createObjectURL` (token ada di header, link biasa tidak bisa).
+
+## Template & import Excel (nilai + siswa)
+Template dibuat di server (PhpSpreadsheet) lalu diisi & diunggah ulang; semua endpoint tetap token/stateless.
+- **Nilai**: `GET /api/nilai-diniyah/template?semester_id=&kelas_rombel_id=` dan `POST /api/nilai-diniyah/import` (`file`, `semester_id`, `kelas_rombel_id`, `dry_run` opsional). Route `role:guru_pesantren,admin,wali_kelas`.
+  - Kolom mapel mengikuti hak user (`NilaiDiniyahController@mapelBolehMassal`): admin & wali kelas kelas tsb = semua mapel; guru = mapel yang diampu di kelas itu pada semester induk. Sel kosong = hapus nilai (null).
+  - Template: sheet "Nilai", judul 1–3, **baris 4 tersembunyi metadata `__MAPEL_ID__` + ID mapel per kolom** (import memakai ini untuk mengenali kolom mapel; fallback cocok nama bila metadata tak ada), header baris 5 (`No|NIS|Nama Siswa|...`), data mulai baris 6, validasi 0–100.
+  - Import mengenali NIS sebagai kunci (fallback nama unik di kelas), validasi ketat (bukan angka / di luar 0–100 / mapel bukan haknya → 422 dengan daftar error, tak menulis apa pun), tulis `nilai_mapels` + sentuh `log_edit_nilais`. `dry_run=1` hanya pratinjau.
+  - Logika di `App\Services\ImportNilaiService` (`buatTemplate`, `rencana`, `jalankan`). Frontend: tombol "Template Excel" + "Import Excel" di `MatriksNilaiMassal`, modal `NilaiImportModal` (Pratinjau dulu → Import Sekarang).
+- **Siswa**: `GET /api/siswa/template` (route `role:admin`, bersanding dengan `POST /api/siswa/import`).
+  - Format kompatibel dengan `ImportSiswaService`: sheet "Semua Siswa", header baris 5 (label) & data mulai **baris 7**, kolom B/C/D/E/F/G/I/J/T/Y/AB/AE/AH/AK/AN/AQ/BE/BF. Data siswa yang ada ikut terisi agar bisa diedit lalu diimport ulang. Sheet "Petunjuk" berisi ringkasan aturan.
+  - Frontend: tombol "Download Template" di `SiswaImportModal`.
 
 ## Input nilai guru (asesmen OPSIONAL)
 Dua jalur input nilai guru mapel, keduanya berujung ke rapor yang sama:
@@ -90,7 +103,8 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 - Konsep kunci: **profil guru** (`gurus` row, `User->guru`) menentukan siapa yang boleh mengakses fitur guru — BUKAN cuma role `guru_pesantren`. Wali kelas yang mengajar punya profil guru + penugasan pengampu.
 - `GET /api/pengampuan-saya` (semua role): penugasan `guru_mapel_kelas` milik user login; kosong bila tanpa profil guru. Dipakai halaman `/guru/nilai` (bukan turunan `/jadwal` — guru multi-mapel tanpa slot jadwal tetap tampil) dan sidebar wali kelas (menu "Guru Mapel" muncul kondisional di `frontend/src/app/wali-kelas/layout.tsx`).
 - PENTING: route resource `guru-mapel-kelas` wajib `->parameters(['guru-mapel-kelas' => 'guruMapelKelas'])` — singular "kelas"→"kela" membuat param default `{guru_mapel_kela}` tak match `$guruMapelKelas`, binding diam-diam inject model kosong → update/delete 200/204 palsu tanpa mengubah apa pun (pola sama sudah dipakai `mapel-plus`, `praktik-item`).
-- Route `role:guru_pesantren,wali_kelas,admin`: jadwal CRUD, `presensi/massal`, `nilai/massal`, `progres-hafalan` store, `catatan-guru` store. Scope per item tetap di controller (kepemilikan jadwal/pengampuan/profil guru).
+- Route `role:guru_pesantren,wali_kelas,admin`: jadwal CRUD, `nilai/massal`, `progres-hafalan` store, `catatan-guru` store. Scope per item tetap di controller (kepemilikan jadwal/pengampuan/profil guru).
+- **Presensi hanya wali kelas**: `POST /api/presensi/massal` route `role:wali_kelas,admin`; `PresensiController@pastikanBolehCatatPresensi` menolak guru mapel (walau punya profil guru) — hanya wali kelas pemilik kelas pada jadwal tsb (+ admin untuk koreksi). Tujuan: satu tanggal = satu rekap kehadiran, tidak ada absensi bertumpuk dari banyak guru di hari sama.
 - `NilaiController@storeMassal` & `NilaiDiniyahController@pastikanBolehNilaiMassal`: non-admin wajib profil guru; sah via penugasan pengampu ATAU (wali kelas) kelas binaan.
 - `JadwalController@index` di-scope lewat profil guru (`$user->guru`), role-agnostic.
 - `POST /api/login` & `GET /api/me` menyertakan `punya_penugasan_guru: bool` agar sidebar (`useRoleNav` di `frontend/src/lib/nav.ts`) render sinkron tanpa fetch dulu (cegah flicker saat pindah halaman); fetch `/pengampuan-saya` hanya sebagai revalidasi background + cache sesi per user.
@@ -106,8 +120,10 @@ Ada 6 role (`User::ROLE_*`): `admin`, `guru_pesantren`, `wali_kelas`, `kepala_se
 
 ## Alur rapor — lihat bagian "Alur rapor" di atas (real-time, tanpa validasi)
 
-### Kehadiran rapor = presensi guru (fallback rekap wali)
-- `GET /api/rapor/cetak` bagian `kehadiran` dihitung dari tabel `presensis` (input harian guru mapel via `/presensi/massal`): jumlah HARI berbeda per status (Sakit/Izin/Alpa) pada semester tsb — satu hari dihitung sekali walau ada banyak sesi. Bila belum ada presensi sama sekali, fallback ke `kehadiran_rekaps` (input manual wali kelas). Indikator `kehadiran_terisi` di `/rapor/progres` juga menghitung keduanya.
+### Kehadiran rapor = presensi wali kelas (fallback rekap wali)
+- `GET /api/rapor/cetak` bagian `kehadiran` dihitung dari tabel `presensis` (input harian **wali kelas** via `/presensi/massal`): jumlah HARI berbeda per status (Sakit/Izin/Alpa) pada semester tsb — satu hari dihitung sekali walau ada banyak sesi. Bila belum ada presensi sama sekali, fallback ke `kehadiran_rekaps` (input manual wali kelas). Indikator `kehadiran_terisi` di `/rapor/progres` juga menghitung keduanya.
+- Web: halaman presensi wali kelas `/wali-kelas/presensi` (`components/presensi/PresensiHarian.tsx`) — pilih kelas (terkunci ke kelas binaan) + tanggal; slot jadwal dipilih otomatis (slot pertama kelas) supaya wali kelas tidak memilih sesi. `/guru/presensi` dipertahankan agar tautan lama tidak 404 tapi menampilkan "Akses terbatas" untuk guru mapel. Menu "Input Presensi" hanya ada di `WALI_ITEMS` (`frontend/src/lib/nav.ts`).
+- Mobile: kartu "Presensi Santri" hanya muncul untuk admin & wali kelas yang punya kelas binaan (`getKelasDiwalikan()` → `/kelas-rombel`); guru mapel tidak melihat tombol Absensi. Layar presensi wali kelas memakai pengampuan sintetis (`mapelPlus.id = 0`) → `AbsensiScreen` memakai `getJadwalKelas()` dan menyembunyikan pemilih slot.
 
 ## Quirk struktur & penamaan
 - Nama tabel non-default (cek migration/model sebelum menulis tabel baru): `siswas`, `gurus`, `kelas_rombels`, `mapel_plus`, `rapors`, `presensis`, `nilais`, `progres_hafalans`, `catatan_gurus`, pivot `siswa_wali`.

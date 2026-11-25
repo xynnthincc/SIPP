@@ -22,6 +22,7 @@ export interface NavConfig {
 
 const WALI_ITEMS: NavItem[] = [
   { href: "/wali-kelas", label: "Siswa Binaan" },
+  { href: "/wali-kelas/presensi", label: "Input Presensi" },
   { href: "/wali-kelas/rapor", label: "Cetak Rapor" },
   { href: "/wali-kelas/nilai-diniyah", label: "Input Nilai Diniyah" },
 ];
@@ -30,7 +31,6 @@ const GURU_ITEMS: NavGroup = {
   label: "Guru Mapel",
   items: [
     { href: "/guru", label: "Jadwal Saya" },
-    { href: "/guru/presensi", label: "Input Presensi" },
     { href: "/guru/nilai", label: "Input Nilai" },
     { href: "/guru/progres-hafalan", label: "Progres Hafalan" },
   ],
@@ -41,7 +41,6 @@ const GURU_PESANTREN_GROUPS: NavGroup[] = [
     label: "Jadwal & Aktivitas",
     items: [
       { href: "/guru", label: "Jadwal Saya" },
-      { href: "/guru/presensi", label: "Input Presensi" },
     ],
   },
   {

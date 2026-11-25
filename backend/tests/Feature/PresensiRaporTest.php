@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
- * Regresi: presensi harian yang diinput guru mapel harus tampil di rapor
+ * Regresi: presensi harian yang diinput wali kelas harus tampil di rapor
  * (sebelumnya rapor hanya membaca rekap manual wali kelas).
  */
 class PresensiRaporTest extends TestCase
@@ -25,6 +25,8 @@ class PresensiRaporTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
+    private User $wali;
 
     private User $guru;
 
@@ -46,6 +48,10 @@ class PresensiRaporTest extends TestCase
             'name' => 'Admin Tes', 'email' => 'admin-pr@sipp.test',
             'password' => Hash::make('password'), 'role' => User::ROLE_ADMIN,
         ]);
+        $this->wali = User::create([
+            'name' => 'Wali Kelas Tes', 'email' => 'wali-pr@sipp.test',
+            'password' => Hash::make('password'), 'role' => User::ROLE_WALI_KELAS,
+        ]);
         $this->guru = User::create([
             'name' => 'Guru Ujian', 'email' => 'guru-pr@sipp.test',
             'password' => Hash::make('password'), 'role' => User::ROLE_GURU_PESANTREN,
@@ -59,6 +65,7 @@ class PresensiRaporTest extends TestCase
         ]);
         $this->kelas = KelasRombel::create([
             'nama' => '7A', 'tingkat' => 7, 'tahun_ajaran_id' => $tahun->id,
+            'wali_kelas_id' => $this->wali->id,
         ]);
         $this->siswa = Siswa::create([
             'nis' => '991001', 'nama' => 'Siswa Presensi', 'jenis_kelamin' => 'L',
@@ -93,13 +100,13 @@ class PresensiRaporTest extends TestCase
             ->assertStatus(200);
     }
 
-    public function test_presensi_guru_dihitung_per_hari_di_rapor(): void
+    public function test_presensi_wali_kelas_dihitung_per_hari_di_rapor(): void
     {
-        $this->catatPresensi($this->guru, $this->jadwal1->id, '2026-09-01', 'Sakit');
-        $this->catatPresensi($this->guru, $this->jadwal1->id, '2026-09-02', 'Sakit');
-        $this->catatPresensi($this->guru, $this->jadwal1->id, '2026-09-03', 'Alpa');
+        $this->catatPresensi($this->wali, $this->jadwal1->id, '2026-09-01', 'Sakit');
+        $this->catatPresensi($this->wali, $this->jadwal1->id, '2026-09-02', 'Sakit');
+        $this->catatPresensi($this->wali, $this->jadwal1->id, '2026-09-03', 'Alpa');
         // Dua sesi berbeda di hari yang sama dihitung SATU hari
-        $this->catatPresensi($this->guru, $this->jadwal2->id, '2026-09-01', 'Sakit');
+        $this->catatPresensi($this->wali, $this->jadwal2->id, '2026-09-01', 'Sakit');
 
         $this->actingAs($this->admin, 'sanctum')
             ->getJson('/api/rapor/cetak?siswa_id='.$this->siswa->id.'&semester_id='.$this->semester->id)
@@ -107,6 +114,19 @@ class PresensiRaporTest extends TestCase
             ->assertJsonPath('kehadiran.sakit', 2)
             ->assertJsonPath('kehadiran.izin', 0)
             ->assertJsonPath('kehadiran.alpa', 1);
+    }
+
+    public function test_guru_mapel_tidak_boleh_input_presensi(): void
+    {
+        $this->actingAs($this->guru, 'sanctum')
+            ->postJson('/api/presensi/massal', [
+                'jadwal_id' => $this->jadwal1->id,
+                'tanggal' => '2026-09-01',
+                'presensi' => [['siswa_id' => $this->siswa->id, 'status' => 'Hadir']],
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('presensis', 0);
     }
 
     public function test_fallback_ke_rekap_manual_bila_tanpa_presensi(): void
@@ -134,7 +154,7 @@ class PresensiRaporTest extends TestCase
 
     public function test_progres_menandai_kehadiran_terisi_dari_presensi(): void
     {
-        $this->catatPresensi($this->guru, $this->jadwal1->id, '2026-09-01', 'Hadir');
+        $this->catatPresensi($this->wali, $this->jadwal1->id, '2026-09-01', 'Hadir');
 
         $this->actingAs($this->admin, 'sanctum')
             ->getJson('/api/rapor/progres?semester_id='.$this->semester->id)

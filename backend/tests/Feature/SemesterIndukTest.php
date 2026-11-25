@@ -26,6 +26,8 @@ class SemesterIndukTest extends TestCase
 
     private User $admin;
 
+    private User $wali;
+
     private User $guru;
 
     private TahunAjaran $tahun;
@@ -46,6 +48,10 @@ class SemesterIndukTest extends TestCase
             'name' => 'Admin Tes', 'email' => 'admin-si@sipp.test',
             'password' => Hash::make('password'), 'role' => User::ROLE_ADMIN,
         ]);
+        $this->wali = User::create([
+            'name' => 'Wali Tes', 'email' => 'wali-si@sipp.test',
+            'password' => Hash::make('password'), 'role' => User::ROLE_WALI_KELAS,
+        ]);
         $this->guru = User::create([
             'name' => 'Guru Ujian', 'email' => 'guru-si@sipp.test',
             'password' => Hash::make('password'), 'role' => User::ROLE_GURU_PESANTREN,
@@ -59,6 +65,7 @@ class SemesterIndukTest extends TestCase
         ]);
         $this->kelas = KelasRombel::create([
             'nama' => '7A', 'tingkat' => 7, 'tahun_ajaran_id' => $this->tahun->id,
+            'wali_kelas_id' => $this->wali->id,
         ]);
         $this->siswa = Siswa::create([
             'nis' => '993001', 'nama' => 'Siswa Induk', 'jenis_kelamin' => 'L',
@@ -186,7 +193,7 @@ class SemesterIndukTest extends TestCase
 
         // 3 hari sakit (paruh pertama) + 2 hari sakit (paruh kedua)
         foreach (['2026-09-01', '2026-09-02', '2026-09-03', '2026-10-01', '2026-10-02'] as $tgl) {
-            $this->actingAs($this->guru, 'sanctum')
+            $this->actingAs($this->wali, 'sanctum')
                 ->postJson('/api/presensi/massal', [
                     'jadwal_id' => $jadwal->id,
                     'tanggal' => $tgl,

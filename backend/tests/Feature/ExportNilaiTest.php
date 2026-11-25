@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Guru;
 use App\Models\GuruMapelKelas;
+use App\Models\Jadwal;
 use App\Models\JenisAssessment;
 use App\Models\KelasRombel;
 use App\Models\MapelPlus;
 use App\Models\NilaiMapel;
+use App\Models\Presensi;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
@@ -32,6 +34,8 @@ class ExportNilaiTest extends TestCase
     private KelasRombel $kelas;
 
     private MapelPlus $mapel;
+
+    private GuruMapelKelas $pengampuan;
 
     protected function setUp(): void
     {
@@ -76,7 +80,7 @@ class ExportNilaiTest extends TestCase
 
         $this->mapel = MapelPlus::create(['kode' => 'TAHFIDZ', 'nama' => 'Tahfidz', 'kkm_default' => 75]);
 
-        GuruMapelKelas::create([
+        $this->pengampuan = GuruMapelKelas::create([
             'guru_id' => $guru->id,
             'mapel_plus_id' => $this->mapel->id,
             'kelas_rombel_id' => $this->kelas->id,
@@ -131,11 +135,15 @@ class ExportNilaiTest extends TestCase
         $this->assertSame(1, $sheet->getCell('A5')->getValue());
         $this->assertSame(2, $sheet->getCell('A6')->getValue());
         // Kolom ranking tetap: Siswa Rendah (60) peringkat 2, Siswa Tinggi (90) peringkat 1
-        $this->assertSame(2, $sheet->getCell('G5')->getValue());
-        $this->assertSame(1, $sheet->getCell('G6')->getValue());
+        $this->assertSame(2, $sheet->getCell('K5')->getValue());
+        $this->assertSame(1, $sheet->getCell('K6')->getValue());
         $this->assertSame(60, $sheet->getCell('D5')->getValue());
-        $this->assertSame(60, $sheet->getCell('E5')->getValue()); // total
-        $this->assertEquals(60.0, $sheet->getCell('F5')->getValue()); // rata-rata (round → float)
+        $this->assertSame(0, $sheet->getCell('E5')->getValue()); // hadir
+        $this->assertSame(0, $sheet->getCell('F5')->getValue()); // sakit
+        $this->assertSame(0, $sheet->getCell('G5')->getValue()); // izin
+        $this->assertSame(0, $sheet->getCell('H5')->getValue()); // alpa
+        $this->assertSame(60, $sheet->getCell('I5')->getValue()); // total
+        $this->assertEquals(60.0, $sheet->getCell('J5')->getValue()); // rata-rata (round → float)
         $this->assertSame($tinggi->id, Siswa::where('nis', '999010')->first()->id);
     }
 
@@ -154,9 +162,57 @@ class ExportNilaiTest extends TestCase
         $sheet = IOFactory::load($berkas)->getActiveSheet();
         unlink($berkas);
 
-        // Total sama → ranking sama (1 dan 1)
-        $this->assertSame(1, $sheet->getCell('G5')->getValue());
-        $this->assertSame(1, $sheet->getCell('G6')->getValue());
+        // Total sama & presensi sama → ranking sama (1 dan 1)
+        $this->assertSame(1, $sheet->getCell('K5')->getValue());
+        $this->assertSame(1, $sheet->getCell('K6')->getValue());
+    }
+
+    public function test_ranking_total_sama_dipecah_oleh_presensi_lebih_baik(): void
+    {
+        $rajin = $this->buatSiswa('999010', 'Siswa A', 80);
+        $bolos = $this->buatSiswa('999011', 'Siswa B', 80);
+
+        $jadwal = Jadwal::create([
+            'guru_mapel_kelas_id' => $this->pengampuan->id,
+            'hari' => 'Senin',
+            'jam_mulai' => '07:00',
+            'jam_selesai' => '08:00',
+        ]);
+
+        foreach (['2026-09-01', '2026-09-02'] as $tanggal) {
+            Presensi::create([
+                'siswa_id' => $rajin->id,
+                'jadwal_id' => $jadwal->id,
+                'tanggal' => $tanggal,
+                'status' => 'Hadir',
+                'dicatat_oleh' => $this->wali->id,
+            ]);
+        }
+        Presensi::create([
+            'siswa_id' => $bolos->id,
+            'jadwal_id' => $jadwal->id,
+            'tanggal' => '2026-09-01',
+            'status' => 'Alpa',
+            'dicatat_oleh' => $this->wali->id,
+        ]);
+
+        $response = $this->actingAs($this->wali, 'sanctum')
+            ->getJson("/api/nilai-diniyah/export?semester_id={$this->semester->id}");
+
+        $response->assertOk();
+
+        $berkas = tempnam(sys_get_temp_dir(), 'sipp-test-');
+        file_put_contents($berkas, $response->streamedContent());
+        $sheet = IOFactory::load($berkas)->getActiveSheet();
+        unlink($berkas);
+
+        // Baris 5 = Siswa A (rajin), baris 6 = Siswa B (alpa)
+        $this->assertSame(2, $sheet->getCell('E5')->getValue()); // hadir
+        $this->assertSame(0, $sheet->getCell('H5')->getValue()); // alpa
+        $this->assertSame(1, $sheet->getCell('K5')->getValue()); // ranking
+        $this->assertSame(0, $sheet->getCell('E6')->getValue()); // hadir
+        $this->assertSame(1, $sheet->getCell('H6')->getValue()); // alpa
+        $this->assertSame(2, $sheet->getCell('K6')->getValue()); // ranking
     }
 
     public function test_guru_tidak_boleh_export(): void

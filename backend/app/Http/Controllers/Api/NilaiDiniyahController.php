@@ -15,11 +15,13 @@ use App\Models\NilaiPraktik;
 use App\Models\Pembiasaan;
 use App\Models\PraktikItem;
 use App\Models\PredikatRange;
+use App\Models\Presensi;
 use App\Models\Semester;
 use App\Models\Sikap;
 use App\Models\Siswa;
 use App\Models\SiswaKelas;
 use App\Models\User;
+use App\Services\ImportNilaiService;
 use App\Support\NilaiDiniyah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -284,6 +286,36 @@ class NilaiDiniyahController extends Controller
 
     /* ── Helpers ──────────────────────────────────────────── */
 
+    /**
+     * Daftar mapel yang boleh diinput massal oleh user pada kelas/semester:
+     * admin & wali kelas kelas tsb = semua mapel; guru lain = mapel yang
+     * diampu di kelas itu (semester induk, sama seperti penugasan).
+     */
+    private function mapelBolehMassal(User $user, KelasRombel $kelas, Semester $semester): Collection
+    {
+        $semua = MapelPlus::orderBy('urutan')->orderBy('kode')->get();
+
+        if ($user->hasRole('admin')) {
+            return $semua;
+        }
+
+        if ($user->hasRole('wali_kelas') && $kelas->wali_kelas_id === $user->id) {
+            return $semua;
+        }
+
+        if ($user->guru) {
+            $ids = GuruMapelKelas::where('guru_id', $user->guru->id)
+                ->where('kelas_rombel_id', $kelas->id)
+                ->where('semester_id', $semester->induk()->id)
+                ->pluck('mapel_plus_id')
+                ->unique();
+
+            return $semua->whereIn('id', $ids)->values();
+        }
+
+        abort(403, 'Anda tidak memiliki akses nilai untuk kelas ini.');
+    }
+
     /** Scope input massal: pemilik profil guru harus mengampu mapel di kelas tsb (ikut induk bila Sementara); wali kelas kelas binaannya; admin bebas. */
     private function pastikanBolehNilaiMassal(User $user, int $mapelId, KelasRombel $kelas, Semester $semester): void
     {
@@ -313,10 +345,107 @@ class NilaiDiniyahController extends Controller
     }
 
     /**
+     * Unduh template import nilai untuk satu kelas/semester. Kolom mapel
+     * mengikuti hak user: admin/wali kelas semua mapel, guru mapel hanya
+     * mapel yang diampu di kelas tersebut.
+     */
+    public function template(Request $request, ImportNilaiService $service)
+    {
+        $data = $request->validate([
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'kelas_rombel_id' => ['required', 'exists:kelas_rombels,id'],
+        ]);
+
+        $semester = Semester::with('tahunAjaran')->findOrFail($data['semester_id']);
+        $kelas = KelasRombel::findOrFail($data['kelas_rombel_id']);
+        $mapels = $this->mapelBolehMassal($request->user(), $kelas, $semester);
+        abort_if($mapels->isEmpty(), 403, 'Anda tidak memiliki mapel yang bisa diinput di kelas ini.');
+
+        // Riwayat penempatan dipakai agar template semester lama tetap benar.
+        $siswas = Siswa::whereIn('id', $this->anggotaKelas($kelas))->orderBy('nama')->get();
+
+        $spreadsheet = $service->buatTemplate($kelas, $semester, $mapels, $siswas);
+        $namaFile = sprintf(
+            'Template_Nilai_%s_Semester%s_%s.xlsx',
+            str_replace(['/', '\\', '?', '*', '[', ']', ':'], '-', $kelas->nama),
+            $semester->nama,
+            str_replace('/', '-', $semester->tahunAjaran->nama),
+        );
+
+        $berkas = tempnam(sys_get_temp_dir(), 'sipp-template-nilai-');
+        (new Xlsx($spreadsheet))->save($berkas);
+
+        return response()->download($berkas, $namaFile, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Import nilai dari template Excel. Mendukung mode `dry_run` untuk pratinjau
+     * tanpa menulis database.
+     */
+    public function import(Request $request, ImportNilaiService $service)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
+            'semester_id' => ['required', 'exists:semesters,id'],
+            'kelas_rombel_id' => ['required', 'exists:kelas_rombels,id'],
+            'dry_run' => ['nullable', 'boolean'],
+        ], [
+            'file.mimes' => 'File harus berformat Excel (.xlsx).',
+            'file.max' => 'Ukuran file maksimal 10 MB.',
+        ]);
+
+        $semester = Semester::with('tahunAjaran')->findOrFail($request->integer('semester_id'));
+        abort_unless($semester->penilaian_dibuka, 422, 'Periode penilaian semester ini sudah ditutup.');
+
+        $kelas = KelasRombel::findOrFail($request->integer('kelas_rombel_id'));
+        $mapels = $this->mapelBolehMassal($request->user(), $kelas, $semester);
+        abort_if($mapels->isEmpty(), 403, 'Anda tidak memiliki mapel yang bisa diinput di kelas ini.');
+
+        $siswas = Siswa::whereIn('id', $this->anggotaKelas($kelas))->orderBy('nama')->get();
+        $plan = $service->rencana(
+            $request->file('file')->getRealPath(),
+            $semester,
+            $mapels,
+            $siswas
+        );
+
+        if (! $plan['ok']) {
+            return response()->json([
+                'message' => $plan['error'],
+                'errors' => $plan['errors'] ?? [],
+            ], 422);
+        }
+
+        if ($request->boolean('dry_run')) {
+            return response()->json([
+                'dry_run' => true,
+                'ringkasan' => [
+                    'mapel' => count($plan['nilai']),
+                    'siswa' => count($plan['siswa_ids']),
+                    'nilai_terisi' => $plan['terisi'],
+                    'nilai_kosong' => $plan['kosong'],
+                ],
+            ]);
+        }
+
+        $hasil = $service->jalankan($plan, $request->user()->id);
+
+        return response()->json([
+            'dry_run' => false,
+            'message' => 'Nilai berhasil diimport.',
+            'ringkasan' => $hasil,
+        ]);
+    }
+
+    /**
      * Export Excel daftar nilai satu kelas per semester (wali kelas & admin):
-     * kolom NIS, nama, nilai efektif tiap mapel, total, rata-rata, dan ranking —
-     * baris diurutkan berdasarkan NAMA siswa (abjad). Nilai efektif = nilai
-     * langsung atau agregasi sumatif (sama dengan rapor).
+     * kolom NIS, nama, nilai efektif tiap mapel, rekap kehadiran (hadir/sakit/
+     * izin/alpa), total, rata-rata, dan ranking — baris diurutkan berdasarkan
+     * NAMA siswa (abjad). Nilai efektif = nilai langsung atau agregasi sumatif
+     * (sama dengan rapor). Ranking nilai sama dipecah oleh presensi yang lebih
+     * baik (hadir lebih banyak, lalu alpa/sakit/izin lebih sedikit).
      */
     public function export(Request $request)
     {
@@ -347,6 +476,8 @@ class NilaiDiniyahController extends Controller
             ->groupBy('siswa_id')
             ->mapWithKeys(fn ($rows, $siswaId) => [$siswaId => $rows->pluck('nilai', 'mapel_plus_id')]);
 
+        $kehadiran = $this->kehadiranKelas($siswas->pluck('id'), $semester);
+
         $agregat = Nilai::with('jenisAssessment')
             ->where('semester_id', $semester->id)
             ->whereIn('siswa_id', $siswas->pluck('id'))
@@ -362,8 +493,8 @@ class NilaiDiniyahController extends Controller
                 return [$key => $nilai];
             });
 
-        // Baris per siswa: nilai tiap mapel (efektif), total, rata-rata
-        $baris = $siswas->map(function (Siswa $siswa) use ($mapels, $nilaiLangsung, $agregat) {
+        // Baris per siswa: nilai tiap mapel (efektif), rekap kehadiran, total, rata-rata
+        $baris = $siswas->map(function (Siswa $siswa) use ($mapels, $nilaiLangsung, $agregat, $kehadiran) {
             $nilaiPerMapel = $mapels->map(function (MapelPlus $mapel) use ($siswa, $nilaiLangsung, $agregat) {
                 $langsung = $nilaiLangsung->get($siswa->id)?->get($mapel->id);
                 $gabung = $agregat->get($siswa->id.'-'.$mapel->id);
@@ -374,27 +505,104 @@ class NilaiDiniyahController extends Controller
             $total = $nilaiPerMapel->filter()->sum();
             $rataRata = $mapels->count() > 0 ? round($total / $mapels->count(), 2) : 0;
 
+            $hadir = $kehadiran->get($siswa->id, []);
+
             return [
                 'siswa' => $siswa,
                 'nilai' => $nilaiPerMapel,
+                'hadir' => (int) ($hadir['hadir'] ?? 0),
+                'sakit' => (int) ($hadir['sakit'] ?? 0),
+                'izin' => (int) ($hadir['izin'] ?? 0),
+                'alpa' => (int) ($hadir['alpa'] ?? 0),
                 'total' => $total,
                 'rata_rata' => $rataRata,
             ];
         });
 
-        // Ranking berdasarkan total/rata-rata terbesar; nilai sama mendapat ranking sama
-        $urutan = $baris->sortByDesc('total')->values();
+        // Ranking: total terbesar; bila nilai sama, presensi lebih baik menang
+        // (hadir lebih banyak, lalu alpa/sakit/izin lebih sedikit). Baris dengan
+        // total DAN rekap presensi identik mendapat ranking sama.
+        $urutan = $baris->sortBy([
+            ['total', 'desc'],
+            ['hadir', 'desc'],
+            ['alpa', 'asc'],
+            ['sakit', 'asc'],
+            ['izin', 'asc'],
+        ])->values();
         $ranking = collect();
         $rankSekarang = 0;
-        $rankSebelumnya = null;
+        $kunciSebelumnya = null;
         foreach ($urutan as $i => $row) {
-            $rankSekarang = $row['total'] === $rankSebelumnya ? $rankSekarang : $i + 1;
-            $rankSebelumnya = $row['total'];
+            $kunci = [$row['total'], $row['hadir'], $row['sakit'], $row['izin'], $row['alpa']];
+            $rankSekarang = $kunci === $kunciSebelumnya ? $rankSekarang : $i + 1;
+            $kunciSebelumnya = $kunci;
             $ranking[$row['siswa']->id] = $rankSekarang;
         }
 
         // Barisan diurutkan berdasarkan nama (abjad) — ranking tetap ditampilkan sebagai kolom
         return $this->buatXlsx($kelas, $semester, $mapels, $baris, $ranking);
+    }
+
+    /**
+     * Rekap kehadiran per siswa dari presensi (satu HARI dihitung sekali).
+     * Bila siswa belum punya presensi sama sekali, fallback ke rekap manual
+     * wali kelas (sakit/izin/alpa) agar data lama tetap tampil.
+     */
+    private function kehadiranKelas(Collection $siswaIds, Semester $semester): Collection
+    {
+        if ($siswaIds->isEmpty()) {
+            return collect();
+        }
+
+        $indukId = $semester->induk()->id;
+        $presensi = Presensi::whereIn('siswa_id', $siswaIds)
+            ->whereHas('jadwal.guruMapelKelas', fn ($q) => $q->where('semester_id', $indukId))
+            ->get(['siswa_id', 'tanggal', 'status']);
+
+        $rekap = KehadiranRekap::where('semester_id', $semester->id)
+            ->whereIn('siswa_id', $siswaIds)
+            ->get()
+            ->keyBy('siswa_id');
+
+        $hasil = [];
+        foreach ($siswaIds as $id) {
+            $hasil[$id] = ['hadir' => 0, 'sakit' => 0, 'izin' => 0, 'alpa' => 0, 'sumber' => null];
+        }
+
+        // Kumpulkan status per siswa per tanggal; bila satu hari punya beberapa
+        // sesi dengan status berbeda, ambil yang paling "berat" agar transparan.
+        $perHari = [];
+        foreach ($presensi as $p) {
+            $tanggal = $p->tanggal?->format('Y-m-d') ?? (string) $p->tanggal;
+            $perHari[$p->siswa_id][$tanggal][$p->status] = true;
+        }
+
+        foreach ($perHari as $siswaId => $hariList) {
+            $hasil[$siswaId]['sumber'] = 'presensi';
+            foreach ($hariList as $statuses) {
+                if (isset($statuses['Alpa'])) {
+                    $hasil[$siswaId]['alpa']++;
+                } elseif (isset($statuses['Sakit'])) {
+                    $hasil[$siswaId]['sakit']++;
+                } elseif (isset($statuses['Izin'])) {
+                    $hasil[$siswaId]['izin']++;
+                } else {
+                    $hasil[$siswaId]['hadir']++;
+                }
+            }
+        }
+
+        foreach ($hasil as $siswaId => $row) {
+            if ($row['sumber'] === null && $rekap->has($siswaId)) {
+                $r = $rekap->get($siswaId);
+                $hasil[$siswaId]['sakit'] = (int) $r->sakit;
+                $hasil[$siswaId]['izin'] = (int) $r->izin;
+                $hasil[$siswaId]['alpa'] = (int) $r->alpa;
+                $hasil[$siswaId]['sumber'] = 'rekap';
+            }
+        }
+
+        return collect($hasil);
     }
 
     private function buatXlsx($kelas, $semester, $mapels, $baris, $ranking)
@@ -403,8 +611,7 @@ class NilaiDiniyahController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(substr('Nilai '.$kelas->nama, 0, 31));
 
-        $kolomAkhir = Coordinate::stringFromColumnIndex(4 + $mapels->count());
-        $jumlahKolom = 4 + $mapels->count() + 3; // NIS, Nama, ...mapel, Total, Rata², Ranking + No
+        $kolomAkhir = Coordinate::stringFromColumnIndex(3 + $mapels->count() + 7);
 
         // Judul
         $sheet->mergeCells("A1:{$kolomAkhir}1");
@@ -421,7 +628,7 @@ class NilaiDiniyahController extends Controller
         foreach ($mapels as $mapel) {
             $header[] = $mapel->nama;
         }
-        array_push($header, 'Total', 'Rata-rata', 'Ranking');
+        array_push($header, 'Hadir', 'Sakit', 'Izin', 'Alpa', 'Total', 'Rata-rata', 'Ranking');
         $sheet->fromArray($header, null, 'A4');
 
         $sheet->getStyle('A4:'.$kolomAkhir.'4')->getFont()->setBold(true);
@@ -445,9 +652,13 @@ class NilaiDiniyahController extends Controller
                 $kolom++;
             }
 
-            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom).$barisExcel, $row['total']);
-            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 1).$barisExcel, $row['rata_rata']);
-            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 2).$barisExcel, $ranking[$row['siswa']->id]);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom).$barisExcel, $row['hadir']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 1).$barisExcel, $row['sakit']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 2).$barisExcel, $row['izin']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 3).$barisExcel, $row['alpa']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 4).$barisExcel, $row['total']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 5).$barisExcel, $row['rata_rata']);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($kolom + 6).$barisExcel, $ranking[$row['siswa']->id]);
             $barisExcel++;
         }
 
@@ -461,9 +672,16 @@ class NilaiDiniyahController extends Controller
         $sheet->getColumnDimension('A')->setWidth(5);
         $sheet->getColumnDimension('B')->setWidth(12);
         $sheet->getColumnDimension('C')->setWidth(28);
-        for ($k = 4; $k <= 4 + $mapels->count() + 2; $k++) {
+        $kolomMapelAkhir = 3 + $mapels->count();
+        for ($k = 4; $k <= $kolomMapelAkhir; $k++) {
             $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($k))->setWidth(12);
         }
+        for ($k = $kolomMapelAkhir + 1; $k <= $kolomMapelAkhir + 4; $k++) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($k))->setWidth(8);
+        }
+        $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($kolomMapelAkhir + 5))->setWidth(9);
+        $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($kolomMapelAkhir + 6))->setWidth(10);
+        $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($kolomMapelAkhir + 7))->setWidth(9);
 
         $sheet->freezePane('A5');
 

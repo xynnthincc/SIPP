@@ -13,11 +13,18 @@ class JadwalController extends Controller
     public function index(Request $request)
     {
         // Semua pemilik profil guru (guru pesantren & wali kelas yang mengajar)
-        // hanya melihat jadwal pengampuannya sendiri
+        // hanya melihat jadwal pengampuannya sendiri. Pengecualian: wali kelas
+        // boleh melihat seluruh jadwal kelas binaannya (dipakai halaman presensi
+        // harian wali kelas).
         $user = $request->user();
+        $kelasDiminta = $request->integer('kelas_rombel_id') ?: null;
+        $bolehLihatKelas = $kelasDiminta !== null
+            && ($user->hasRole('admin', 'kepala_sekolah')
+                || ($user->hasRole('wali_kelas')
+                    && $user->kelasDiwalikan()->whereKey($kelasDiminta)->exists()));
 
         return Jadwal::with('guruMapelKelas.guru.user', 'guruMapelKelas.mapelPlus', 'guruMapelKelas.kelasRombel', 'guruMapelKelas.semester')
-            ->when($user->guru, function ($q) use ($user) {
+            ->when($user->guru && ! $bolehLihatKelas, function ($q) use ($user) {
                 $q->whereHas('guruMapelKelas.guru', fn ($qq) => $qq->where('user_id', $user->id));
             })
             ->when($request->kelas_rombel_id, function ($q, $id) {

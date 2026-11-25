@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { labelKelas } from "@/lib/kelas";
 import { labelSemester } from "@/lib/semester";
 import { PageHeader, Card, Button, Select, Skeleton, EmptyState, Alert } from "@/components/ui";
+import { NilaiImportModal } from "@/components/nilai/NilaiImportModal";
 
 interface SemesterLite {
   id: number;
@@ -72,6 +73,8 @@ export default function MatriksNilaiMassal({
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -211,6 +214,32 @@ export default function MatriksNilaiMassal({
     if (kId !== null) void muatKelas(kId, semesterId);
   }
 
+  async function unduhTemplate() {
+    if (kelasId === null || !semesterId) return;
+    setDownloadingTemplate(true);
+    setError(null);
+    try {
+      const res = await api.get("/nilai-diniyah/template", {
+        params: { semester_id: Number(semesterId), kelas_rombel_id: kelasId },
+        responseType: "blob",
+      });
+      const kelas = kelasTersaring.find((k) => k.id === kelasId);
+      const nama = (kelas ? (labelKelas(kelas.nama) ?? kelas.nama) : "Kelas").replace(/\s+/g, "");
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Template_Nilai_${nama}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Gagal mengunduh template nilai. Coba lagi.");
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  }
+
   function ubahNilai(mapelId: number, siswaId: number, v: string) {
     setMatriks((prev) => ({
       ...prev,
@@ -341,6 +370,20 @@ export default function MatriksNilaiMassal({
         </p>
       </Card>
 
+      {kelasId !== null && semesterId && (
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          <Button variant="outline" onClick={unduhTemplate} loading={downloadingTemplate}>
+            Template Excel
+          </Button>
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            Import Excel
+          </Button>
+          <span className="text-xs text-slate-400">
+            Unduh template, isi nilai, lalu import kembali.
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <Skeleton className="h-40 w-full" />
       ) : !semesterId ? (
@@ -420,6 +463,18 @@ export default function MatriksNilaiMassal({
           </div>
         </div>
       )}
+
+      <NilaiImportModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        semesterId={semesterId ? Number(semesterId) : null}
+        kelasId={kelasId}
+        kelasNama={labelKelas(namaKelas) ?? namaKelas ?? "-"}
+        onSelesai={() => {
+          if (kelasId !== null) void muatKelas(kelasId, semesterId);
+          setSavedMsg("Nilai berhasil diimport dari Excel.");
+        }}
+      />
     </div>
   );
 }

@@ -221,14 +221,15 @@ class WaliKelasGuruMapelTest extends TestCase
             ->assertJsonPath('0.guru_mapel_kelas.id', $pengampuanWali->id);
     }
 
-    public function test_wali_kelas_yang_mengajar_bisa_input_presensi_jadwalnya(): void
+    public function test_wali_kelas_bisa_input_presensi_kelas_binaannya(): void
     {
         $jadwal = Jadwal::create([
             'guru_mapel_kelas_id' => GuruMapelKelas::first()->id,
             'hari' => 'Senin', 'jam_mulai' => '07:00', 'jam_selesai' => '08:00',
         ]);
 
-        $this->actingAs($this->waliGuru, 'sanctum')
+        // waliBiasa adalah wali kelas 8A (kelas pada jadwal di atas)
+        $this->actingAs($this->waliBiasa, 'sanctum')
             ->postJson('/api/presensi/massal', [
                 'jadwal_id' => $jadwal->id,
                 'tanggal' => '2026-09-21',
@@ -239,6 +240,39 @@ class WaliKelasGuruMapelTest extends TestCase
         $this->assertDatabaseHas('presensis', [
             'siswa_id' => $this->siswaLain->id, 'jadwal_id' => $jadwal->id, 'tanggal' => '2026-09-21 00:00:00',
         ]);
+    }
+
+    public function test_wali_kelas_tidak_boleh_input_presensi_kelas_lain(): void
+    {
+        $jadwal = Jadwal::create([
+            'guru_mapel_kelas_id' => GuruMapelKelas::first()->id,
+            'hari' => 'Senin', 'jam_mulai' => '07:00', 'jam_selesai' => '08:00',
+        ]);
+
+        // waliGuru adalah wali kelas 7A, sedangkan jadwal di atas untuk kelas 8A
+        $this->actingAs($this->waliGuru, 'sanctum')
+            ->postJson('/api/presensi/massal', [
+                'jadwal_id' => $jadwal->id,
+                'tanggal' => '2026-09-21',
+                'presensi' => [['siswa_id' => $this->siswaLain->id, 'status' => 'Hadir']],
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_guru_mapel_tidak_boleh_input_presensi(): void
+    {
+        $jadwal = Jadwal::create([
+            'guru_mapel_kelas_id' => GuruMapelKelas::first()->id,
+            'hari' => 'Senin', 'jam_mulai' => '07:00', 'jam_selesai' => '08:00',
+        ]);
+
+        $this->actingAs($this->guru, 'sanctum')
+            ->postJson('/api/presensi/massal', [
+                'jadwal_id' => $jadwal->id,
+                'tanggal' => '2026-09-21',
+                'presensi' => [['siswa_id' => $this->siswaLain->id, 'status' => 'Hadir']],
+            ])
+            ->assertForbidden();
     }
 
     public function test_wali_kelas_yang_mengajar_bisa_membuat_catatan_guru(): void

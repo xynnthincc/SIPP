@@ -100,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Import massal siswa (.xlsx) — only admin: menimpa data lintas kelas.
     Route::middleware('role:admin')->group(function () {
+        Route::get('/siswa/template', [SiswaImportController::class, 'template']);
         Route::post('/siswa/import', [SiswaImportController::class, 'store']);
     });
     Route::get('/siswa/{siswa}', [SiswaController::class, 'show']);
@@ -112,11 +113,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/izin/{izin}/status', [IzinController::class, 'updateStatus']);
     });
 
-    // ── Guru Pesantren & Wali Kelas yang mengajar: jadwal, presensi, assessment, nilai, progres, catatan ──
+    // ── Guru Pesantren & Wali Kelas yang mengajar: jadwal, assessment, nilai, progres, catatan ──
     // (wali kelas boleh masuk selama punya profil guru + penugasan pengampu; scope per item dicek di controller)
     Route::middleware('role:guru_pesantren,wali_kelas,admin')->group(function () {
         Route::apiResource('jadwal', JadwalController::class)->only(['store', 'update', 'destroy']);
-        Route::post('/presensi/massal', [PresensiController::class, 'storeMassal']);
         Route::post('/nilai/massal', [NilaiController::class, 'storeMassal']);
         Route::post('/progres-hafalan', [ProgresHafalanController::class, 'store']);
         Route::put('/progres-hafalan/{progresHafalan}', [ProgresHafalanController::class, 'update']);
@@ -124,11 +124,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/catatan-guru', [CatatanGuruController::class, 'store']);
     });
 
+    // ── Presensi: hanya wali kelas (admin untuk koreksi), bukan guru mapel ──
+    Route::middleware('role:wali_kelas,admin')->group(function () {
+        Route::post('/presensi/massal', [PresensiController::class, 'storeMassal']);
+    });
+
     // ── Input Nilai Diniyah: wali kelas & guru yang berhak (akses diceck per-mapel/praktik) ──
     Route::middleware('role:guru_pesantren,admin,wali_kelas')->group(function () {
         Route::post('/nilai-diniyah/simpan', [NilaiDiniyahController::class, 'simpan']);
         Route::get('/nilai-diniyah/massal', [NilaiDiniyahController::class, 'daftarMassal']);
         Route::post('/nilai-diniyah/massal', [NilaiDiniyahController::class, 'simpanMassal']);
+        Route::get('/nilai-diniyah/template', [NilaiDiniyahController::class, 'template']);
+        Route::post('/nilai-diniyah/import', [NilaiDiniyahController::class, 'import']);
     });
 
     // ── Export Excel daftar nilai kelas: wali kelas (kelasnya) & admin ──
