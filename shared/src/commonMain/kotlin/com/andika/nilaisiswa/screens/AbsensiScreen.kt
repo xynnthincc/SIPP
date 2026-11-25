@@ -88,19 +88,27 @@ fun AbsensiScreen(
                     }
                 }
 
-                // 2. Slot jadwal milik guru untuk mapel & kelas pengampuan ini
-                val jadwalRes = SippApi.getJadwalSaya(semester.id).filter { j ->
-                    val gmk = j.guruMapelKelas
-                    gmk != null &&
-                        gmk.mapelPlus?.id == pengampuan.mapelPlus.id &&
-                        gmk.kelasRombel?.id == pengampuan.kelasRombel.id
+                // 2. Slot jadwal: presensi kini rekap harian per kelas, jadi wali
+                // kelas memakai slot pertama kelas binaannya (tanpa pilih mapel).
+                // Guru mapel (mapelPlus.id > 0) tetap memakai slot pengampuannya.
+                val presensiPerKelas = pengampuan.mapelPlus.id <= 0
+                val jadwalRes = if (presensiPerKelas) {
+                    SippApi.getJadwalKelas(
+                        semesterId = semester.id,
+                        kelasRombelId = pengampuan.kelasRombel.id
+                    )
+                } else {
+                    SippApi.getJadwalSaya(semester.id).filter { j ->
+                        val gmk = j.guruMapelKelas
+                        gmk != null &&
+                            gmk.mapelPlus?.id == pengampuan.mapelPlus.id &&
+                            gmk.kelasRombel?.id == pengampuan.kelasRombel.id
+                    }
                 }
                 jadwalList = jadwalRes
                 if (jadwalRes.isEmpty()) {
-                    // Backend menyimpan presensi per slot jadwal; tanpa slot,
-                    // presensi harus dibuat lewat web (admin/guru) dulu.
                     errorMessage =
-                        "Mapel ini belum punya slot jadwal. Buat jadwal terlebih dahulu di web (Jadwal & Pengampu), lalu presensi bisa diinput di sini."
+                        "Kelas ini belum punya slot jadwal pada semester aktif. Buat jadwal terlebih dahulu di web (Jadwal & Pengampu), lalu presensi bisa diinput di sini."
                     isLoading = false
                     return@launch
                 }
@@ -214,7 +222,10 @@ fun AbsensiScreen(
         ) {
             SippHeader(
                 title = "Presensi Siswa",
-                subtitle = "${pengampuan.mapelPlus.nama} • Kelas ${pengampuan.kelasRombel.nama}",
+                subtitle = if (pengampuan.mapelPlus.id <= 0)
+                    "Presensi harian • Kelas ${pengampuan.kelasRombel.nama}"
+                else
+                    "${pengampuan.mapelPlus.nama} • Kelas ${pengampuan.kelasRombel.nama}",
                 onBack = onBack
             )
 
@@ -280,7 +291,9 @@ fun AbsensiScreen(
                         }
                     }
 
-                    // Pilih Slot Jadwal (presensi tersimpan per slot di backend)
+                    // Pilih Slot Jadwal (disembunyikan untuk presensi harian wali
+                    // kelas: backend memakai slot pertama kelas sebagai kanal)
+                    if (pengampuan.mapelPlus.id > 0) {
                     Column(modifier = Modifier.weight(0.9f)) {
                         Text(
                             text = "Slot Jadwal",
@@ -334,6 +347,7 @@ fun AbsensiScreen(
                                 }
                             }
                         }
+                    }
                     }
 
                     // Tombol Hadirkan Semua Siswa

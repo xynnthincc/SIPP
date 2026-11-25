@@ -538,6 +538,44 @@ object SippApi {
         return json.decodeFromJsonElement(listEl)
     }
 
+    /**
+     * Kelas binaan (wali kelas) / semua kelas (admin) — dipakai untuk memastikan
+     * hanya wali kelas yang benar-benar memegang kelas tersebut yang melihat
+     * menu presensi. Guru mapel biasa mendapat daftar kosong dari backend.
+     */
+    suspend fun getKelasDiwalikan(): List<KelasRombelItem> {
+        val response = request("kelas-rombel")
+        val listEl = when {
+            response is JsonArray -> response
+            response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
+            else -> JsonArray(emptyList())
+        }
+        return try {
+            json.decodeFromJsonElement(listEl)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Seluruh slot jadwal satu kelas pada semester (wali kelas pemilik kelas).
+     * Dipakai halaman presensi harian agar wali kelas tidak perlu memilih
+     * pengampuan mapel tertentu.
+     */
+    suspend fun getJadwalKelas(semesterId: Int? = null, kelasRombelId: Int): List<JadwalItem> {
+        val params = buildString {
+            append("jadwal?kelas_rombel_id=$kelasRombelId")
+            if (semesterId != null) append("&semester_id=$semesterId")
+        }
+        val response = request(params)
+        val listEl = when {
+            response is JsonArray -> response
+            response is JsonObject && response["data"] is JsonArray -> response["data"] as JsonArray
+            else -> JsonArray(emptyList())
+        }
+        return json.decodeFromJsonElement(listEl)
+    }
+
     /** Presensi tersimpan untuk satu slot jadwal pada tanggal tertentu. */
     suspend fun getPresensiByJadwal(jadwalId: Int, tanggal: String): List<AbsensiRecord> {
         val response = request("presensi?jadwal_id=$jadwalId&tanggal=$tanggal")

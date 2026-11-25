@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.andika.nilaisiswa.components.*
 import com.andika.nilaisiswa.data.SippApi
 import com.andika.nilaisiswa.data.TokenStore
+import com.andika.nilaisiswa.data.models.KelasRombelItem
 import com.andika.nilaisiswa.data.models.PengampuanItem
 import com.andika.nilaisiswa.data.models.SemesterItem
 import com.andika.nilaisiswa.data.models.UserProfile
@@ -52,16 +53,38 @@ fun DashboardScreen(
     var semesters by remember { mutableStateOf<List<SemesterItem>>(emptyList()) }
     var selectedSemester by remember { mutableStateOf<SemesterItem?>(null) }
     var pengampuanList by remember { mutableStateOf<List<PengampuanItem>>(emptyList()) }
+    var kelasDiwalikan by remember { mutableStateOf<List<KelasRombelItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showSemesterSheet by remember { mutableStateOf(false) }
     var showMapelPickerSheet by remember { mutableStateOf(false) }
+    var showKelasPresensiSheet by remember { mutableStateOf(false) }
     var pickerTargetMode by remember { mutableStateOf("nilai") } // "nilai" atau "absensi"
 
-    // Fitur input nilai/presensi hanya untuk akun guru. Flag dari /me dipakai
-    // supaya wali kelas tanpa penugasan mapel tidak melihat kartu yang tak bisa dipakai.
-    val bolehInputGuru = user.role in setOf("guru_pesantren", "wali_kelas", "admin") &&
+    // Fitur input nilai hanya untuk akun guru yang punya penugasan. Presensi
+    // hanya untuk wali kelas (kelas binaannya) dan admin — guru mapel ditolak
+    // backend karena presensi kini satu rekap harian per kelas.
+    val bolehInputNilai = user.role in setOf("guru_pesantren", "wali_kelas", "admin") &&
         (user.role == "admin" || user.punyaPenugasanGuru)
+    val idKelasDiwalikan = kelasDiwalikan.map { it.id }.toSet()
+    val bolehPresensi = user.role == "admin" ||
+        (user.role == "wali_kelas" && idKelasDiwalikan.isNotEmpty())
+
+    fun bolehPresensiKelas(kelasId: Int): Boolean =
+        user.role == "admin" || (user.role == "wali_kelas" && kelasId in idKelasDiwalikan)
+
+    // Pengampuan sintetis untuk membuka layar presensi kelas (tanpa mapel):
+    // backend menyimpan presensi per slot jadwal, layar akan memakai slot
+    // pertama kelas binaan.
+    fun pengampuanPresensi(kelas: KelasRombelItem): PengampuanItem = PengampuanItem(
+        id = -kelas.id,
+        semesterId = selectedSemester?.id ?: 0,
+        mapelPlus = com.andika.nilaisiswa.data.models.MapelPlusItem(
+            id = 0,
+            nama = "Presensi Harian"
+        ),
+        kelasRombel = kelas
+    )
 
     val scope = rememberCoroutineScope()
 
@@ -85,6 +108,18 @@ fun DashboardScreen(
                 // ke penugasan tahun ajaran lain.
                 pengampuanList = selectedSemester?.let { SippApi.getPengampuanSaya(it.id) }
                     ?: SippApi.getPengampuanSaya()
+
+                // Kelas binaan hanya relevan untuk wali kelas/admin; guru mapel
+                // mendapat daftar kosong sehingga kartu presensi tidak tampil.
+                kelasDiwalikan = if (profile.role == "wali_kelas" || profile.role == "admin") {
+                    try {
+                        SippApi.getKelasDiwalikan()
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
 
                 isLoading = false
             } catch (e: Exception) {
@@ -218,13 +253,14 @@ fun DashboardScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Hero Action Cards: Input Nilai & Presensi Siswa
-                    if (bolehInputGuru) {
+                    // Hero Action Cards: Input Nilai (guru) & Presensi (wali kelas)
+                    if (bolehInputNilai || bolehPresensi) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // Card 1: Nilai Asesmen
+                        if (bolehInputNilai) {
                         SippCard(
                             modifier = Modifier.weight(1f),
                             borderColor = SippEmeraldBorder,
@@ -278,15 +314,21 @@ fun DashboardScreen(
                                 )
                             }
                         }
+                        }
 
-                        // Card 2: Presensi / Absensi Siswa
+                        // Card 2: Presensi Harian Kelas (khusus wali kelas)
+                        if (bolehPresensi) {
                         SippCard(
                             modifier = Modifier.weight(1f),
                             borderColor = StatusInfoBorder,
                             padding = 16.dp,
                             onClick = {
-                                pickerTargetMode = "absensi"
-                                showMapelPickerSheet = true
+                                val kelas = kelasDiwalikan
+                                if (kelas.size == 1 && selectedSemester != null) {
+                                    onKeAbsensi(selectedSemester!!, pengampuanPresensi(kelas.first()))
+                                } else {
+                                    showKelasPresensiSheet = true
+                                }
                             }
                         ) {
                             Box(
@@ -332,6 +374,7 @@ fun DashboardScreen(
                                     modifier = Modifier.size(12.dp)
                                 )
                             }
+                        }
                         }
                     }
                     }
@@ -471,19 +514,22 @@ fun DashboardScreen(
                                             }
                                         }
 
-                                        // Tombol Aksi: Presensi & Nilai
+                                        // Tombol Aksi: Presensi (wali kelas) & Nilai
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            // Tombol Absensi
+                                            // Tombol Absensi — hanya untuk wali kelas kelas ini
+                                            if (bolehPresensiKelas(item.kelasRombel.id)) {
                                             Box(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(8.dp))
                                                     .background(StatusInfoBg)
                                                     .border(1.dp, StatusInfoBorder, RoundedCornerShape(8.dp))
                                                     .clickable {
-                                                        selectedSemester?.let { onKeAbsensi(it, item) }
+                                                        selectedSemester?.let {
+                                                            onKeAbsensi(it, pengampuanPresensi(item.kelasRombel))
+                                                        }
                                                     }
                                                     .padding(horizontal = 10.dp, vertical = 6.dp),
                                                 contentAlignment = Alignment.Center
@@ -503,6 +549,7 @@ fun DashboardScreen(
                                                         color = StatusInfoText
                                                     )
                                                 }
+                                            }
                                             }
 
                                             // Tombol Nilai
@@ -650,6 +697,97 @@ fun DashboardScreen(
                     SippButton(
                         text = "Tutup",
                         onClick = { showMapelPickerSheet = false },
+                        variant = SippButtonVariant.Outline,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // Bottom Sheet Pemilihan Kelas untuk Presensi (wali kelas dengan >1 kelas)
+        if (showKelasPresensiSheet) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .clickable { showKelasPresensiSheet = false },
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .background(Color.White)
+                        .padding(24.dp)
+                        .clickable(enabled = false) {}
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(Slate200)
+                            .align(Alignment.CenterHorizontally)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Pilih Kelas Binaan",
+                        style = SippTypography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Slate900
+                    )
+                    Text(
+                        text = "Presensi dicatat sekali per kelas setiap tanggal.",
+                        style = SippTypography.bodySmall,
+                        color = Slate500,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 380.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        kelasDiwalikan.forEach { kelas ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Slate100)
+                                    .clickable {
+                                        showKelasPresensiSheet = false
+                                        selectedSemester?.let { sem ->
+                                            onKeAbsensi(sem, pengampuanPresensi(kelas))
+                                        }
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Kelas ${kelas.nama}",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Slate900
+                                )
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "Pilih",
+                                    tint = SippPrimaryDark,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SippButton(
+                        text = "Tutup",
+                        onClick = { showKelasPresensiSheet = false },
                         variant = SippButtonVariant.Outline,
                         modifier = Modifier.fillMaxWidth()
                     )
